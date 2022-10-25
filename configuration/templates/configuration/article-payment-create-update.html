@@ -1,0 +1,41 @@
+{% extends 'main_page.html' %}
+{% load static %}
+
+{% block content_header %}
+    <h1>{% if form.instance.id %}Редагування{% else %}Нова стаття{% endif %}</h1>
+{% endblock %}
+
+{% block main_content %}
+    <div class="card">
+        <div class="card-body">
+            <form id="article-payment-form" method="post" {% if form.instance.id %}action="{% url 'article-payment-update' pk=form.instance.id %}" {% else %}action="{% url 'article-payment-create' %}"{% endif %}>
+            {% csrf_token %}
+            <div class="row">
+                <div class="col-sm-12 col-lg-7">
+                    <div class="row">
+                        <div class="form-group col-sm-12">
+                            <label for="{{ form.name.auto_id }}">Назва</label>
+                            <input class="form-control" id="{{ form.name.auto_id }}" name="{{ form.name.html_name }}" {% if form.instance %}value="{{ form.instance.name }}"{% endif %}>
+                        </div>
+                    </div>
+                    <div class="row" style="margin-top: 25px;">
+                        <div class="form-group col-sm-12">
+                            <label for="{{ form.type.auto_id }}">Прихід/розхід</label>
+                            <select id="{{ form.type.auto_id }}" name="{{ form.type.html_name }}" class="form-control">
+                                <option value="income" {% if form.instance.type == 'income' %}selected{% endif %}>Прихід</option>
+                                <option value="outcome" {% if form.instance.type == 'outcome' %}selected{% endif %}>Розхід</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-sm-12 text-right">
+                    <button type="reset" class="btn btn-default" style="margin-right: 20px;">Відмінити</button>
+                    <button type="submit" class="btn btn-success">{% if form.instance.pk %}Зберегти{% else %}Створити{% endif %}</button>
+                </div>
+            </div>
+            </form>
+        </div>
+    </div>
+{% endblock %}

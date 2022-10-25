@@ -1,0 +1,54 @@
+{% extends 'main_page.html' %}
+{% load static %}
+
+{% block content_header %}
+    <h1>Користувачі</h1>
+{% endblock %}
+
+{% block main_content %}
+    <div class="row" style="margin-bottom: 25px;">
+        <div class="col-sm-12 text-right">
+            <a href="{% url 'user-create' %}" class="btn btn-success">Створити користувача</a>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-body">
+            <div class="row">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Користувач</th>
+                            <th>Роль</th>
+                            <th>Телефон</th>
+                            <th>Email (логін)</th>
+                            <th>Статус</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for object in object_list %}
+                            <tr>
+                                <td>{{ forloop.counter }}</td>
+                                <td>{{ object.name }} {{ object.surname }}</td>
+                                <td>{{ object.role.get_role_display }}</td>
+                                <td>{{ object.phone }}</td>
+                                <td>{{ object.email }}</td>
+                                <td>{% if object.status == 'new' %}<span class="badge badge-warning">{{ object.get_status_display }}{% elif object.status == 'active' %}<span class="badge badge-success">{{ object.get_status_display }}{% else %}<span class="badge badge-danger">{{ object.get_status_display }}</span>{% endif %}</span></span></td>
+                                <td class="text-right">
+                                    <div class="btn-group pull-right">
+                                        <a class="btn btn-default btn-sm" title="Редагувати" href="#">
+                                            <i class="fa fa-pencil"></i>
+                                        </a>
+                                        <button id="{{ object.pk }}" type="button" class="btn btn-default btn-sm delete-article" title="Видалити">
+                                            <i class="fa fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+{% endblock %}

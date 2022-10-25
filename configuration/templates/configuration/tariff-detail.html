@@ -1,0 +1,61 @@
+{% extends 'main_page.html' %}
+{% load static %}
+
+{% block content_header %}
+    <h1>Тариф: {{ object.name }}</h1>
+{% endblock %}
+
+{% block main_content %}
+    <div class="card">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-sm-12 text-right">
+                    <a class="btn btn-info" href="{% url 'tariff-update' pk=object.pk %}">Редагувати тариф</a>
+                </div>
+            </div>
+            <div class="row">
+                <table class="table table-borderless">
+                    <tbody>
+                        <tr>
+                            <td><b>Назва тарифу</b></td>
+                            <td>{{ object.name }}</td>
+                        </tr>
+                        <tr>
+                            <td><b>Опис</b></td>
+                            <td>{{ object.description }}</td>
+                        </tr>
+                        <tr>
+                            <td><b>Дата редагування</b></td>
+                            <td>{{ object.updated_at|date:'d.m.Y - H:i' }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="row" style="margin-top: 25px;">
+                <table class="col-sm-8 col-md-6 table table-borderless text-center">
+                    <thead>
+                        <tr class="text-center">
+                            <th>#</th>
+                            <th>Послуга</th>
+                            <th>Од. вим.</th>
+                            <th>Ціна за од., грн</th>
+                            <th>Валюта</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for tariff_service in object.tariffservice_set.all %}
+                            <tr class="text-center">
+                                <td>{{ forloop.counter }}</td>
+                                <td>{{ tariff_service.service.name }}</td>
+                                <td>{{ tariff_service.service.measurement_unit.name }}</td>
+                                <td>{{ tariff_service.price|floatformat:2 }}</td>
+                                <td>{{ tariff_service.currency }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                <div class="col-sm-4 col-md-6"></div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

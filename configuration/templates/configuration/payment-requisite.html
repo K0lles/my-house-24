@@ -1,0 +1,34 @@
+{% extends 'main_page.html' %}
+{% load static %}
+
+{% block content_header %}
+    <h1>Платіжні реквізити</h1>
+{% endblock %}
+
+{% block main_content %}
+    <div class="card">
+        <div class="card-body">
+            <form id="payment-requisite-form" action="{% url 'requisites' %}" method="post">
+                {% csrf_token %}
+                <div class="row">
+                    <div class="col-xs-12 col-lg-7">
+                        <div class="row">
+                            <label for="{{ form.name.auto_id }}">Назва компанії</label>
+                            <input class="form-control" id="{{ form.name.auto_id }}" name="{{ form.name.html_name }}" value="{{ form.instance.name }}">
+                        </div>
+                        <div class="row" style="margin-top: 25px;">
+                            <label for="{{ form.information.auto_id }}">Інформація</label>
+                            <textarea class="form-control" id="{{ form.information.auto_id }}" name="{{ form.information.html_name }}">{{ form.instance.information }}</textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="row" style="margin-top: 30px;">
+                    <div class="col-sm-12 text-center">
+                        <button type="reset" class="btn btn-default" style="margin-right: 20px;">Відмінити</button>
+                        <button type="submit" class="btn btn-success">Зберегти</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+{% endblock %}

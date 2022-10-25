@@ -1,0 +1,188 @@
+{% extends 'main_page.html' %}
+{% load static %}
+
+{% block content_header %}
+    <h1 class="m-0">Редагування послуг</h1>
+{% endblock content_header %}
+
+{% block main_content %}
+
+    <div class="card">
+            <div class="card-body">
+                <form id="measurement-units" action="{% url 'measurement-units' %}" method="post" enctype="multipart/form-data">
+                    <div class="nav-tabs" style="margin-bottom: 20px;">
+                        <div class="col-sm-12 col-lg-7">
+                            <ul class="nav nav-pills ml-auto">
+                                <li class="nav-item">
+                                    <a class="nav-link" href="{% url 'services' %}">Послуги</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link active" href="{% url 'measurement-units' %}">Одиниці вимірювання</a>
+                                </li>
+                            </ul>
+                            <div class="tab-content" style="margin-top: 4%; padding-left: 3%; margin-bottom: 20px;">
+                                {% csrf_token %}
+                                {{ formset.management_form }}
+                                <div id="measurement-unit-list">
+                                    {% for form_unit in formset %}
+                                        <div id="{{ form_unit.name.auto_id }}-parent" class="form-group" style="margin-top: 2%;">
+                                            {{ form_unit.id }}
+                                            <label for="{{ form_unit.name.auto_id }}">Од. вим.</label>
+                                            <div class="input-group">
+                                                <input class="form-control" id="{{ form_unit.name.auto_id }}" name="{{ form_unit.name.html_name }}" value="{{ form_unit.instance.name }}"
+                                                {% if form_unit.name.errors %}style="border: 1px solid red" {% endif %}>
+                                                <span class="input-group-append">
+                                                    <button id="{{ form_unit.name.auto_id }}-button" type="button"
+                                                    onclick="deleteUnit(this,{% if form_unit.instance.id %}{{ form_unit.instance.id }}{% else %}null{% endif %},{% if form_unit.instance.is_used %}true{% endif %})"
+                                                    class="btn btn-default delete-unit" {% if form_unit.instance.is_used %}style="opacity: .65"{% endif %}
+                                                    {% if form_unit.name.errors %}style="border-top: 1px solid red; border-right: 1px solid red; border-bottom: 1px solid red;" {% endif %}>
+                                                        <i class="fa fa-trash"></i>
+                                                    </button>
+                                                </span>
+                                            </div>
+                                            {% for error in form_unit.name.errors %}
+                                                <p style="color: red">{{ error }}</p>
+                                            {% endfor %}
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                                <div style="display: none">
+                                    <div class="form-group empty-form" style="margin-top: 2%;">
+                                        {{ formset.empty_form.id }}
+                                        <label for="{{ formset.empty_form.name.auto_id }}">Од. вим.</label>
+                                        <div class="input-group">
+                                            <input class="form-control" id="{{ formset.empty_form.name.auto_id }}" name="{{ formset.empty_form.name.html_name }}">
+                                            <span class="input-group-append">
+                                                <button id="{{ formset.empty_form.name.auto_id }}-button" onclick="deleteUnit(this)" type="button" class="btn btn-default delete-unit">
+                                                    <i class="fa fa-trash"></i>
+                                                </button>
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <button class="btn btn-default add-measurement-unit" type="button">Додати</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row col-sm-12 text-center">
+                        <div class="form-group">
+                            <button type="reset" class="btn btn-default">Відмінити</button>
+                            <button type="submit" onclick="formIsValid(event)" class="btn btn-success">Зберегти</button>
+                        </div>
+                    </div>
+                </form>
+            </div><!-- /.card-body -->
+    </div>
+<!-- /.card -->
+
+{% endblock main_content %}
+
+{% block scripts %}
+<script>
+    let TOTAL_FORMS = $('#id_form-TOTAL_FORMS');
+
+    $('.add-measurement-unit').on('click', function () {
+        let total_forms = parseInt(TOTAL_FORMS.attr('value'));
+        let empty_form = $('div.empty-form').clone();
+        empty_form.find('label[for="id_form-__prefix__-name"]').attr('for', `id_form-${total_forms}-name`);
+        empty_form.find('#id_form-__prefix__-name').attr('name', `form-${total_forms}-name`);
+        empty_form.find('#id_form-__prefix__-name').attr('id', `id_form-${total_forms}-name`);
+        empty_form.find(`#id_form-${total_forms}-name`).attr('class', 'form-control');
+        empty_form.find('button#id_form-__prefix__-name-button').attr('id', `id_form-${total_forms}-name-button`);
+        empty_form.attr('id', `id_form-${total_forms}-name-parent`);
+        empty_form.attr('class', 'form-group');
+        empty_form.attr('display', 'block');
+
+        $('#id_form-TOTAL_FORMS').attr('value', total_forms + 1);
+        $('#measurement-unit-list').append(empty_form);
+    })
+
+    function deleteUnit(element, id=null, is_used=false) {
+        Swal.fire({
+            title: 'Ви впевнені?',
+            text: "Після видалення цієї одиниці, її неможливо буде повернути!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#A9A9A9',
+            cancelButtonText: 'Скасувати',
+            confirmButtonText: 'Видалити'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    if (is_used) {
+                        Swal.fire({
+                            title: 'Ой',
+                            text:'Одиниця використовується у послугах. Неможливо видалити!',
+                            icon:'error',
+                        });
+                        return
+                    }
+                    let parent = $(element).attr('id').replace('-button', '-parent');
+                    if (!id) {
+                        $(`#${parent}`).remove();
+                    }
+                    else {
+                        $.ajax({
+                            url: `${id}`,
+                            type: 'DELETE',
+                            headers: {
+                                'X-CSRFToken': $("input[name=csrfmiddlewaretoken]").val()
+                            },
+                            success: function (response) {
+                                if (response['answer'] === 'success') {
+                                    $(`#${parent}`).remove();
+                                    //TOTAL_FORMS.attr('value', TOTAL_FORMS.attr('value') - 1);
+                                    //INITIAL_FORMS.attr('value', INITIAL_FORMS.attr('value') - 1)
+                                    Swal.fire({
+                                        position: 'top-end',
+                                        icon: 'success',
+                                        title: 'Успішно видалено!',
+                                        showConfirmButton: false,
+                                        timer: 1200,
+                                    })
+                                }
+                                else if (response['answer'] === 'failed') {
+                                    Swal.fire({
+                                        position: 'top-end',
+                                        icon: 'error',
+                                        title: 'Щось пішло не так!',
+                                        showConfirmButton: false,
+                                        timer: 1200
+                                    });
+                                }
+                            }
+                        })
+                    }
+                }
+            })
+    }
+
+    function formIsValid(e) {
+        e.preventDefault();
+        let isValid = true;
+
+        $(`#measurement-unit-list`).find(`input[id$='-name']`).each(function() {
+            if (!$(this).val()) {
+                isValid = false;
+                let button_name = `#${$(this).attr('id')}-button`;
+                let parent_name = `#${$(this).attr('id')}-parent`
+                $(this).css('border', '1px solid red');
+                $(button_name).css('border-top',  '1px solid red');
+                $(button_name).css('border-right', '1px solid red');
+                $(button_name).css('border-bottom', '1px solid red');
+                $(parent_name).append('<p style="color: red">Назва не може бути пустою</p>');
+            }
+        });
+
+        if (isValid) {
+            $(`form#measurement-units`).submit();
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+
+
+</script>
+{% endblock %}

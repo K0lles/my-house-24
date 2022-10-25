@@ -1,0 +1,86 @@
+{% extends 'main_page.html' %}
+{% load static %}
+
+{% block content_header %}
+    <h1>Ролі</h1>
+{% endblock %}
+
+{% block main_content %}
+    <div class="card">
+        <div class="card-body">
+            <form id="roles-form" method="post" action="{% url 'roles' %}">
+                {% csrf_token %}
+                {{ formset.management_form }}
+                <table class="table table-responsive table-bordered">
+                    <thead>
+                        <tr>
+                            <th><b>Роль</b></th>
+                            <th><b>Статистика</b></th>
+                            <th><b>Каса</b></th>
+                            <th><b>Квитанції на оплату</b></th>
+                            <th><b>Особові рахунки</b></th>
+                            <th><b>Квартири</b></th>
+                            <th><b>Власники квартир</b></th>
+                            <th><b>Дома</b></th>
+                            <th><b>Повідомлення</b></th>
+                            <th><b>Заявки виклика майстера</b></th>
+                            <th><b>Рахунки</b></th>
+                            <th><b>Управління сайтом</b></th>
+                            <th><b>Послуги</b></th>
+                            <th><b>Тарифи</b></th>
+                            <th><b>Ролі</b></th>
+                            <th><b>Користувачі</b></th>
+                            <th><b>Платіжні реквізити</b></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for form in formset %}
+                            {{ form.id }}
+                            <tr class="text-center">
+                                <td><b>{{ form.instance.get_role_display }}</b></td>
+                                <td>{{ form.statistic_access }}</td>
+                                <td>{{ form.checkout_access }}</td>
+                                <td>{{ form.receipt_access }}</td>
+                                <td>{{ form.bill_access }}</td>
+                                <td>{{ form.flat_access }}</td>
+                                <td>{{ form.owner_access }}</td>
+                                <td>{{ form.building_access }}</td>
+                                <td>{{ form.message_access }}</td>
+                                <td>{{ form.master_apply_access }}</td>
+                                <td>{{ form.counter_access }}</td>
+                                <td>{{ form.site_management_access }}</td>
+                                <td>{{ form.service_access }}</td>
+                                <td>{{ form.tariff_access }}</td>
+                                <td>{{ form.role_access }}</td>
+                                <td>{{ form.user_access }}</td>
+                                <td>{{ form.payment_requisite_access }}</td>
+                                {% comment %}<td><input id="{{ form.statistic_access.auto_id }}" name="{{ form.statistic_access.html_name }}" class="form-check-input" type="checkbox" {% if form.instance.statistic_access %}checked{% endif %}></td>
+                                <td><input id="{{ form.checkout_access.auto_id }}" name="{{ form.checkout_access.html_name }}" class="form-check-input" type="checkbox" {% if form.instance.checkout_access %}checked{% endif %}></td>
+                                <td><input id="{{ form.receipt_access.auto_id }}" name="{{ form.receipt_access.html_name }}" class="form-check-input" type="checkbox" {% if form.instance.receipt_access %}checked{% endif %}></td>
+                                <td><input id="{{ form.bill_access.auto_id }}" name="{{ form.bill_access.html_name }}" class="form-check-input" type="checkbox" {% if form.instance.bill_access %}checked{% endif %}></td>
+                                <td><input id="{{ form.flat_access.auto_id }}" name="{{ form.flat_access.html_name }}" class="form-check-input" type="checkbox" {% if form.instance.flat_access %}checked{% endif %}></td>
+                                <td><input id="{{ form.owner_access.auto_id }}" name="{{ form.owner_access.html_name }}" class="form-check-input" type="checkbox" {% if form.instance.owner_access %}checked{% endif %}></td>
+                                <td><input id="{{ form.building_access.auto_id }}" name="{{ form.building_access.html_name }}" class="form-check-input" type="checkbox" {% if form.instance.building_access %}checked{% endif %}></td>
+                                <td><input id="{{ form.message_access.auto_id }}" name="{{ form.message_access.html_name }}" class="form-check-input" type="checkbox" {% if form.instance.message_access %}checked{% endif %}></td>
+                                <td><input id="{{ form.master_apply_access.auto_id }}" name="{{ form.master_apply_access.html_name }}" class="form-check-input" type="checkbox" {% if form.instance.master_apply_access %}checked{% endif %}></td>
+                                <td><input id="{{ form.counter_access.auto_id }}" name="{{ form.counter_access.html_name }}" class="form-check-input" type="checkbox" {% if form.instance.counter_access %}checked{% endif %}></td>
+                                <td><input id="{{ form.site_management_access.auto_id }}" name="{{ form.site_management_access.html_name }}" class="form-check-input" type="checkbox" {% if form.instance.site_management_access %}checked{% endif %}></td>
+                                <td><input id="{{ form.service_access.auto_id }}" name="{{ form.service_access.html_name }}" class="form-check-input" type="checkbox" {% if form.instance.service_access %}checked{% endif %}></td>
+                                <td><input id="{{ form.tariff_access.auto_id }}" name="{{ form.tariff_access.html_name }}" class="form-check-input" type="checkbox" {% if form.instance.tariff_access %}checked{% endif %}></td>
+                                <td><input id="{{ form.role_access.auto_id }}" name="{{ form.role_access.html_name }}" class="form-check-input" type="checkbox" {% if form.instance.role_access %}checked{% endif %}></td>
+                                <td><input id="{{ form.user_access.auto_id }}" name="{{ form.user_access.html_name }}" class="form-check-input" type="checkbox" {% if form.instance.user_access %}checked{% endif %}></td>
+                                <td><input id="{{ form.payment_requisite_access.auto_id }}" name="{{ form.payment_requisite_access.html_name }}" class="form-check-input" type="checkbox" {% if form.instance.payment_requisite_access %}checked{% endif %}></td>{% endcomment %}
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                <div class="row">
+                    <div class="col-sm-12 text-right">
+                        <button type="reset" class="btn btn-default">Відміна</button>
+                        <button type="submit" class="btn btn-success" style="margin-left: 20px;">Зберегти</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+{% endblock %}

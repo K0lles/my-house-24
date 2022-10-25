@@ -1,0 +1,243 @@
+{% extends 'main_page.html' %}
+
+{% block content_header %}
+    <h1 class="m-0">Редагування послуг</h1>
+{% endblock %}
+
+{% block main_content %}
+
+    <div class="card">
+            <div class="card-body">
+                <form id="services" action="{% url 'services' %}" method="post">
+                    <div class="nav-tabs" style="margin-bottom: 20px;">
+                        <div class="col-sm-12 col-lg-7">
+                            <ul class="nav nav-pills ml-auto">
+                                <li class="nav-item">
+                                    <a class="nav-link active" href="{% url 'services' %}">Послуги</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" href="{% url 'measurement-units' %}">Одиниці вимірювання</a>
+                                </li>
+                            </ul>
+                            <div class="tab-content" style="margin-top: 4%; padding-left: 3%; margin-bottom: 20px;">
+                                {% csrf_token %}
+                                {{ formset.management_form }}
+                                <div id="service-list">
+                                    {% for form_service in formset %}
+                                        <div id="{{ form_service.name.auto_id }}-parent" class="row form-group" style="margin-top: 2%;">
+                                            {{ form_service.id }}
+                                            <div id="{{ form_service.name.auto_id }}-first-parent" class="col-xs-12 col-sm-7">
+                                                <label for="{{ form_service.name.auto_id }}">Назва послуги</label>
+                                                <div class="input-group">
+                                                    <input class="form-control" id="{{ form_service.name.auto_id }}" name="{{ form_service.name.html_name }}" value="{{ form_service.instance.name }}"
+                                                    {% if form_service.name.errors %}style="border: 1px solid red" {% endif %}>
+                                                </div>
+                                                {% for error in form_service.name.errors %}
+                                                    <p style="color: red">{{ error }}</p>
+                                                {% endfor %}
+                                            </div>
+                                            <div id="{{ form_service.name.auto_id }}-second-parent" class="col-xs-12 col-sm-5">
+                                                <label for="{{ form_service.measurement_unit.auto_id }}">Од. вим.</label>
+                                                <div class="input-group">
+                                                    <select class="form-control" id="{{ form_service.measurement_unit.auto_id }}" name="{{ form_service.measurement_unit.html_name }}"
+                                                    {% if form_service.measurement_unit.errors %}style="border: 1px solid red"{% endif %}>
+                                                        <option value="">Виберіть...</option>
+                                                    {% for unit in measurement_units %}
+                                                        <option value="{{ unit.id }}" {% if form_service.instance.measurement_unit.id == unit.id %}selected{% endif %}>{{ unit.name }}</option>
+                                                    {% endfor %}
+                                                    </select>
+                                                    <span class="input-group-append">
+                                                        <button id="{{ form_service.name.auto_id }}-button" type="button" {% if form_service.instance.is_used %}disabled{% endif %}
+                                                        onclick="deleteService(this,{% if form_service.instance.id %}{{ form_service.instance.id }}{% else %}null{% endif %},{% if form_service.instance.is_used %}true{% endif %})"
+                                                        class="btn btn-default delete-unit"
+                                                        {% if form_service.measurement_unit.errors %}style="border-top: 1px solid red; border-right: 1px solid red; border-bottom: 1px solid red;"{% endif %}>
+                                                            <i class="fa fa-trash"></i>
+                                                        </button>
+                                                    </span>
+                                                </div>
+                                                {% for error in form_service.measurement_unit.errors %}
+                                                    <p style="color: red">{{ error }}</p>
+                                                {% endfor %}
+                                            </div>
+                                            <input id="{{ form_service.show_in_counters.auto_id }}" name="{{ form_service.show_in_counters.html_name }}" type="checkbox" class="form-check-inline" {% if form_service.instance.show_in_counters %}checked{% endif %} style="margin-left: 1%;">
+                                            <label for="{{ form_service.show_in_counters.auto_id }}" class="form-check-label"><b>Показувати у лічильниках</b></label>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                                <div style="display: none">
+                                    <div id="{{ formset.empty_form.name.auto_id }}-parent" class="empty-form row form-group" style="margin-top: 2%;">
+                                        <div id="{{ formset.empty_form.name.auto_id }}-first-parent" class="col-xs-12 col-sm-7">
+                                            <label for="{{ formset.empty_form.name.auto_id }}">Назва послуги</label>
+                                            <div class="input-group">
+                                                <input class="form-control" id="{{ formset.empty_form.name.auto_id }}" name="{{ formset.empty_form.name.html_name }}">
+                                            </div>
+                                        </div>
+                                        <div id="{{ formset.empty_form.name.auto_id }}-second-parent" class="col-xs-12 col-sm-5">
+                                            <label for="{{ formset.empty_form.measurement_unit.auto_id }}">Од. вим.</label>
+                                            <div class="input-group">
+                                                <select class="form-control" id="{{ formset.empty_form.measurement_unit.auto_id }}" name="{{ formset.empty_form.measurement_unit.html_name }}">
+                                                    <option value="">Виберіть...</option>
+                                                {% for unit in measurement_units %}
+                                                    <option value="{{ unit.id }}">{{ unit.name }}</option>
+                                                {% endfor %}
+                                                </select>
+                                                <span class="input-group-append">
+                                                    <button id="{{ formset.empty_form.name.auto_id }}-button" type="button"
+                                                    onclick="deleteService(this)" class="btn btn-default delete-service">
+                                                        <i class="fa fa-trash"></i>
+                                                    </button>
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <input id="{{ formset.empty_form.show_in_counters.auto_id }}" name="{{ formset.empty_form.show_in_counters.html_name }}" type="checkbox" class="form-check-inline" style="margin-left: 1%;">
+                                        <label for="{{ formset.empty_form.show_in_counters.auto_id }}" class="form-check-label"><b>Показувати у лічильниках</b></label>
+                                    </div>
+                                </div>
+                                <button class="btn btn-default add-service" type="button">Додати</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row col-sm-12">
+                        <div class="form-group">
+                            <button type="reset" class="btn btn-default">Відмінити</button>
+                            <button type="submit" onclick="formIsValid(event)" class="btn btn-success">Зберегти</button>
+                        </div>
+                    </div>
+                </form>
+            </div><!-- /.card-body -->
+    </div>
+<!-- /.card -->
+
+{% endblock main_content %}
+
+{% block scripts %}
+<script>
+    let TOTAL_FORMS = $('#id_form-TOTAL_FORMS');
+
+
+    $('.add-service').on('click', function () {
+        let total_forms = parseInt(TOTAL_FORMS.attr('value'));
+        let empty_form = $('div.empty-form').clone();
+        empty_form.find('label[for="id_form-__prefix__-name"]').attr('for', `id_form-${total_forms}-name`);
+        empty_form.find('#id_form-__prefix__-name').attr('name', `form-${total_forms}-name`);
+        empty_form.find('#id_form-__prefix__-name').attr('id', `id_form-${total_forms}-name`);
+
+        empty_form.find('label[for="id_form-__prefix__-measurement_unit"]').attr('for', `id_form-${total_forms}-measurement_unit`);
+        empty_form.find('#id_form-__prefix__-measurement_unit').attr('name', `form-${total_forms}-measurement_unit`);
+        empty_form.find('#id_form-__prefix__-measurement_unit').attr('id', `id_form-${total_forms}-measurement_unit`);
+
+        empty_form.find('#id_form-__prefix__-show_in_counters').attr('name', `form-${total_forms}-show_in_counters`);
+        empty_form.find('#id_form-__prefix__-show_in_counters').attr('id', `id_form-${total_forms}-show_in_counters`);
+        empty_form.find('label[for="id_form-__prefix__-show_in_counters"]').attr('for', `id_form-${total_forms}-show_in_counters`);
+
+        empty_form.find(`#id_form-__prefix__-name-first-parent`).attr('id', `id_form-${total_forms}-name-first-parent`);
+        empty_form.find(`#id_form-__prefix__-name-second-parent`).attr('id', `id_form-${total_forms}-name-second-parent`);
+
+        empty_form.find(`#id_form-${total_forms}-name`).attr('class', 'form-control');
+        empty_form.find(`#id_form-__prefix__-id`).attr('name', `form-${total_forms}-id`);
+        empty_form.find(`#id_form-__prefix__-id`).attr('id', `id_form-${total_forms}-id`);
+
+        empty_form.find('button#id_form-__prefix__-name-button').attr('id', `id_form-${total_forms}-name-button`);
+        empty_form.attr('id', `id_form-${total_forms}-name-parent`);
+        empty_form.attr('class', 'row form-group');
+        empty_form.attr('display', null);
+
+        $('#id_form-TOTAL_FORMS').attr('value', total_forms + 1);
+        $('#service-list').append(empty_form);
+    })
+
+    function deleteService(element, id=null, is_used=false) {
+        Swal.fire({
+            title: 'Ви впевнені?',
+            text: "Після видалення послугу неможливо буде повернути!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#A9A9A9',
+            cancelButtonText: 'Скасувати',
+            confirmButtonText: 'Видалити'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    if (is_used) {
+                        Swal.fire({
+                            title: 'Ой',
+                            text:'Послуга використовується у квитанціях. Неможливо видалити!',
+                            icon:'error',
+                        });
+                        return
+                    }
+                    let parent = $(element).attr('id').replace('-button', '');
+                    if (!id) {
+                        $(`#${parent}-parent`).remove();
+                    }
+                    else {
+                        $.ajax({
+                            url: `${id}`,
+                            type: 'DELETE',
+                            headers: {
+                                'X-CSRFToken': $("input[name=csrfmiddlewaretoken]").val()
+                            },
+                            success: function (response) {
+                                if (response['answer'] === 'success') {
+                                    $(`#${parent}-parent`).remove();
+                                    Swal.fire({
+                                        position: 'top-end',
+                                        icon: 'success',
+                                        title: 'Успішно видалено!',
+                                        showConfirmButton: false,
+                                        timer: 1200,
+                                    })
+                                }
+                                else if (response['answer'] === 'failed') {
+                                    Swal.fire({
+                                        position: 'top-end',
+                                        icon: 'error',
+                                        title: 'Щось пішло не так!',
+                                        showConfirmButton: false,
+                                        timer: 1200
+                                    });
+                                }
+                            }
+                        })
+                    }
+                }
+            })
+    }
+
+    function formIsValid(e) {
+        e.preventDefault();
+        let isValid = true;
+
+        $(`#service-list`).find(`input[id$='-name']`).each(function() {
+            if (!$(this).val()) {
+                isValid = false;
+                let parent_name = `#${$(this).attr('id')}-first-parent`;
+                $(this).css('border', '1px solid red');
+                $(parent_name).append('<p style="color: red">Назва не може бути пустою</p>');
+            }
+        });
+
+        $(`#service-list`).find(`select[id$='-measurement_unit']`).each(function() {
+            if (!$(`#${$(this).attr('id')} option:selected`).attr('value')) {
+                isValid = false;
+                let parent_name = `#${$(this).attr('id').replace('measurement_unit', 'name')}-second-parent`;
+                let button_name = parent_name.replace('second-parent', 'button');
+                $(this).css('border', '1px solid red');
+                $(button_name).css('border-top',  '1px solid red');
+                $(button_name).css('border-right', '1px solid red');
+                $(button_name).css('border-bottom', '1px solid red');
+                $(parent_name).append('<p style="color: red">Виберіть од. вим.</p>');
+            }
+        });
+
+        if (isValid) {
+            $(`form#services`).submit();
+            return false;
+        }
+        else {
+            return false;
+        }
+    }
+</script>
+
+{% endblock %}

@@ -1,0 +1,100 @@
+{% extends 'main_page.html' %}
+{% load static %}
+
+{% block content_header %}
+    <h1>Новий користувач</h1>
+{% endblock %}
+
+{% block main_content %}
+    <div class="card">
+        <div class="card-body">
+            <form id="user-form" method="post" action="{% url 'user-create' %}">
+                {% csrf_token %}
+                <div class="row">
+                    <div class="col-xs-12 col-md-6">
+                        <div class="form-group">
+                            <label for="{{ form.name.auto_id }}">Ім'я</label>
+                            <input class="form-control" type="text" id="{{ form.name.auto_id }}" name="{{ form.name.html_name }}">
+                        </div>
+                        <div class="form-group">
+                            <label for="{{ form.surname.auto_id }}">Прізвище</label>
+                            <input class="form-control" type="text" id="{{ form.surname.auto_id }}" name="{{ form.surname.html_name }}">
+                        </div>
+                        <div class="form-group">
+                            <label for="{{ form.phone.auto_id }}">Телефон</label>
+                            <input class="form-control" type="text" id="{{ form.phone.auto_id }}" name="{{ form.phone.html_name }}">
+                        </div>
+                        <div class="form-group">
+                            <label for="{{ form.role.auto_id }}">Роль</label>
+                            <select class="form-control" type="text" id="{{ form.role.auto_id }}" name="{{ form.role.html_name }}">
+                                {% for role in roles %}
+                                    <option value="{{ role.id }}">{{ role.get_role_display }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="{{ form.status.auto_id }}">Статус</label>
+                            <select class="form-control" type="text" id="{{ form.status.auto_id }}" name="{{ form.status.html_name }}">
+                                {% for value, status in form.status.field.choices %}
+                                    <option value="{{ value }}">{{ status }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-xs-12 col-md-6">
+                        <div class="form-group">
+                            <label for="{{ form.email.auto_id }}">Email</label>
+                            <input class="form-control" type="email" id="{{ form.email.auto_id }}" name="{{ form.email.html_name }}">
+                        </div>
+                        <div class="form-group">
+                            <label for="{{ form.password.auto_id }}">Пароль</label>
+                            <div class="input-group">
+                                <input class="form-control" type="password" id="{{ form.password.auto_id }}" name="{{ form.password.html_name }}">
+                                <span class="input-group-append">
+                                    <button type="button" class="btn btn-default" onclick='generatePassword()'>Згенерувати</button>
+                                    <button type="button" class="btn btn-primary" onclick="showHidePassword()">
+                                        <i class="fa fa-eye"></i>
+                                    </button>
+                                </span>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="id_repeat-password">Повторіть пароль</label>
+                            <input class="form-control" type="password" id="id_repeat-password" name="repeat-password">
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-sm-12 text-right">
+                        <button type="reset" class="btn btn-default" style="margin-right: 20px;">Відмінити</button>
+                        <button type="submit" class="btn btn-success">Створити</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function generatePassword() {
+        let randomstring = Math.random().toString(36).slice(-8);
+        $('#id_password').attr('value', randomstring);
+        $('#id_repeat-password').attr('value', randomstring)
+    }
+
+    function showHidePassword() {
+        let type = $('#id_password').attr('type');
+        if (type === 'password') {
+            $('#id_password').attr('type', 'text');
+            $('#id_repeat-password').attr('type', 'text');
+            $('.fa-eye').attr('class', 'fa fa-eye-slash');
+        }
+        else {
+            $('#id_password').attr('type', 'password');
+            $('#id_repeat-password').attr('type', 'password');
+            $('.fa-eye-slash').attr('class', 'fa fa-eye');
+        }
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,92 @@
+{% extends 'main_page.html' %}
+{% load static %}
+
+{% block content_header %}
+    <h1>Статті приходів/розходів</h1>
+{% endblock %}
+
+{% block main_content %}
+    <div class="row" style="margin-bottom: 25px;">
+        <div class="col-sm-12 text-right">
+            <a class="btn btn-info" href="{% url 'article-payment-create' %}">Створити статтю</a>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-body">
+            <div class="row">
+                <table class="table table-borderless table-hover">
+                    <thead>
+                        <tr>
+                            <th>Назва</th>
+                            <th style="color:#6084e0;">Прихід/розхід</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for object in object_list %}
+                        <tr role="button" data-href="{% url 'article-payment-update' pk=object.pk %}">
+                            <td>{{ object.name }}</td>
+                            <td style="color: {% if object.type == 'income' %}#20A202;{% else %}#BD2105;{% endif %}">{{ object.get_type_display }}</td>
+                            <td class="text-right">
+                                <div class="btn-group pull-right">
+                                    <a class="btn btn-default btn-sm" title="Редагувати" href="{% url 'article-payment-update' pk=object.pk %}">
+                                        <i class="fa fa-pencil"></i>
+                                    </a>
+                                    <button id="{{ object.pk }}" type="button" class="btn btn-default btn-sm delete-article" title="Видалити">
+                                        <i class="fa fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    $('.delete-article').on('click', function (event) {
+        event.stopPropagation();
+        Swal.fire({
+            title: 'Ви впевнені?',
+            text: "Після видалення послугу неможливо буде повернути!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#A9A9A9',
+            cancelButtonText: 'Скасувати',
+            confirmButtonText: 'Видалити'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.ajax({
+                            url: `delete/${$(this).attr('id')}`,
+                            type: 'GET',
+                            success: function (response) {
+                                if (response['answer'] === 'success') {
+                                    $(event.target).closest('tr').remove();
+                                    Swal.fire({
+                                        position: 'top-end',
+                                        icon: 'success',
+                                        title: 'Успішно видалено!',
+                                        showConfirmButton: false,
+                                        timer: 1200,
+                                    })
+                                }
+                                else if (response['answer'] === 'failed') {
+                                    Swal.fire({
+                                        position: 'top-end',
+                                        icon: 'error',
+                                        title: 'Щось пішло не так!',
+                                        showConfirmButton: false,
+                                        timer: 1200
+                                    });
+                                }
+                            }
+                        })
+                }
+            })
+    })
+</script>
+{% endblock %}

@@ -2,33 +2,33 @@
 {% load static %}
 
 {% block content_header %}
-    <h1>Новий користувач</h1>
+    <h1>{% if form.instance.id %}Редагування користувача{% else %}Новий користувач{% endif %}</h1>
 {% endblock %}
 
 {% block main_content %}
     <div class="card">
         <div class="card-body">
-            <form id="user-form" method="post" action="{% url 'user-create' %}">
+            <form id="user-form" method="post" action="{% if not form.instance.id %}{% url 'user-create' %}{% else %}{% url 'user-update' pk=form.instance.pk %}{% endif %}">
                 {% csrf_token %}
                 <div class="row">
                     <div class="col-xs-12 col-md-6">
                         <div class="form-group">
                             <label for="{{ form.name.auto_id }}">Ім'я</label>
-                            <input class="form-control" type="text" id="{{ form.name.auto_id }}" name="{{ form.name.html_name }}">
+                            <input class="form-control" type="text" id="{{ form.name.auto_id }}" name="{{ form.name.html_name }}" value="{{ form.instance.name }}">
                         </div>
                         <div class="form-group">
                             <label for="{{ form.surname.auto_id }}">Прізвище</label>
-                            <input class="form-control" type="text" id="{{ form.surname.auto_id }}" name="{{ form.surname.html_name }}">
+                            <input class="form-control" type="text" id="{{ form.surname.auto_id }}" name="{{ form.surname.html_name }}" value="{{ form.instance.surname }}">
                         </div>
                         <div class="form-group">
                             <label for="{{ form.phone.auto_id }}">Телефон</label>
-                            <input class="form-control" type="text" id="{{ form.phone.auto_id }}" name="{{ form.phone.html_name }}">
+                            <input class="form-control" type="text" id="{{ form.phone.auto_id }}" name="{{ form.phone.html_name }}" value="{{ form.instance.phone }}">
                         </div>
                         <div class="form-group">
                             <label for="{{ form.role.auto_id }}">Роль</label>
                             <select class="form-control" type="text" id="{{ form.role.auto_id }}" name="{{ form.role.html_name }}">
                                 {% for role in roles %}
-                                    <option value="{{ role.id }}">{{ role.get_role_display }}</option>
+                                    <option value="{{ role.id }}" {% if form.instance.role.id == role.id %}selected{% endif %}>{{ role.get_role_display }}</option>
                                 {% endfor %}
                             </select>
                         </div>
@@ -36,7 +36,7 @@
                             <label for="{{ form.status.auto_id }}">Статус</label>
                             <select class="form-control" type="text" id="{{ form.status.auto_id }}" name="{{ form.status.html_name }}">
                                 {% for value, status in form.status.field.choices %}
-                                    <option value="{{ value }}">{{ status }}</option>
+                                    <option value="{{ value }}" {% if form.instance.status == value %}selected{% endif %}>{{ status }}</option>
                                 {% endfor %}
                             </select>
                         </div>
@@ -44,7 +44,7 @@
                     <div class="col-xs-12 col-md-6">
                         <div class="form-group">
                             <label for="{{ form.email.auto_id }}">Email</label>
-                            <input class="form-control" type="email" id="{{ form.email.auto_id }}" name="{{ form.email.html_name }}">
+                            <input class="form-control" type="email" id="{{ form.email.auto_id }}" name="{{ form.email.html_name }}" value="{{ form.instance.email }}">
                         </div>
                         <div class="form-group">
                             <label for="{{ form.password.auto_id }}">Пароль</label>
@@ -67,7 +67,7 @@
                 <div class="row">
                     <div class="col-sm-12 text-right">
                         <button type="reset" class="btn btn-default" style="margin-right: 20px;">Відмінити</button>
-                        <button type="submit" class="btn btn-success">Створити</button>
+                        <button type="submit" class="btn btn-success">{% if not form.instance.id %}Створити{% else %}Зберегти{% endif %}</button>
                     </div>
                 </div>
             </form>

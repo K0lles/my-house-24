@@ -258,7 +258,7 @@ class RolesListUpdate(ListView):
 
 class UserCreateView(CreateView):
     model = User
-    template_name = 'configuration/user-create.html'
+    template_name = 'configuration/user-create-update.html'
     form_class = UserForm
 
     def get_context_data(self, **kwargs):
@@ -289,7 +289,7 @@ class UserCreateView(CreateView):
 
 class UserUpdateView(UpdateView):
     model = User
-    template_name = 'configuration/user-create.html'
+    template_name = 'configuration/user-create-update.html'
     form_class = UserForm
     pk_url_kwarg = 'pk'
 
@@ -309,10 +309,29 @@ class UserUpdateView(UpdateView):
         return context
 
     def post(self, request, *args, **kwargs):
-        form = UserForm(request.POST, instance=self.get_object())
+        user = self.get_object()
+        print(user.password)
+        form = UserForm(request.POST, instance=user)
         print(form.errors)
         if form.is_valid():
+            self.form_valid(form, user)
             print(form.cleaned_data)
+            old_password = user.password
+            user_saved = form.save()
+            if not form.cleaned_data.get('password'):
+                user_saved.password = old_password
+
+        return redirect('users')
+
+    def form_valid(self, form, user):
+        old_password = user.password
+        user_saved = form.save()
+        if form.cleaned_data.get('password'):
+            user_saved.set_password(form.cleaned_data.get('password'))
+            user_saved.save()
+        else:
+            user_saved.password = old_password
+            user_saved.save()
         return redirect('users')
 
 
@@ -322,6 +341,15 @@ class UserListView(ListView):
 
     def get_queryset(self):
         return User.objects.select_related('role').all().order_by('pk')
+
+
+def delete_user(request, pk):
+    try:
+        user = User.objects.get(pk=pk)
+        user.delete()
+    except (User.DoesNotExist, ValueError):
+        return JsonResponse({'answer': 'failed'})
+    return JsonResponse({'answer': 'success'})
 
 
 class PaymentRequisitesCreateView(CreateView):

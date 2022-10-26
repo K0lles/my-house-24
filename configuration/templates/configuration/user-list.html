@@ -36,7 +36,7 @@
                                 <td>{% if object.status == 'new' %}<span class="badge badge-warning">{{ object.get_status_display }}{% elif object.status == 'active' %}<span class="badge badge-success">{{ object.get_status_display }}{% else %}<span class="badge badge-danger">{{ object.get_status_display }}</span>{% endif %}</span></span></td>
                                 <td class="text-right">
                                     <div class="btn-group pull-right">
-                                        <a class="btn btn-default btn-sm" title="Редагувати" href="#">
+                                        <a class="btn btn-default btn-sm" title="Редагувати" href="{% url 'user-update' pk=object.pk %}">
                                             <i class="fa fa-pencil"></i>
                                         </a>
                                         <button id="{{ object.pk }}" type="button" class="btn btn-default btn-sm delete-article" title="Видалити">

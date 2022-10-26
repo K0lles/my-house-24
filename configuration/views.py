@@ -271,7 +271,7 @@ class UserCreateView(CreateView):
         print(form.errors)
         if form.is_valid():
             self.form_valid(form)
-            return redirect('user-create')
+            return redirect('users')
         self.object = None
         context = self.get_context_data()
         context['form'] = form
@@ -285,6 +285,35 @@ class UserCreateView(CreateView):
                                  phone=form.cleaned_data.get('phone'),
                                  status=form.cleaned_data.get('status'),
                                  role=form.cleaned_data.get('role'))
+
+
+class UserUpdateView(UpdateView):
+    model = User
+    template_name = 'configuration/user-create.html'
+    form_class = UserForm
+    pk_url_kwarg = 'pk'
+
+    def get_object(self, queryset=None):
+        try:
+            user = User.objects.select_related('role').get(pk=self.kwargs['pk'])
+            return user
+        except User.DoesNotExist:
+            raise Http404()
+
+    def get_form(self, form_class=None):
+        return UserForm(instance=self.get_object())
+
+    def get_context_data(self, **kwargs):
+        context = super(UserUpdateView, self).get_context_data(**kwargs)
+        context['roles'] = Role.objects.all()
+        return context
+
+    def post(self, request, *args, **kwargs):
+        form = UserForm(request.POST, instance=self.get_object())
+        print(form.errors)
+        if form.is_valid():
+            print(form.cleaned_data)
+        return redirect('users')
 
 
 class UserListView(ListView):

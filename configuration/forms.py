@@ -92,6 +92,16 @@ class UserForm(ModelForm):
         model = User
         fields = ('name', 'surname', 'phone', 'email', 'password', 'role', 'status')
 
+    def clean(self):
+        cleaned_data = super(UserForm, self).clean()
+        print(self.instance)
+
+        if self.instance:
+            self._errors = {}
+
+        return cleaned_data
+
+
 
 class PaymentRequisitesForm(ModelForm):
 

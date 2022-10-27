@@ -219,12 +219,14 @@
 
         $(`#service-list`).find(`input[id$='-name']`).each(function() {
             if (!($(`#${$(this).attr('id')}-errors`).text() === '') || (!$(`#${$(this).attr('id')}`).val())) {
+                textTypeValidation(this);
                 isValidName = false;
             }
         });
 
         $(`#service-list`).find(`select[id$='-measurement_unit']`).each(function() {
             if (!($(`#${$(this).attr('id')}-errors`).text() === '') || (!$(`#${$(this).attr('id')} option:selected`).attr('value'))) {
+                selectElementValidation(this);
                 isValidSelect = false;
             }
         });

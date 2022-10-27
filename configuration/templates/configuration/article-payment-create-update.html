@@ -15,16 +15,18 @@
                     <div class="row">
                         <div class="form-group col-sm-12">
                             <label for="{{ form.name.auto_id }}">Назва</label>
-                            <input class="form-control" id="{{ form.name.auto_id }}" name="{{ form.name.html_name }}" {% if form.instance %}value="{{ form.instance.name }}"{% endif %}>
+                            <input type="text" class="form-control" id="{{ form.name.auto_id }}" name="{{ form.name.html_name }}" {% if form.instance %}value="{{ form.instance.name }}"{% endif %} onchange="fieldIsValid(this)">
+                            <p id="{{ form.name.auto_id }}-errors" style="color: red;"></p>
                         </div>
                     </div>
                     <div class="row" style="margin-top: 25px;">
                         <div class="form-group col-sm-12">
                             <label for="{{ form.type.auto_id }}">Прихід/розхід</label>
-                            <select id="{{ form.type.auto_id }}" name="{{ form.type.html_name }}" class="form-control">
+                            <select id="{{ form.type.auto_id }}" name="{{ form.type.html_name }}" class="form-control" onchange="fieldIsValid(this)">
                                 <option value="income" {% if form.instance.type == 'income' %}selected{% endif %}>Прихід</option>
                                 <option value="outcome" {% if form.instance.type == 'outcome' %}selected{% endif %}>Розхід</option>
                             </select>
+                            <p id="{{ form.type.auto_id }}-errors" style="color: red"></p>
                         </div>
                     </div>
                 </div>
@@ -32,10 +34,40 @@
             <div class="row">
                 <div class="col-sm-12 text-right">
                     <button type="reset" class="btn btn-default" style="margin-right: 20px;">Відмінити</button>
-                    <button type="submit" class="btn btn-success">{% if form.instance.pk %}Зберегти{% else %}Створити{% endif %}</button>
+                    <button type="submit" class="btn btn-success" onclick="formIsValid(event)">{% if form.instance.pk %}Зберегти{% else %}Створити{% endif %}</button>
                 </div>
             </div>
             </form>
         </div>
     </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function formIsValid(e) {
+        e.preventDefault();
+        let isValidName = true;
+        let isValidSelect = true;
+
+        $(`#article-payment-form`).find(`input[id$='_name']`).each(function() {
+            if (!fieldIsValid(this)) {
+                isValidName = false;
+            }
+        });
+
+        $(`#article-payment-form`).find(`select[id$='_type']`).each(function() {
+            if (!fieldIsValid(this)) {
+                isValidSelect = false;
+            }
+        });
+
+        if (isValidName && isValidSelect) {
+            $(`#article-payment-form`).submit();
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+</script>
 {% endblock %}

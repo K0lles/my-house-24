@@ -29,9 +29,10 @@
                                             <div id="{{ form_service.name.auto_id }}-first-parent" class="col-xs-12 col-sm-7">
                                                 <label for="{{ form_service.name.auto_id }}">Назва послуги</label>
                                                 <div class="input-group">
-                                                    <input class="form-control" id="{{ form_service.name.auto_id }}" name="{{ form_service.name.html_name }}" value="{{ form_service.instance.name }}"
+                                                    <input type="text" class="form-control" id="{{ form_service.name.auto_id }}" name="{{ form_service.name.html_name }}" value="{{ form_service.instance.name }}" onchange="fieldIsValid(this)"
                                                     {% if form_service.name.errors %}style="border: 1px solid red" {% endif %}>
                                                 </div>
+                                                <p id="{{ form_service.name.auto_id }}-errors" style="color: red"></p>
                                                 {% for error in form_service.name.errors %}
                                                     <p style="color: red">{{ error }}</p>
                                                 {% endfor %}
@@ -39,7 +40,7 @@
                                             <div id="{{ form_service.name.auto_id }}-second-parent" class="col-xs-12 col-sm-5">
                                                 <label for="{{ form_service.measurement_unit.auto_id }}">Од. вим.</label>
                                                 <div class="input-group">
-                                                    <select class="form-control" id="{{ form_service.measurement_unit.auto_id }}" name="{{ form_service.measurement_unit.html_name }}"
+                                                    <select class="form-control" id="{{ form_service.measurement_unit.auto_id }}" name="{{ form_service.measurement_unit.html_name }}" onchange="fieldIsValid(this)"
                                                     {% if form_service.measurement_unit.errors %}style="border: 1px solid red"{% endif %}>
                                                         <option value="">Виберіть...</option>
                                                     {% for unit in measurement_units %}
@@ -55,6 +56,7 @@
                                                         </button>
                                                     </span>
                                                 </div>
+                                                <p id="{{ form_service.measurement_unit.auto_id }}-errors" style="color: red"></p>
                                                 {% for error in form_service.measurement_unit.errors %}
                                                     <p style="color: red">{{ error }}</p>
                                                 {% endfor %}
@@ -69,13 +71,14 @@
                                         <div id="{{ formset.empty_form.name.auto_id }}-first-parent" class="col-xs-12 col-sm-7">
                                             <label for="{{ formset.empty_form.name.auto_id }}">Назва послуги</label>
                                             <div class="input-group">
-                                                <input class="form-control" id="{{ formset.empty_form.name.auto_id }}" name="{{ formset.empty_form.name.html_name }}">
+                                                <input type="text" class="form-control" id="{{ formset.empty_form.name.auto_id }}" name="{{ formset.empty_form.name.html_name }}" onchange="fieldIsValid(this)">
                                             </div>
+                                            <p id="{{ formset.empty_form.name.auto_id }}-errors" style="color: red"></p>
                                         </div>
                                         <div id="{{ formset.empty_form.name.auto_id }}-second-parent" class="col-xs-12 col-sm-5">
                                             <label for="{{ formset.empty_form.measurement_unit.auto_id }}">Од. вим.</label>
                                             <div class="input-group">
-                                                <select class="form-control" id="{{ formset.empty_form.measurement_unit.auto_id }}" name="{{ formset.empty_form.measurement_unit.html_name }}">
+                                                <select class="form-control" id="{{ formset.empty_form.measurement_unit.auto_id }}" name="{{ formset.empty_form.measurement_unit.html_name }}" onchange="fieldIsValid(this)">
                                                     <option value="">Виберіть...</option>
                                                 {% for unit in measurement_units %}
                                                     <option value="{{ unit.id }}">{{ unit.name }}</option>
@@ -88,6 +91,7 @@
                                                     </button>
                                                 </span>
                                             </div>
+                                            <p id="{{ formset.empty_form.measurement_unit.auto_id }}-errors" style="color: red"></p>
                                         </div>
                                         <input id="{{ formset.empty_form.show_in_counters.auto_id }}" name="{{ formset.empty_form.show_in_counters.html_name }}" type="checkbox" class="form-check-inline" style="margin-left: 1%;">
                                         <label for="{{ formset.empty_form.show_in_counters.auto_id }}" class="form-check-label"><b>Показувати у лічильниках</b></label>
@@ -122,9 +126,13 @@
         empty_form.find('#id_form-__prefix__-name').attr('name', `form-${total_forms}-name`);
         empty_form.find('#id_form-__prefix__-name').attr('id', `id_form-${total_forms}-name`);
 
+        empty_form.find('#id_form-__prefix__-name-errors').attr('id', `id_form-${total_forms}-name-errors`);
+
         empty_form.find('label[for="id_form-__prefix__-measurement_unit"]').attr('for', `id_form-${total_forms}-measurement_unit`);
         empty_form.find('#id_form-__prefix__-measurement_unit').attr('name', `form-${total_forms}-measurement_unit`);
         empty_form.find('#id_form-__prefix__-measurement_unit').attr('id', `id_form-${total_forms}-measurement_unit`);
+
+        empty_form.find('#id_form-__prefix__-measurement_unit-errors').attr('id', `id_form-${total_forms}-measurement_unit-errors`);
 
         empty_form.find('#id_form-__prefix__-show_in_counters').attr('name', `form-${total_forms}-show_in_counters`);
         empty_form.find('#id_form-__prefix__-show_in_counters').attr('id', `id_form-${total_forms}-show_in_counters`);
@@ -206,31 +214,24 @@
 
     function formIsValid(e) {
         e.preventDefault();
-        let isValid = true;
+        let isValidName = true;
+        let isValidSelect = true;
 
         $(`#service-list`).find(`input[id$='-name']`).each(function() {
-            if (!$(this).val()) {
-                isValid = false;
-                let parent_name = `#${$(this).attr('id')}-first-parent`;
-                $(this).css('border', '1px solid red');
-                $(parent_name).append('<p style="color: red">Назва не може бути пустою</p>');
+            if (!($(`#${$(this).attr('id')}-errors`).text() === '') || (!$(`#${$(this).attr('id')}`).val())) {
+                textTypeValidation(this);
+                isValidName = false;
             }
         });
 
         $(`#service-list`).find(`select[id$='-measurement_unit']`).each(function() {
-            if (!$(`#${$(this).attr('id')} option:selected`).attr('value')) {
-                isValid = false;
-                let parent_name = `#${$(this).attr('id').replace('measurement_unit', 'name')}-second-parent`;
-                let button_name = parent_name.replace('second-parent', 'button');
-                $(this).css('border', '1px solid red');
-                $(button_name).css('border-top',  '1px solid red');
-                $(button_name).css('border-right', '1px solid red');
-                $(button_name).css('border-bottom', '1px solid red');
-                $(parent_name).append('<p style="color: red">Виберіть од. вим.</p>');
+            if (!($(`#${$(this).attr('id')}-errors`).text() === '') || (!$(`#${$(this).attr('id')} option:selected`).attr('value'))) {
+                selectElementValidation(this);
+                isValidSelect = false;
             }
         });
 
-        if (isValid) {
+        if (isValidName && isValidSelect) {
             $(`form#services`).submit();
             return false;
         }

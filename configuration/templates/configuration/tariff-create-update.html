@@ -18,11 +18,13 @@
                 <div class="col-xs-12 col-lg-7" style="margin-bottom: 20px;">
                     <div class="row">
                         <label for="{{ form.name.auto_id }}">Назва тарифу</label>
-                        <input type="text" class="form-control" id="{{ form.name.auto_id }}" name="{{ form.name.html_name }}" {% if object %}value="{{ object.name }}"{% endif %} {% if tariff_to_copy %}value="{{ tariff_to_copy.name }}"{% endif %}>
+                        <input type="text" class="form-control" id="{{ form.name.auto_id }}" name="{{ form.name.html_name }}" onchange="fieldIsValid(this)" {% if object %}value="{{ object.name }}"{% endif %} {% if tariff_to_copy %}value="{{ tariff_to_copy.name }}"{% endif %}>
+                        <p id="{{ form.name.auto_id }}-errors" style="color: red;"></p>
                     </div>
                     <div class="row" style="margin-top: 20px;">
                         <label for="{{ form.description.auto_id }}">Опис тарифу</label>
-                        <textarea class="form-control" id="{{ form.description.auto_id }}" name="{{ form.description.html_name }}" rows="3">{% if object %}{{ object.description }}{% endif %}{% if tariff_to_copy %}{{ tariff_to_copy.description }}{% endif %}</textarea>
+                        <textarea class="form-control" id="{{ form.description.auto_id }}" name="{{ form.description.html_name }}" onchange="fieldIsValid(this)" rows="3">{% if object %}{{ object.description }}{% endif %}{% if tariff_to_copy %}{{ tariff_to_copy.description }}{% endif %}</textarea>
+                        <p id="{{ form.description.auto_id }}-errors" style="color: red;"></p>
                     </div>
                     <button class="btn btn-default add-tariff_service" type="button" style="margin-top: 4%;">Добавити послугу</button>
 
@@ -39,19 +41,21 @@
                                                 <option value="{{ service.id }}" {% if service.id == tariff_service.instance.service.id %}selected{% endif %}>{{ service.name }}</option>
                                             {% endfor %}
                                         </select>
+                                        <p id="{{ tariff_service.service.auto_id }}-errors" style="color: red;"></p>
                                     </div>
                                 </div>
                                 <div class="col-xs-6 col-md-3">
                                     <div class="form-group">
                                         <label for="{{ tariff_service.price.auto_id }}">Ціна</label>
-                                        <input class="form-control" step="0.01" type="number" id="{{ tariff_service.price.auto_id }}" name="{{ tariff_service.price.html_name }}" value="{{ tariff_service.instance.price }}">
+                                        <input class="form-control" step="0.01" type="number" id="{{ tariff_service.price.auto_id }}" name="{{ tariff_service.price.html_name }}" value="{{ tariff_service.instance.price }}" onchange="fieldIsValid(this)">
+                                        <p id="{{ tariff_service.price.auto_id }}-errors" style="color: red;"></p>
                                     </div>
                                 </div>
                                 <div class="col-xs-6 col-md-2">
                                     <div class="form-group">
                                         <label for="currency">Валюта</label>
                                         <input type="text" disabled id="currency" value="{{ tariff_service.instance.currency }}"  class="form-control">
-                                    </div >
+                                    </div>
                                 </div>
                                 <div class="col-xs-6 col-md-3">
                                     <label for="{{ tariff_service.service.auto_id }}-measurement-unit">Од. вим.</label>
@@ -63,10 +67,11 @@
                                             {% endfor %}
                                         </select>
                                         <span class="input-group-append">
-                                        <button id="{{ tariff_service.service.auto_id }}-delete_button" type="button" class="btn btn-default self-delete-button-exists">
-                                            <i class="fa fa-trash"></i>
-                                        </button>
-                                    </span>
+                                            <button id="{{ tariff_service.service.auto_id }}-delete_button" type="button" class="btn btn-default self-delete-button-exists">
+                                                <i class="fa fa-trash"></i>
+                                            </button>
+                                        </span>
+
                                     </div>
                                 </div>
                             </div>
@@ -77,18 +82,20 @@
                                     <div class="col-xs-6 col-md-4">
                                         <div class="form-group">
                                             <label for="id_form-{{ forloop.counter0 }}-service">Назва послуги</label>
-                                            <select id="id_form-{{ forloop.counter0 }}-service" name="form-{{ forloop.counter0 }}-service" onchange="changedService(this)" class="form-control">
+                                            <select id="id_form-{{ forloop.counter0 }}-service" name="form-{{ forloop.counter0 }}-service" onclick="changedService(this)" class="form-control">
                                                 <option value="none">Вибрати...</option>
                                                 {% for service in services %}
                                                 <option value="{{ service.pk }}" {% if service.pk == tariff_service.service.pk %}selected{% endif %}>{{ service.name }}</option>
                                                 {% endfor %}
                                             </select>
+                                            <p id="id_form-{{ forloop.counter0 }}-service-errors" style="color: red;"></p>
                                         </div>
                                     </div>
                                     <div class="col-xs-6 col-md-3">
                                         <div class="form-group">
                                             <label for="id_form-{{ forloop.counter0 }}-price">Ціна</label>
-                                            <input id="id_form-{{ forloop.counter0 }}-price" name="form-{{ forloop.counter0 }}-price" value="{{ tariff_service.price|floatformat:2 }}" class="form-control" type="number" step="0.01">
+                                            <input id="id_form-{{ forloop.counter0 }}-price" name="form-{{ forloop.counter0 }}-price" value="{{ tariff_service.price|floatformat:2 }}" class="form-control" type="number" step="0.01" onchange="fieldIsValid((this))">
+                                            <p id="id_form-{{ forloop.counter0 }}-price-errors" style="color: red;"></p>
                                         </div>
                                     </div>
                                     <div class="col-xs-6 col-md-2">
@@ -113,10 +120,8 @@
                                                     </button>
                                                 </span>
                                             </div>
-
                                         </div>
                                     </div>
-
                                 </div>
                             {% endfor %}
                         {% endif %}
@@ -134,25 +139,27 @@
                         <div class="col-xs-6 col-md-4">
                             <div class="form-group">
                                 <label for="{{ formset.empty_form.service.auto_id }}">Послуга</label>
-                                <select class="form-control" id="{{ formset.empty_form.service.auto_id }}" onchange="changedService(this)" name="{{ formset.empty_form.service.html_name }}">
+                                <select class="form-control" id="{{ formset.empty_form.service.auto_id }}" onclick="changedService(this)" name="{{ formset.empty_form.service.html_name }}">
                                     <option value="none">Вибрати...</option>
                                     {% for service in services %}
                                         <option value="{{ service.id }}">{{ service.name }}</option>
                                     {% endfor %}
                                 </select>
+                                <p id="{{ formset.empty_form.service.auto_id }}-errors" style="color: red;"></p>
                             </div>
                         </div>
                         <div class="col-xs-6 col-md-3">
                             <div class="form-group">
                                 <label for="{{ formset.empty_form.price.auto_id }}">Ціна</label>
-                                <input class="form-control" step="0.01" type="number" id="{{ formset.empty_form.price.auto_id }}" name="{{ formset.empty_form.price.html_name }}">
+                                <input class="form-control" step="0.01" type="number" id="{{ formset.empty_form.price.auto_id }}" name="{{ formset.empty_form.price.html_name }}" onchange="fieldIsValid(this)">
+                                <p id="{{ formset.empty_form.price.auto_id }}-errors" style="color: red;"></p>
                             </div>
                         </div>
                         <div class="col-xs-6 col-md-2">
                             <div class="form-group">
                                 <label for="currency">Валюта</label>
                                 <input type="text" disabled id="currency" value="грн"  class="form-control">
-                            </div >
+                            </div>
                         </div>
                         <div class="col-xs-6 col-md-3">
                             <label for="{{ formset.empty_form.service.auto_id }}-measurement-unit">Од. вим.</label>
@@ -164,17 +171,17 @@
                                     {% endfor %}
                                 </select>
                                 <span class="input-group-append">
-                                <button type="button" class="btn btn-default self-delete-button">
-                                    <i class="fa fa-trash"></i>
-                                </button>
-                            </span>
+                                    <button type="button" class="btn btn-default self-delete-button">
+                                        <i class="fa fa-trash"></i>
+                                    </button>
+                                </span>
                             </div>
                         </div>
                     </div>
                 </div>
                 <div class="row col-sm-12">
-                    <button type="reset" class="btn btn-default" style="margin-right: 15px;">Відмінити</a>
-                    <button type="submit" class="btn btn-success">Зберегти</button>
+                    <button type="reset" class="btn btn-default" style="margin-right: 15px;">Відмінити</button>
+                    <button type="submit" class="btn btn-success" onclick="formIsValid(event)">Зберегти</button>
                 </div>
             </form>
         </div>
@@ -193,12 +200,16 @@
         empty_form.find('#id_form-__prefix__-service').attr('name', `form-${total_forms}-service`);
         empty_form.find('#id_form-__prefix__-service').attr('id', `id_form-${total_forms}-service`);
 
+        empty_form.find('#id_form-__prefix__-service-errors').attr('id', `id_form-${total_forms}-service-errors`);
+
         empty_form.find('label[for="id_form-__prefix__-service-measurement-unit"]').attr('for', `id_form-${total_forms}-service-measurement-unit`);
         empty_form.find('#id_form-__prefix__-service-measurement-unit').attr('id', `id_form-${total_forms}-service-measurement-unit`);
 
         empty_form.find('#id_form-__prefix__-price').attr('name', `form-${total_forms}-price`);
         empty_form.find('#id_form-__prefix__-price').attr('id', `id_form-${total_forms}-price`);
         empty_form.find('label[for="id_form-__prefix__-price"]').attr('for', `id_form-${total_forms}-price`);
+
+        empty_form.find('#id_form-__prefix__-price-errors').attr('id', `id_form-${total_forms}-price-errors`);
 
         empty_form.find('.self-delete-button').attr('id', `id_form-${total_forms}-delete_button`)
 
@@ -277,7 +288,51 @@
 
     function changedService(element) {
         let selectedService = $(element).children("option:selected").val();
+        $(`#${element.id}-measurement-unit > option`).each(function() {
+            $(this).removeAttr('selected');
+        });
         $(`#${element.id}-measurement-unit option[value=${selectedService}]`).attr('selected', 'selected');
+        fieldIsValid(element)
+    }
+
+    function formIsValid(e) {
+        e.preventDefault();
+        let isValidName = true;
+        let isValidDescription = true;
+        let isValidService = true;
+        let isValidPrice = true;
+
+        $(`#form-tariff`).find(`input[id$='-name']`).each(function() {
+            if (!fieldIsValid(this)) {
+                isValidName = false;
+            }
+        });
+
+        $(`#form-tariff`).find(`textarea[id$='-description']`).each(function() {
+            if (!textTypeValidation(this)) {
+                isValidDescription = false;
+            }
+        });
+
+        $(`#tariff_service-list`).find(`select[id$='-service']`).each(function() {
+            if (!selectElementValidation(this)) {
+                isValidService = false;
+            }
+        });
+
+        $(`#tariff_service-list`).find(`input[id$='-price']`).each(function() {
+            if (!fieldIsValid(this)) {
+                isValidPrice = false;
+            }
+        });
+
+        if (isValidName && isValidDescription && isValidService && isValidPrice) {
+            $(`form#form-tariff`).submit();
+            return true;
+        }
+        else {
+            return false;
+        }
     }
 
 </script>

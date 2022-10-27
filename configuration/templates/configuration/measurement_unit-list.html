@@ -29,8 +29,8 @@
                                             {{ form_unit.id }}
                                             <label for="{{ form_unit.name.auto_id }}">Од. вим.</label>
                                             <div class="input-group">
-                                                <input class="form-control" id="{{ form_unit.name.auto_id }}" name="{{ form_unit.name.html_name }}" value="{{ form_unit.instance.name }}"
-                                                {% if form_unit.name.errors %}style="border: 1px solid red" {% endif %}>
+                                                <input type="text" class="form-control" id="{{ form_unit.name.auto_id }}" name="{{ form_unit.name.html_name }}" value="{{ form_unit.instance.name }}"
+                                                {% if form_unit.name.errors %}style="border: 1px solid red" {% endif %} onchange="fieldIsValid(this)">
                                                 <span class="input-group-append">
                                                     <button id="{{ form_unit.name.auto_id }}-button" type="button"
                                                     onclick="deleteUnit(this,{% if form_unit.instance.id %}{{ form_unit.instance.id }}{% else %}null{% endif %},{% if form_unit.instance.is_used %}true{% endif %})"
@@ -40,8 +40,9 @@
                                                     </button>
                                                 </span>
                                             </div>
+                                                <p id="{{ form_unit.name.auto_id }}-errors" style="color: red"></p>
                                             {% for error in form_unit.name.errors %}
-                                                <p style="color: red">{{ error }}</p>
+                                                <p>{{ error }}</p>
                                             {% endfor %}
                                         </div>
                                     {% endfor %}
@@ -51,13 +52,14 @@
                                         {{ formset.empty_form.id }}
                                         <label for="{{ formset.empty_form.name.auto_id }}">Од. вим.</label>
                                         <div class="input-group">
-                                            <input class="form-control" id="{{ formset.empty_form.name.auto_id }}" name="{{ formset.empty_form.name.html_name }}">
+                                            <input type="text" class="form-control" id="{{ formset.empty_form.name.auto_id }}" name="{{ formset.empty_form.name.html_name }}" onchange="fieldIsValid(this)">
                                             <span class="input-group-append">
                                                 <button id="{{ formset.empty_form.name.auto_id }}-button" onclick="deleteUnit(this)" type="button" class="btn btn-default delete-unit">
                                                     <i class="fa fa-trash"></i>
                                                 </button>
                                             </span>
                                         </div>
+                                        <p id="{{ formset.empty_form.name.auto_id }}-errors" style="color: red"></p>
                                     </div>
                                 </div>
                                 <button class="btn btn-default add-measurement-unit" type="button">Додати</button>
@@ -92,6 +94,7 @@
         empty_form.attr('id', `id_form-${total_forms}-name-parent`);
         empty_form.attr('class', 'form-group');
         empty_form.attr('display', 'block');
+        empty_form.find(`#id_form-__prefix__-name-errors`).attr('id', `id_form-${total_forms}-name-errors`);
 
         $('#id_form-TOTAL_FORMS').attr('value', total_forms + 1);
         $('#measurement-unit-list').append(empty_form);
@@ -131,8 +134,6 @@
                             success: function (response) {
                                 if (response['answer'] === 'success') {
                                     $(`#${parent}`).remove();
-                                    //TOTAL_FORMS.attr('value', TOTAL_FORMS.attr('value') - 1);
-                                    //INITIAL_FORMS.attr('value', INITIAL_FORMS.attr('value') - 1)
                                     Swal.fire({
                                         position: 'top-end',
                                         icon: 'success',
@@ -162,15 +163,9 @@
         let isValid = true;
 
         $(`#measurement-unit-list`).find(`input[id$='-name']`).each(function() {
-            if (!$(this).val()) {
+            if (!($(`#${$(this).attr('id')}-errors`).text() === '') || (!$(`#${$(this).attr('id')}`).val())) {
+                textTypeValidation(this);
                 isValid = false;
-                let button_name = `#${$(this).attr('id')}-button`;
-                let parent_name = `#${$(this).attr('id')}-parent`
-                $(this).css('border', '1px solid red');
-                $(button_name).css('border-top',  '1px solid red');
-                $(button_name).css('border-right', '1px solid red');
-                $(button_name).css('border-bottom', '1px solid red');
-                $(parent_name).append('<p style="color: red">Назва не може бути пустою</p>');
             }
         });
 

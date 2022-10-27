@@ -162,24 +162,11 @@
         e.preventDefault();
         let isValid = true;
 
-
-
         $(`#measurement-unit-list`).find(`input[id$='-name']`).each(function() {
             if (!($(`#${$(this).attr('id')}-errors`).text() === '') || (!$(`#${$(this).attr('id')}`).val())) {
                 textTypeValidation(this);
                 isValid = false;
             }
-            
-            {% comment %}if (!$(this).val()) {
-                isValid = false;
-                let button_name = `#${$(this).attr('id')}-button`;
-                let parent_name = `#${$(this).attr('id')}-parent`
-                $(this).css('border', '1px solid red');
-                $(button_name).css('border-top',  '1px solid red');
-                $(button_name).css('border-right', '1px solid red');
-                $(button_name).css('border-bottom', '1px solid red');
-                $(parent_name).append('<p style="color: red">Назва не може бути пустою</p>');
-            }{% endcomment %}
         });
 
         if (isValid) {

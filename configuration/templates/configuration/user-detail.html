@@ -1,0 +1,48 @@
+{% extends 'main_page.html' %}
+{% load static %}
+
+{% block content_header %}
+    <h1>Користувач</h1>
+{% endblock %}
+
+{% block main_content %}
+    <div class="card">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-sm-12 text-right">
+                    <a href="{% url 'user-update' pk=object.pk %}" class="btn btn-info">Редагувати користувача</a>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-sm-12">
+                    <table class="table table-borderless">
+                        <tbody>
+                            <tr>
+                                <th>Користувач</th>
+                                <td>{{ object.name }} {{ object.surname }}</td>
+                            </tr>
+                            <tr>
+                                <th>Роль</th>
+                                <td>{{ object.role.get_role_display }}</td>
+                            </tr>
+                            <tr>
+                                <th>Телефон</th>
+                                <td>{{ object.phone }}</td>
+                            </tr>
+                            <tr>
+                                <th>Email</th>
+                                <td>{{ object.email }}</td>
+                            </tr>
+                            <tr>
+                                <th>Статус</th>
+                                <td>{% if object.status == 'new' %}<span class="badge badge-warning">{{ object.get_status_display }}</span>
+                                {% elif object.status == 'active' %}<span class="badge badge-success">{{ object.get_status_display }}</span>
+                                    {% else %}<span class="badge badge-danger">{{ object.get_status_display }}</span>{% endif %}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

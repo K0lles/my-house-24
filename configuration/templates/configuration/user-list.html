@@ -27,13 +27,15 @@
                     </thead>
                     <tbody>
                         {% for object in object_list %}
-                            <tr role="button" data-href="{% url 'user-update' pk=object.pk %}" id="{{ object.id }}">
+                            <tr role="button" data-href="{% url 'user-detail' pk=object.pk %}" id="{{ object.id }}">
                                 <td>{{ forloop.counter }}</td>
                                 <td>{{ object.name }} {{ object.surname }}</td>
                                 <td>{{ object.role.get_role_display }}</td>
                                 <td>{{ object.phone }}</td>
                                 <td>{{ object.email }}</td>
-                                <td>{% if object.status == 'new' %}<span class="badge badge-warning">{{ object.get_status_display }}{% elif object.status == 'active' %}<span class="badge badge-success">{{ object.get_status_display }}{% else %}<span class="badge badge-danger">{{ object.get_status_display }}</span>{% endif %}</span></span></td>
+                                <td>{% if object.status == 'new' %}<span class="badge badge-warning">{{ object.get_status_display }}</span>
+                                    {% elif object.status == 'active' %}<span class="badge badge-success">{{ object.get_status_display }}</span>
+                                    {% else %}<span class="badge badge-danger">{{ object.get_status_display }}</span>{% endif %}</td>
                                 <td class="text-right">
                                     <div class="btn-group pull-right">
                                         <a class="btn btn-default btn-sm" title="Редагувати" href="{% url 'user-update' pk=object.pk %}">

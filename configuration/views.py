@@ -287,6 +287,18 @@ class UserCreateView(CreateView):
                                  role=form.cleaned_data.get('role'))
 
 
+class UserDetailView(DetailView):
+    model = User
+    template_name = 'configuration/user-detail.html'
+    pk_url_kwarg = 'pk'
+
+    def get_object(self, queryset=None):
+        try:
+            return User.objects.select_related('role').get(pk=self.kwargs['pk'])
+        except (User.DoesNotExist, ValueError):
+            raise Http404()
+
+
 class UserUpdateView(UpdateView):
     model = User
     template_name = 'configuration/user-create-update.html'
@@ -295,8 +307,7 @@ class UserUpdateView(UpdateView):
 
     def get_object(self, queryset=None):
         try:
-            user = User.objects.select_related('role').get(pk=self.kwargs['pk'])
-            return user
+            return User.objects.select_related('role').get(pk=self.kwargs['pk'])
         except User.DoesNotExist:
             raise Http404()
 
@@ -310,18 +321,17 @@ class UserUpdateView(UpdateView):
 
     def post(self, request, *args, **kwargs):
         user = self.get_object()
-        print(user.password)
         form = UserForm(request.POST, instance=user)
-        print(form.errors)
         if form.is_valid():
             self.form_valid(form, user)
-            print(form.cleaned_data)
             old_password = user.password
             user_saved = form.save()
             if not form.cleaned_data.get('password'):
                 user_saved.password = old_password
-
-        return redirect('users')
+        self.object = self.get_object()
+        context = self.get_context_data()
+        context['form'] = form
+        return self.render_to_response(context)
 
     def form_valid(self, form, user):
         old_password = user.password

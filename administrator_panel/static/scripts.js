@@ -150,6 +150,34 @@ function validatePasswordUpdate(element) {
     return true;
 }
 
+/*function formIsValid() {
+    function formIsValid(e) {
+        e.preventDefault();
+        let isValidName = true;
+        let isValidSelect = true;
+
+        $(`#article-payment-form`).find(`input[id$='_name']`).each(function() {
+            if (!fieldIsValid(this)) {
+                isValidName = false;
+            }
+        });
+
+        $(`#article-payment-form`).find(`select[id$='_type']`).each(function() {
+            if (!fieldIsValid(this)) {
+                isValidSelect = false;
+            }
+        });
+
+        if (isValidName && isValidSelect) {
+            $(`#article-payment-form`).submit();
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+}*/
+
 $('tr[data-href]').on('click', function() {
     document.location = $(this).data('href');
 });

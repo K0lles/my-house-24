@@ -9,8 +9,9 @@ function fieldIsValid(element) {
         'text': textTypeValidation,
         'number': numberTypeValidation,
         'email': emailTypeValidation,
-        'password': passwordTypeValidation
+        'password': passwordTypeValidation,
     }
+    if ($(`#${element.id}`).attr('type') === 'file') return true;
     return dict_function_by_type[$(`#${element.id}`).attr('type')](element);
 }
 
@@ -181,3 +182,14 @@ function validatePasswordUpdate(element) {
 $('tr[data-href]').on('click', function() {
     document.location = $(this).data('href');
 });
+
+
+function loadFile(event, id) {
+    event.preventDefault();
+
+    let image = $(`#${id}-display`);
+    image.attr('src', URL.createObjectURL(event.target.files[0]));
+    image.onload = function() {
+        URL.revokeObjectURL(image.src);
+    };
+}

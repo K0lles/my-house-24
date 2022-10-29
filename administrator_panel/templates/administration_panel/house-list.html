@@ -1,0 +1,98 @@
+{% extends 'main_page.html' %}
+{% load static %}
+
+{% block content_header %}
+    <h1>Будинки</h1>
+{% endblock %}
+
+{% block main_content %}
+    <div class="row" style="margin-top: 25px; margin-bottom: 25px;">
+        <div class="col-sm-12 text-right">
+            <a href="{% url 'house-create' %}" class="btn btn-success">Створити будинок</a>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-body">
+            <div class="row">
+                <table class="table table-borderless table-hover">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Назва</th>
+                            <th>Адреса</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for house in house_list %}
+                            <tr role="button" data-href="{% url 'house-update' house_pk=house.pk %}">
+                                <td>{{ forloop.counter }}</td>
+                                <td>{{ house.name }}</td>
+                                <td>{{ house.address }}</td>
+                                <td class="text-right">
+                                    <div class="btn-group">
+                                        <a class="btn btn-default btn-sm" title="Редагувати" href="{% url 'house-update' house_pk=house.pk %}">
+                                            <i class="fa fa-pencil"></i>
+                                        </a>
+                                        <button id="{{ house.pk }}" type="button" class="btn btn-default btn-sm delete-house" title="Видалити">
+                                            <i class="fa fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    $('button.delete-house').on('click', function (event) {
+        event.stopPropagation();
+        Swal.fire({
+            title: 'Ви впевнені?',
+            text: "Після видалення будинок неможливо буде повернути!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#A9A9A9',
+            cancelButtonText: 'Скасувати',
+            confirmButtonText: 'Видалити'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.ajax({
+                            url: `delete/${$(this).attr('id')}`,
+                            type: 'GET',
+                            success: function (response) {
+                                if (response['answer'] === 'success') {
+                                    $(event.target).closest('tr').remove();
+                                    Swal.fire({
+                                        position: 'top-end',
+                                        icon: 'success',
+                                        title: 'Успішно видалено!',
+                                        showConfirmButton: false,
+                                        timer: 1200,
+                                    })
+                                }
+                                else if (response['answer'] === 'failed') {
+                                    Swal.fire({
+                                        position: 'top-end',
+                                        icon: 'error',
+                                        title: 'Щось пішло не так!',
+                                        showConfirmButton: false,
+                                        timer: 1200
+                                    });
+                                }
+                            }
+                        })
+                }
+            })
+    })
+
+    $('tr').on('click', function() {
+        document.location = $(this).data('href');
+    });
+</script>
+{% endblock %}

@@ -22,7 +22,7 @@
                     <div class="row" style="margin-top: 25px;">
                         <div class="form-group col-sm-12">
                             <label for="{{ form.type.auto_id }}">Прихід/розхід</label>
-                            <select id="{{ form.type.auto_id }}" name="{{ form.type.html_name }}" class="form-control" onchange="fieldIsValid(this)">
+                            <select id="{{ form.type.auto_id }}" name="{{ form.type.html_name }}" class="form-select" onchange="fieldIsValid(this)">
                                 <option value="income" {% if form.instance.type == 'income' %}selected{% endif %}>Прихід</option>
                                 <option value="outcome" {% if form.instance.type == 'outcome' %}selected{% endif %}>Розхід</option>
                             </select>

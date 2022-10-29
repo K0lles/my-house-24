@@ -36,11 +36,13 @@
                                                 {% for error in form_service.name.errors %}
                                                     <p style="color: red">{{ error }}</p>
                                                 {% endfor %}
+                                                <input id="{{ form_service.show_in_counters.auto_id }}" name="{{ form_service.show_in_counters.html_name }}" type="checkbox" class="form-check-inline" {% if form_service.instance.show_in_counters %}checked{% endif %} style="margin-left: 1%;">
+                                                <label for="{{ form_service.show_in_counters.auto_id }}" class="form-check-label"><b>Показувати у лічильниках</b></label>
                                             </div>
                                             <div id="{{ form_service.name.auto_id }}-second-parent" class="col-xs-12 col-sm-5">
                                                 <label for="{{ form_service.measurement_unit.auto_id }}">Од. вим.</label>
                                                 <div class="input-group">
-                                                    <select class="form-control" id="{{ form_service.measurement_unit.auto_id }}" name="{{ form_service.measurement_unit.html_name }}" onchange="fieldIsValid(this)"
+                                                    <select class="form-select" id="{{ form_service.measurement_unit.auto_id }}" name="{{ form_service.measurement_unit.html_name }}" onchange="fieldIsValid(this)"
                                                     {% if form_service.measurement_unit.errors %}style="border: 1px solid red"{% endif %}>
                                                         <option value="">Виберіть...</option>
                                                     {% for unit in measurement_units %}
@@ -60,9 +62,7 @@
                                                 {% for error in form_service.measurement_unit.errors %}
                                                     <p style="color: red">{{ error }}</p>
                                                 {% endfor %}
-                                            </div>
-                                            <input id="{{ form_service.show_in_counters.auto_id }}" name="{{ form_service.show_in_counters.html_name }}" type="checkbox" class="form-check-inline" {% if form_service.instance.show_in_counters %}checked{% endif %} style="margin-left: 1%;">
-                                            <label for="{{ form_service.show_in_counters.auto_id }}" class="form-check-label"><b>Показувати у лічильниках</b></label>
+                                                </div>
                                         </div>
                                     {% endfor %}
                                 </div>
@@ -74,11 +74,13 @@
                                                 <input type="text" class="form-control" id="{{ formset.empty_form.name.auto_id }}" name="{{ formset.empty_form.name.html_name }}" onchange="fieldIsValid(this)">
                                             </div>
                                             <p id="{{ formset.empty_form.name.auto_id }}-errors" style="color: red"></p>
+                                            <input id="{{ formset.empty_form.show_in_counters.auto_id }}" name="{{ formset.empty_form.show_in_counters.html_name }}" type="checkbox" class="form-check-inline" style="margin-left: 1%;">
+                                            <label for="{{ formset.empty_form.show_in_counters.auto_id }}" class="form-check-label"><b>Показувати у лічильниках</b></label>
                                         </div>
                                         <div id="{{ formset.empty_form.name.auto_id }}-second-parent" class="col-xs-12 col-sm-5">
                                             <label for="{{ formset.empty_form.measurement_unit.auto_id }}">Од. вим.</label>
                                             <div class="input-group">
-                                                <select class="form-control" id="{{ formset.empty_form.measurement_unit.auto_id }}" name="{{ formset.empty_form.measurement_unit.html_name }}" onchange="fieldIsValid(this)">
+                                                <select class="form-select" id="{{ formset.empty_form.measurement_unit.auto_id }}" name="{{ formset.empty_form.measurement_unit.html_name }}" onchange="fieldIsValid(this)">
                                                     <option value="">Виберіть...</option>
                                                 {% for unit in measurement_units %}
                                                     <option value="{{ unit.id }}">{{ unit.name }}</option>
@@ -93,8 +95,6 @@
                                             </div>
                                             <p id="{{ formset.empty_form.measurement_unit.auto_id }}-errors" style="color: red"></p>
                                         </div>
-                                        <input id="{{ formset.empty_form.show_in_counters.auto_id }}" name="{{ formset.empty_form.show_in_counters.html_name }}" type="checkbox" class="form-check-inline" style="margin-left: 1%;">
-                                        <label for="{{ formset.empty_form.show_in_counters.auto_id }}" class="form-check-label"><b>Показувати у лічильниках</b></label>
                                     </div>
                                 </div>
                                 <button class="btn btn-default add-service" type="button">Додати</button>

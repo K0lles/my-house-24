@@ -38,7 +38,7 @@
                             {{ form.id }}
                             <tr class="text-center">
                                 <td><b>{{ form.instance.get_role_display }}</b></td>
-                                <td>{{ form.statistic_access }}</td>
+                                {% comment %}<td>{{ form.statistic_access }}</td>
                                 <td>{{ form.checkout_access }}</td>
                                 <td>{{ form.receipt_access }}</td>
                                 <td>{{ form.bill_access }}</td>
@@ -53,23 +53,23 @@
                                 <td>{{ form.tariff_access }}</td>
                                 <td>{{ form.role_access }}</td>
                                 <td>{{ form.user_access }}</td>
-                                <td>{{ form.payment_requisite_access }}</td>
-                                {% comment %}<td><input id="{{ form.statistic_access.auto_id }}" name="{{ form.statistic_access.html_name }}" class="form-check-input" type="checkbox" {% if form.instance.statistic_access %}checked{% endif %}></td>
-                                <td><input id="{{ form.checkout_access.auto_id }}" name="{{ form.checkout_access.html_name }}" class="form-check-input" type="checkbox" {% if form.instance.checkout_access %}checked{% endif %}></td>
-                                <td><input id="{{ form.receipt_access.auto_id }}" name="{{ form.receipt_access.html_name }}" class="form-check-input" type="checkbox" {% if form.instance.receipt_access %}checked{% endif %}></td>
-                                <td><input id="{{ form.bill_access.auto_id }}" name="{{ form.bill_access.html_name }}" class="form-check-input" type="checkbox" {% if form.instance.bill_access %}checked{% endif %}></td>
-                                <td><input id="{{ form.flat_access.auto_id }}" name="{{ form.flat_access.html_name }}" class="form-check-input" type="checkbox" {% if form.instance.flat_access %}checked{% endif %}></td>
-                                <td><input id="{{ form.owner_access.auto_id }}" name="{{ form.owner_access.html_name }}" class="form-check-input" type="checkbox" {% if form.instance.owner_access %}checked{% endif %}></td>
-                                <td><input id="{{ form.building_access.auto_id }}" name="{{ form.building_access.html_name }}" class="form-check-input" type="checkbox" {% if form.instance.building_access %}checked{% endif %}></td>
-                                <td><input id="{{ form.message_access.auto_id }}" name="{{ form.message_access.html_name }}" class="form-check-input" type="checkbox" {% if form.instance.message_access %}checked{% endif %}></td>
-                                <td><input id="{{ form.master_apply_access.auto_id }}" name="{{ form.master_apply_access.html_name }}" class="form-check-input" type="checkbox" {% if form.instance.master_apply_access %}checked{% endif %}></td>
-                                <td><input id="{{ form.counter_access.auto_id }}" name="{{ form.counter_access.html_name }}" class="form-check-input" type="checkbox" {% if form.instance.counter_access %}checked{% endif %}></td>
-                                <td><input id="{{ form.site_management_access.auto_id }}" name="{{ form.site_management_access.html_name }}" class="form-check-input" type="checkbox" {% if form.instance.site_management_access %}checked{% endif %}></td>
-                                <td><input id="{{ form.service_access.auto_id }}" name="{{ form.service_access.html_name }}" class="form-check-input" type="checkbox" {% if form.instance.service_access %}checked{% endif %}></td>
-                                <td><input id="{{ form.tariff_access.auto_id }}" name="{{ form.tariff_access.html_name }}" class="form-check-input" type="checkbox" {% if form.instance.tariff_access %}checked{% endif %}></td>
-                                <td><input id="{{ form.role_access.auto_id }}" name="{{ form.role_access.html_name }}" class="form-check-input" type="checkbox" {% if form.instance.role_access %}checked{% endif %}></td>
-                                <td><input id="{{ form.user_access.auto_id }}" name="{{ form.user_access.html_name }}" class="form-check-input" type="checkbox" {% if form.instance.user_access %}checked{% endif %}></td>
-                                <td><input id="{{ form.payment_requisite_access.auto_id }}" name="{{ form.payment_requisite_access.html_name }}" class="form-check-input" type="checkbox" {% if form.instance.payment_requisite_access %}checked{% endif %}></td>{% endcomment %}
+                                <td>{{ form.payment_requisite_access }}</td>{% endcomment %}
+                                <td><input id="{{ form.statistic_access.auto_id }}" name="{{ form.statistic_access.html_name }}" type="checkbox" {% if form.instance.statistic_access %}checked{% endif %} {% if form.instance.role == 'director' %}disabled{% endif %}></td>
+                                <td><input id="{{ form.checkout_access.auto_id }}" name="{{ form.checkout_access.html_name }}" type="checkbox" {% if form.instance.checkout_access %}checked{% endif %} {% if form.instance.role == 'director' %}disabled{% endif %}></td>
+                                <td><input id="{{ form.receipt_access.auto_id }}" name="{{ form.receipt_access.html_name }}" type="checkbox" {% if form.instance.receipt_access %}checked{% endif %} {% if form.instance.role == 'director' %}disabled{% endif %}></td>
+                                <td><input id="{{ form.bill_access.auto_id }}" name="{{ form.bill_access.html_name }}" type="checkbox" {% if form.instance.bill_access %}checked{% endif %} {% if form.instance.role == 'director' %}disabled{% endif %}></td>
+                                <td><input id="{{ form.flat_access.auto_id }}" name="{{ form.flat_access.html_name }}" type="checkbox" {% if form.instance.flat_access %}checked{% endif %} {% if form.instance.role == 'director' %}disabled{% endif %}></td>
+                                <td><input id="{{ form.owner_access.auto_id }}" name="{{ form.owner_access.html_name }}" type="checkbox" {% if form.instance.owner_access %}checked{% endif %} {% if form.instance.role == 'director' %}disabled{% endif %}></td>
+                                <td><input id="{{ form.building_access.auto_id }}" name="{{ form.building_access.html_name }}" type="checkbox" {% if form.instance.building_access %}checked{% endif %} {% if form.instance.role == 'director' %}disabled{% endif %}></td>
+                                <td><input id="{{ form.message_access.auto_id }}" name="{{ form.message_access.html_name }}" type="checkbox" {% if form.instance.message_access %}checked{% endif %} {% if form.instance.role == 'director' %}disabled{% endif %}></td>
+                                <td><input id="{{ form.master_apply_access.auto_id }}" name="{{ form.master_apply_access.html_name }}" type="checkbox" {% if form.instance.master_apply_access %}checked{% endif %} {% if form.instance.role == 'director' %}disabled{% endif %}></td>
+                                <td><input id="{{ form.counter_access.auto_id }}" name="{{ form.counter_access.html_name }}" type="checkbox" {% if form.instance.counter_access %}checked{% endif %} {% if form.instance.role == 'director' %}disabled{% endif %}></td>
+                                <td><input id="{{ form.site_management_access.auto_id }}" name="{{ form.site_management_access.html_name }}" type="checkbox" {% if form.instance.site_management_access %}checked{% endif %} {% if form.instance.role == 'director' %}disabled{% endif %}></td>
+                                <td><input id="{{ form.service_access.auto_id }}" name="{{ form.service_access.html_name }}" type="checkbox" {% if form.instance.service_access %}checked{% endif %} {% if form.instance.role == 'director' %}disabled{% endif %}></td>
+                                <td><input id="{{ form.tariff_access.auto_id }}" name="{{ form.tariff_access.html_name }}" type="checkbox" {% if form.instance.tariff_access %}checked{% endif %} {% if form.instance.role == 'director' %}disabled{% endif %}></td>
+                                <td><input id="{{ form.role_access.auto_id }}" name="{{ form.role_access.html_name }}" type="checkbox" {% if form.instance.role_access %}checked{% endif %} {% if form.instance.role == 'director' %}disabled{% endif %}></td>
+                                <td><input id="{{ form.user_access.auto_id }}" name="{{ form.user_access.html_name }}" type="checkbox" {% if form.instance.user_access %}checked{% endif %} {% if form.instance.role == 'director' %}disabled{% endif %}></td>
+                                <td><input id="{{ form.payment_requisite_access.auto_id }}" name="{{ form.payment_requisite_access.html_name }}" type="checkbox" {% if form.instance.payment_requisite_access %}checked{% endif %} {% if form.instance.role == 'director' %}disabled{% endif %}></td>
                             </tr>
                         {% endfor %}
                     </tbody>

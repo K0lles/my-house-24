@@ -248,7 +248,10 @@ class RolesListUpdate(ListView):
     def post(self, request, *args, **kwargs):
         formset = role_formset(request.POST, queryset=Role.objects.all().exclude(role__in=['user', 'owner']))
         if formset.is_valid():
-            formset.save()
+            for form in formset.forms:
+                form_saved = form.save(commit=False)
+                if form_saved.role != 'director':
+                    form_saved.save()
             return redirect('roles')
         self.object_list = None
         context = self.get_context_data()

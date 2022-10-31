@@ -24,7 +24,7 @@
                     </thead>
                     <tbody>
                         {% for house in house_list %}
-                            <tr role="button" data-href="{% url 'house-update' house_pk=house.pk %}">
+                            <tr role="button" data-href="{% url 'house-detail' house_pk=house.pk %}">
                                 <td>{{ forloop.counter }}</td>
                                 <td>{{ house.name }}</td>
                                 <td>{{ house.address }}</td>

@@ -11,4 +11,5 @@ urlpatterns = [
     path('house/section/<int:section_pk>/', delete_section, name='section-delete'),
     path('house/floor/<int:floor_pk>/', delete_floor, name='floor-delete'),
     path('house/house-user/<int:house_user_pk>/', delete_house_user, name='house_user-delete'),
+    path('flat/create/', FlatCreateView.as_view(), name='flat-create'),
 ]

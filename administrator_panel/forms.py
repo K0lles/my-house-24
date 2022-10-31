@@ -1,7 +1,7 @@
 from django.forms import BaseModelFormSet, ModelForm, modelformset_factory, ModelChoiceField, CharField
 
 from configuration.models import User
-from .models import House, HouseUser, Section, Floor
+from .models import House, HouseUser, Section, Floor, PersonalAccount, Flat
 
 
 class HouseForm(ModelForm):
@@ -26,7 +26,6 @@ class HouseUserForm(ModelForm):
 
     def clean(self):
         cleaned_data = super(HouseUserForm, self).clean()
-        print(f"validated house user {cleaned_data}")
         self._errors = {}
 
         return cleaned_data
@@ -46,7 +45,6 @@ class SectionForm(ModelForm):
 
     def clean(self):
         cleaned_data = super(SectionForm, self).clean()
-        print(f"section floor {cleaned_data}")
         self._errors = {}
 
         return cleaned_data
@@ -66,7 +64,6 @@ class FloorForm(ModelForm):
 
     def clean(self):
         cleaned_data = super(FloorForm, self).clean()
-        print(f"validated floor {cleaned_data}")
         self._errors = {}
 
         return cleaned_data
@@ -75,3 +72,17 @@ class FloorForm(ModelForm):
 floor_formset = modelformset_factory(Floor,
                                      form=FloorForm,
                                      extra=0)
+
+
+class FlatForm(ModelForm):
+
+    class Meta:
+        model = Flat
+        fields = '__all__'
+
+
+class PersonalAccountForm(ModelForm):
+
+    class Meta:
+        model = PersonalAccount
+        fields = '__all__'

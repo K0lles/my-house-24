@@ -1,0 +1,76 @@
+{% extends 'main_page.html' %}
+{% load static %}
+
+{% block content_header %}
+    <h1>Нова квартира</h1>
+{% endblock %}
+
+{% block main_content %}
+    <div class="card">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-sm-12 col-lg-6">
+                    <div class="form-group">
+                        <label class="form-label" for="{{ form.number.auto_id }}">Номер квартири</label>
+                        <input type="text" class="form-control" id="{{ form.number.auto_id }}" name="{{ form.number.html_name }}">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="{{ form.square.auto_id }}">Площа (кв. м.)</label>
+                        <input type="number" class="form-control" id="{{ form.square.auto_id }}" name="{{ form.square.html_name }}">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="{{ form.house.auto_id }}">Будинок</label>
+                        <select class="form-select" id="{{ form.house.auto_id }}" name="{{ form.house.html_name }}" onchange="changedHouse(this)">
+                            <option value>Вибрати...</option>
+                            {% for house in houses %}
+                                <option value="{{ house.pk }}">{{ house.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="{{ form.section.auto_id }}">Секція</label>
+                        <select class="form-select" id="{{ form.section.auto_id }}" name="{{ form.section.html_name }}">
+                            <option value>Вибрати...</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="{{ form.floor.auto_id }}">Поверх</label>
+                        <select class="form-select" id="{{ form.floor.auto_id }}" name="{{ form.floor.html_name }}">
+                            <option value>Вибрати...</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="{{ form.owner.auto_id }}">Власник</label>
+                        <select class="form-select" id="{{ form.owner.auto_id }}" name="{{ form.owner.html_name }}">
+                            <option value>Вибрати...</option>
+                            {% for owner in owners %}
+                                <option value="{{ owner.pk }}">{{ owner.name }} {{ owner.surname }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="{{ form.tariff.auto_id }}">Тариф</label>
+                        <select class="form-select" id="{{ form.tariff.auto_id }}" name="{{ form.tariff.html_name }}">
+                            <option value>Вибрати...</option>
+                            {% for tariff in tariffs %}
+                                <option value="{{ tariff.pk }}">{{ tariff.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="col-sm-12 col-lg-6">
+                    <div class="form-group">
+                        <label class="form-label" for="id_personal-account">Особовий рахунок</label>
+                        <input type="text" class="form-control" id="id_personal-account" name="personal-account">
+                        <select class="form-select">
+                            <option></option>
+                            {% for account in personal_accounts %}
+                                <option value="{{ account.number }}">{{ account.number }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

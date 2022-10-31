@@ -3,8 +3,7 @@ from django.shortcuts import render, redirect
 from django.views.generic import ListView, DetailView, CreateView, UpdateView
 from django.db.models.deletion import ProtectedError
 
-from configuration.models import Role
-from .models import House
+from configuration.models import Role, Tariff
 from .forms import *
 
 
@@ -33,18 +32,13 @@ class HouseCreateView(CreateView):
         section_formset_post = section_formset(request.POST, queryset=Section.objects.none(), prefix='sections')
         floor_formset_post = floor_formset(request.POST, queryset=Floor.objects.none(), prefix='floors')
 
-        print(form.errors)
-        print(f'user formset: {user_formset_post.errors}')
-        print(f'section formset: {section_formset_post.errors}')
-        print(f'floor formset{floor_formset_post.errors}')
-
         if form.is_valid() and user_formset_post.is_valid() and section_formset_post.is_valid() \
                 and floor_formset_post.is_valid():
-            self.form_valid(form=form,
-                            user_formset_post=user_formset_post,
-                            section_formset_post=section_formset_post,
-                            floor_formset_post=floor_formset_post)
-            return redirect('house-create')
+            house = self.form_valid(form=form,
+                                    user_formset_post=user_formset_post,
+                                    section_formset_post=section_formset_post,
+                                    floor_formset_post=floor_formset_post)
+            return redirect('house-detail', house_pk=house.pk)
 
         self.object = None
         context = self.get_context_data()
@@ -75,7 +69,7 @@ class HouseCreateView(CreateView):
                 floor_saved.house = house
                 floor_saved.save()
 
-        return True
+        return house
 
 
 class HouseUpdateView(UpdateView):
@@ -113,11 +107,6 @@ class HouseUpdateView(UpdateView):
         section_formset_post = section_formset(request.POST, queryset=self.object.section_set.all(), prefix='sections')
         floor_formset_post = floor_formset(request.POST, queryset=self.object.floor_set.all(), prefix='floors')
 
-        print(form.errors)
-        print(f'user formset: {user_formset_post.errors}')
-        print(f'section formset: {section_formset_post.errors}')
-        print(f'floor formset{floor_formset_post.errors}')
-
         if form.is_valid() and user_formset_post.is_valid() and section_formset_post.is_valid() \
                 and floor_formset_post.is_valid():
             self.form_valid(form=form,
@@ -154,8 +143,6 @@ class HouseUpdateView(UpdateView):
                 floor_saved = form.save(commit=False)
                 floor_saved.house = house
                 floor_saved.save()
-
-        return True
 
 
 class HouseDetailView(DetailView):
@@ -209,5 +196,50 @@ def delete_house_user(request, house_user_pk):
         house_user_to_delete = HouseUser.objects.get(pk=house_user_pk)
         house_user_to_delete.delete()
         return JsonResponse({'answer': 'success'})
-    except (ValueError, AttributeError, Floor.DoesNotExist):
+    except (ValueError, AttributeError, HouseUser.DoesNotExist):
         return JsonResponse({'answer': 'failed'})
+
+
+class FlatCreateView(CreateView):
+    model = Flat
+    template_name = 'administration_panel/flat-create.html'
+    form_class = FlatForm
+
+    def get_context_data(self, **kwargs):
+        context = super(FlatCreateView, self).get_context_data(**kwargs)
+        houses = House.objects.prefetch_related('floor_set', 'section_set').all()
+        house_section = {}
+        house_floor = {}
+        for house in houses:
+            house_section[house.pk] = []
+            for section in house.section_set.all():
+                house_section[house.pk].append([section.pk, section.name])
+        print(house_section)
+        for house in houses:
+            house_floor[house.pk] = []
+            for floor in house.floor_set.all():
+                house_floor[house.pk].append([floor.pk, floor.name])
+        print(house_floor)
+        context['owners'] = User.objects.filter(role__role='owner')
+        context['tariffs'] = Tariff.objects.all()
+        context['houses'] = houses
+        context['house_section'] = house_section
+        context['house_floor'] = house_floor
+        context['personal_accounts'] = PersonalAccount.objects.filter(flat__isnull=True)
+        return context
+
+
+class PersonalAccountCreateView(CreateView):
+    model = PersonalAccount
+    template_name = ''
+    form_class = PersonalAccountForm
+
+    # def get_context_data(self, **kwargs):
+    #     context = super(PersonalAccountCreateView, self).get_context_data(**kwargs)
+    #     houses = House.objects.prefetch_related('flat_set', '')
+    #     flats = Flat.objects.prefetch_related('floor', 'floor__house', 'owner',).filter(personalaccount=None)
+    #     context['flats'] = Flat.objects.prefetch_related('floor', 'floor__house', 'owner',).filter(personalaccount=None)
+    #     house_flat = {}
+    #     for flat in flats:
+    #         dictionary[flat.pk] = {}
+    #     return context

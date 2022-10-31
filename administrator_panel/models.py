@@ -44,9 +44,8 @@ class Flat(models.Model):
 
 
 class PersonalAccount(models.Model):
-    house = models.ForeignKey(House, on_delete=models.CASCADE, verbose_name='Дом')
-    section = models.ForeignKey(Section, on_delete=models.CASCADE, verbose_name='Секція')
-    flat = models.ForeignKey(Flat, on_delete=models.CASCADE, verbose_name='Квартира')
+    number = models.CharField(max_length=255, verbose_name='Номер', unique=True)
+    flat = models.OneToOneField(Flat, on_delete=models.CASCADE, verbose_name='Квартира', blank=True, null=True)
     status = models.BooleanField(default=False, verbose_name='Статус')
 
 

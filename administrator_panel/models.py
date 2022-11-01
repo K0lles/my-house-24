@@ -38,8 +38,8 @@ class Flat(models.Model):
     house = models.ForeignKey(House, on_delete=models.PROTECT, verbose_name='Дім')
     section = models.ForeignKey(Section, on_delete=models.PROTECT, verbose_name='Секція')
     floor = models.ForeignKey(Floor, on_delete=models.PROTECT, verbose_name='Поверх')
-    owner = models.ForeignKey(User, on_delete=models.PROTECT, verbose_name='Власник')
-    tariff = models.ForeignKey(Tariff, on_delete=models.PROTECT, verbose_name='Тариф')
+    owner = models.ForeignKey(User, on_delete=models.PROTECT, verbose_name='Власник', blank=True, null=True)
+    tariff = models.ForeignKey(Tariff, on_delete=models.PROTECT, verbose_name='Тариф', blank=True, null=True)
     square = models.FloatField(validators=[MinValueValidator(0)], verbose_name='Площа')
 
 

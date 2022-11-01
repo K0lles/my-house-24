@@ -2,75 +2,293 @@
 {% load static %}
 
 {% block content_header %}
-    <h1>Нова квартира</h1>
+    <h1>{% if form.instance.pk %}Квартира {{ form.instance.number }}{% else %}Нова квартира{% endif %}</h1>
 {% endblock %}
 
 {% block main_content %}
     <div class="card">
         <div class="card-body">
-            <div class="row">
-                <div class="col-sm-12 col-lg-6">
-                    <div class="form-group">
-                        <label class="form-label" for="{{ form.number.auto_id }}">Номер квартири</label>
-                        <input type="text" class="form-control" id="{{ form.number.auto_id }}" name="{{ form.number.html_name }}">
+            <form id="flat-form" {% if form.instance.pk %} action="{% url 'flat-update' flat_pk=form.instance.pk %}" {% else %}action="{% url 'flat-create' %}"{% endif %} method="post">
+                {% csrf_token %}
+                <div class="row">
+                    <div class="col-sm-12 col-lg-6">
+                        <div class="form-group">
+                            <label class="form-label" for="{{ form.number.auto_id }}">Номер квартири</label>
+                            <input type="text" class="form-control" id="{{ form.number.auto_id }}" name="{{ form.number.html_name }}" onchange="fieldIsValid(this)" {% if form.instance.pk %}value="{{ form.instance.number }}"{% endif %}>
+                            <p id="{{ form.number.auto_id }}-errors" style="color: red;">{% if form.number.errors %}{{ form.number.errors.0 }}{% endif %}</p>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="{{ form.square.auto_id }}">Площа (кв. м.)</label>
+                            <input type="number" class="form-control" id="{{ form.square.auto_id }}" name="{{ form.square.html_name }}" onchange="fieldIsValid(this)" {% if form.instance.pk %}value="{{ form.instance.square }}"{% endif %}>
+                            <p id="{{ form.square.auto_id }}-errors" style="color: red;"></p>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="{{ form.house.auto_id }}">Будинок</label>
+                            <select class="form-select" id="{{ form.house.auto_id }}" name="{{ form.house.html_name }}" onchange="changedHouse(this)">
+                                <option value>Вибрати...</option>
+                                {% for house in houses %}
+                                    <option value="{{ house.pk }}" {% if house.pk == form.instance.house.pk %}selected{% endif %}>{{ house.name }}</option>
+                                {% endfor %}
+                            </select>
+                            <p id="{{ form.house.auto_id }}-errors" style="color: red;"></p>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="{{ form.section.auto_id }}">Секція</label>
+                            <select class="form-select" id="{{ form.section.auto_id }}" name="{{ form.section.html_name }}" onchange="fieldIsValid(this)">
+                                <option value>Вибрати...</option>
+                                {% if form.instance.pk %}
+                                    {% for section in form.instance.house.section_set.all %}
+                                        <option value="{{ section.pk }}" {% if form.instance.section.pk == section.pk %}selected{% endif %}>{{ section.name }}</option>
+                                    {% endfor %}
+                                {% endif %}
+                            </select>
+                            <p id="{{ form.section.auto_id }}-errors" style="color: red;"></p>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="{{ form.floor.auto_id }}">Поверх</label>
+                            <select class="form-select" id="{{ form.floor.auto_id }}" name="{{ form.floor.html_name }}" onchange="fieldIsValid(this)">
+                                <option value>Вибрати...</option>
+                                {% if form.instance.pk %}
+                                    {% for floor in form.instance.house.floor_set.all %}
+                                        <option value="{{ floor.pk }}" {% if form.instance.floor.pk == floor.pk %}selected{% endif %}>{{ floor.name }}</option>
+                                    {% endfor %}
+                                {% endif %}
+                            </select>
+                            <p id="{{ form.floor.auto_id }}-errors" style="color: red;"></p>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="{{ form.owner.auto_id }}">Власник</label>
+                            <select class="form-select" id="{{ form.owner.auto_id }}" name="{{ form.owner.html_name }}" onchange="alwaysValid(this)">
+                                <option value>Вибрати...</option>
+                                {% for owner in owners %}
+                                    <option value="{{ owner.pk }}" {% if owner.pk == form.instance.owner.pk %}selected{% endif %}>{{ owner.name }} {{ owner.surname }}</option>
+                                {% endfor %}
+                            </select>
+                            <p id="{{ form.owner.auto_id }}-errors" style="color: red;"></p>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="{{ form.tariff.auto_id }}">Тариф</label>
+                            <select class="form-select" id="{{ form.tariff.auto_id }}" name="{{ form.tariff.html_name }}" onchange="alwaysValid(this)">
+                                <option value>Вибрати...</option>
+                                {% for tariff in tariffs %}
+                                    <option value="{{ tariff.pk }}" {% if tariff.pk == form.instance.tariff.pk %}selected{% endif %}>{{ tariff.name }}</option>
+                                {% endfor %}
+                            </select>
+                            <p id="{{ form.tariff.auto_id }}-errors" style="color: red;"></p>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label class="form-label" for="{{ form.square.auto_id }}">Площа (кв. м.)</label>
-                        <input type="number" class="form-control" id="{{ form.square.auto_id }}" name="{{ form.square.html_name }}">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label" for="{{ form.house.auto_id }}">Будинок</label>
-                        <select class="form-select" id="{{ form.house.auto_id }}" name="{{ form.house.html_name }}" onchange="changedHouse(this)">
-                            <option value>Вибрати...</option>
-                            {% for house in houses %}
-                                <option value="{{ house.pk }}">{{ house.name }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label" for="{{ form.section.auto_id }}">Секція</label>
-                        <select class="form-select" id="{{ form.section.auto_id }}" name="{{ form.section.html_name }}">
-                            <option value>Вибрати...</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label" for="{{ form.floor.auto_id }}">Поверх</label>
-                        <select class="form-select" id="{{ form.floor.auto_id }}" name="{{ form.floor.html_name }}">
-                            <option value>Вибрати...</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label" for="{{ form.owner.auto_id }}">Власник</label>
-                        <select class="form-select" id="{{ form.owner.auto_id }}" name="{{ form.owner.html_name }}">
-                            <option value>Вибрати...</option>
-                            {% for owner in owners %}
-                                <option value="{{ owner.pk }}">{{ owner.name }} {{ owner.surname }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label" for="{{ form.tariff.auto_id }}">Тариф</label>
-                        <select class="form-select" id="{{ form.tariff.auto_id }}" name="{{ form.tariff.html_name }}">
-                            <option value>Вибрати...</option>
-                            {% for tariff in tariffs %}
-                                <option value="{{ tariff.pk }}">{{ tariff.name }}</option>
-                            {% endfor %}
-                        </select>
+                    <div class="col-sm-12 col-lg-6">
+                        <div class="form-group">
+                            <label class="form-label" for="id_personal-account">Особовий рахунок</label>
+                            <input type="text" class="form-control" id="id_personal-account" name="personal-account" {% if form.instance.pk %}value="{{ selected_account.number }}" {% endif %}>
+                            <select class="form-select" onchange="setAccount(this)">
+                                <option value="">або виберіть зі списку...</option>
+                                {% if selected_account %}
+                                    <option value="{{ selected_account.number }}">{{ selected_account.number }}</option>
+                                {% endif %}
+                                {% for account in personal_accounts %}
+                                    <option value="{{ account.number }}">{{ account.number }}</option>
+                                {% endfor %}
+                            </select>
+                            <p id="id_personal-account-errors" style="color: red;">{{ account_error }}</p>
+                        </div>
                     </div>
                 </div>
-                <div class="col-sm-12 col-lg-6">
-                    <div class="form-group">
-                        <label class="form-label" for="id_personal-account">Особовий рахунок</label>
-                        <input type="text" class="form-control" id="id_personal-account" name="personal-account">
-                        <select class="form-select">
-                            <option></option>
-                            {% for account in personal_accounts %}
-                                <option value="{{ account.number }}">{{ account.number }}</option>
-                            {% endfor %}
-                        </select>
+                <div class="row">
+                    <div class="col-sm-12 text-right" style="margin-top: 2%;">
+                        <button type="reset" class="btn btn-default" style="margin-right: 2%;">Відмінити</button>
+                        <button type="submit" class="btn btn-success" onclick="formIsValid()">Створити</button>
                     </div>
                 </div>
-            </div>
+            </form>
         </div>
     </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let house_section = {{ house_section|safe }};
+    let house_floor = {{ house_floor|safe }};
+
+    function alwaysValid(element) {
+        element.style = 'border: 1px solid #58c76d';
+        return true;
+    }
+
+    function changedHouse(element) {
+        let selectedId = $(element).children("option:selected").val();
+        $('#id_section').find('option').remove().end().append('<option>Вибрати...</option>');
+        $('#id_floor').find('option').remove().end().append('<option>Вибрати...</option>');
+        if (house_section[selectedId]){
+            for (let key_array in house_section[selectedId]) {
+                let option_to_append = `<option value="${house_section[selectedId][key_array][0]}">${house_section[selectedId][key_array][1]}</option>`
+                $('#id_section').append(option_to_append);
+            }
+        }
+        if (house_floor[selectedId]) {
+            for (let key_array in house_floor[selectedId]) {
+                let option_to_append = `<option value="${house_floor[selectedId][key_array][0]}">${house_floor[selectedId][key_array][1]}</option>`
+                $('#id_floor').append(option_to_append);
+            }
+        }
+        fieldIsValid(element);
+    }
+
+    {% comment %}function uniqueAccountIsValid(element) {
+        let isValid = true;
+        $.ajax({
+            type: 'GET',
+            url: `/administrator-panel/account/check-number`,
+            data: {
+                'number': element.value
+            },
+            success: function (response) {
+                if (response['answer'] === 'success') {
+                    isValid = true;
+                    console.log('inside of ajax');
+                    return true;
+                }
+                else if (response['answer'] === 'failed') {
+                    $(`#${element.id}-errors`).text('Особовий рахунок із таким номером вже існує');
+                    element.style = 'border: 1px solid red';
+                    console.log('inside unique is failed returning false')
+                    isValid = false;
+                    return false;
+                }
+            }
+        })
+        console.log('out of ajax')
+        console.log(isValid)
+        return isValid;
+    }{% endcomment %}
+
+    function formIsValid() {
+        event.preventDefault();
+        let isValid = true;
+
+        {% comment %}if (!fieldIsValid($(`#id_number`))) {
+            isValid = false;
+        }
+
+        if (!fieldIsValid($(`#id_square`))) {
+            isValid = false;
+        }
+
+        if (!fieldIsValid($(`#id_house`))) {
+            isValid = false;
+        }
+
+        if (!fieldIsValid($(`#id_section`))) {
+            isValid = false;
+        }
+
+        if (!fieldIsValid($(`#id_floor`))) {
+            isValid = false;
+        }
+
+        if (!uniqueAccountIsValid($(`#id_personal-account`))) {
+            isValid = false;
+        }{% endcomment %}
+
+        $('#flat-form').find(`input[type!='hidden']`).each(function () {
+
+            if ($(this).attr('id') === 'id_number') {
+                if (!fieldIsValid(this)) isValid = false;
+            }
+
+            if ($(this).attr('id') === 'id_square') {
+                if (!fieldIsValid(this)) isValid = false;
+            }
+
+            if ($(this).attr('id') === 'id_house') {
+                if (!fieldIsValid(this)) isValid = false;
+            }
+
+            if ($(this).attr('id') === 'id_section') {
+                if (!fieldIsValid(this)) isValid = false;
+            }
+
+            if ($(this).attr('id') === 'id_floor') {
+                if (!fieldIsValid(this)) isValid = false;
+            }
+
+
+            {% comment %}if ($(this).attr('id')) {
+                if ($(this).attr('id') === 'id_personal-account') {
+                    if (!uniqueAccountIsValid(this)) {
+                        console.log(uniqueAccountIsValid(this));
+                        console.log(`${$(this).attr('id')} is false`);
+                        isValid = false;
+                    };
+                }
+            }
+            if (!($(this).attr('id')).includes('__prefix__')) {
+                if (!fieldIsValid(this)) {
+                    console.log(`${$(this).attr('id')} is false`);
+                    isValid = false;
+                }
+            }{% endcomment %}
+        })
+
+        {% comment %}$('#flat-form').find(`input[type!='hidden']`).each(function () {
+            if ($(this).attr('id')) {
+                if ($(this).attr('id') === 'id_personal-account') {
+                    if (!uniqueAccountIsValid(this)) {
+                        console.log(uniqueAccountIsValid(this));
+                        console.log(`${$(this).attr('id')} is false`);
+                        isValid = false;
+                    };
+                }
+            }
+            if (!($(this).attr('id')).includes('__prefix__')) {
+                if (!fieldIsValid(this)) {
+                    console.log(`${$(this).attr('id')} is false`);
+                    isValid = false;
+                }
+            }
+        }){% endcomment %}
+
+        {% comment %}$(`#flat-form`).find(`select`).each(function () {
+            if ($(this).attr('id')) {
+                console.log($(this).attr('id'))
+                if (!fieldIsValid(this)) {
+                    console.log(`${$(this).attr('id')} is false`);
+                    isValid = false;
+                }
+            }
+        }){% endcomment %}
+
+        $(`#flat-form`).find(`select`).each(function () {
+            if ($(this).attr('id') === 'id_house') {
+                if (!fieldIsValid(this)) isValid = false;
+            }
+
+            if ($(this).attr('id') === 'id_section') {
+                if (!fieldIsValid(this)) isValid = false;
+            }
+
+            if ($(this).attr('id') === 'id_floor') {
+                if (!fieldIsValid(this)) isValid = false;
+            }
+        })
+
+        console.log(isValid);
+        if (isValid) {
+            $('#flat-form').submit();
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+
+    function setAccount(element) {
+        let selectedId = $(element).children("option:selected").val();
+        $(`#id_personal-account`).val(selectedId);
+        $(element).children('option').each(function () {
+            $(this).removeAttr('selected');
+        });
+        $(element).children("option:first").attr('selected', true);
+    }
+</script>
 {% endblock %}

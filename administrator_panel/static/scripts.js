@@ -128,7 +128,6 @@ function passwordTypeValidation(element) {
 
 function validatePasswordUpdate(element) {
     if (element.id === 'id_repeat-password') {
-        console.log('we are here')
         if ($('#id_password').val() !== element.value) {
             if (!($(`#id_password-errors`).text()).includes('Паролі повинні співпадати')) {
                 $(`#id_password-errors`).text('Паролі повинні співпадати');

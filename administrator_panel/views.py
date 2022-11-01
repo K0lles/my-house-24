@@ -1,3 +1,4 @@
+from django.db.models import Q
 from django.http import Http404, JsonResponse
 from django.shortcuts import render, redirect
 from django.views.generic import ListView, DetailView, CreateView, UpdateView
@@ -207,19 +208,17 @@ class FlatCreateView(CreateView):
 
     def get_context_data(self, **kwargs):
         context = super(FlatCreateView, self).get_context_data(**kwargs)
-        houses = House.objects.prefetch_related('floor_set', 'section_set').all()
+        houses = House.objects.prefetch_related('floor_set', 'section_set', 'flat_set').all()
         house_section = {}
         house_floor = {}
         for house in houses:
             house_section[house.pk] = []
             for section in house.section_set.all():
                 house_section[house.pk].append([section.pk, section.name])
-        print(house_section)
         for house in houses:
             house_floor[house.pk] = []
             for floor in house.floor_set.all():
                 house_floor[house.pk].append([floor.pk, floor.name])
-        print(house_floor)
         context['owners'] = User.objects.filter(role__role='owner')
         context['tariffs'] = Tariff.objects.all()
         context['houses'] = houses
@@ -227,6 +226,106 @@ class FlatCreateView(CreateView):
         context['house_floor'] = house_floor
         context['personal_accounts'] = PersonalAccount.objects.filter(flat__isnull=True)
         return context
+
+    def post(self, request, *args, **kwargs):
+        self.object = None
+        form = FlatForm(request.POST)
+        if form.is_valid():
+            return self.form_valid(form, personal_account_number=request.POST.get('personal-account'))
+        context = self.get_context_data()
+        context['form'] = form
+        return self.render_to_response(context)
+
+    def form_valid(self, form, personal_account_number):
+        created_flat = form.save()
+        if personal_account_number:
+            try:
+                account = PersonalAccount.objects.get(number=personal_account_number)
+                if not account.flat:
+                    account.flat = created_flat
+                    account.save()
+            except PersonalAccount.DoesNotExist:
+                PersonalAccount.objects.create(number=personal_account_number,
+                                               flat=created_flat)
+        return redirect('houses')
+
+
+class FlatUpdateView(UpdateView):
+    model = Flat
+    template_name = 'administration_panel/flat-create.html'
+    form_class = FlatForm
+    pk_url_kwarg = 'flat_pk'
+
+    def get_object(self, queryset=None):
+        try:
+            return Flat.objects.get(pk=self.kwargs['flat_pk'])
+        except Flat.DoesNotExist:
+            raise Http404()
+
+    def get_context_data(self, **kwargs):
+        flat = self.get_object()
+        context = super(FlatUpdateView, self).get_context_data(**kwargs)
+        houses = House.objects.prefetch_related('floor_set', 'section_set', 'flat_set').all()
+        house_section = {}
+        house_floor = {}
+        for house in houses:
+            house_section[house.pk] = []
+            for section in house.section_set.all():
+                house_section[house.pk].append([section.pk, section.name])
+        for house in houses:
+            house_floor[house.pk] = []
+            for floor in house.floor_set.all():
+                house_floor[house.pk].append([floor.pk, floor.name])
+        context['selected_account'] = PersonalAccount.objects.get(flat=flat)
+        context['owners'] = User.objects.filter(role__role='owner')
+        context['tariffs'] = Tariff.objects.all()
+        context['houses'] = houses
+        context['house_section'] = house_section
+        context['house_floor'] = house_floor
+        context['personal_accounts'] = PersonalAccount.objects.filter(flat__isnull=True)
+        return context
+
+    def post(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        form = FlatForm(request.POST, instance=self.object)
+        if form.is_valid():
+            return self.form_valid(form, request.POST.get('personal-account'))
+        context = self.get_context_data()
+        context['form'] = form
+        return self.render_to_response(context)
+
+    def form_valid(self, form, personal_account_number):
+        saved_flat = form.save()
+        try:
+            personal_account = PersonalAccount.objects.get(flat=saved_flat)
+            if personal_account.number != personal_account_number:
+                personal_account.flat = None
+                personal_account.save()
+                if personal_account_number:
+                    try:
+                        new_personal_account = PersonalAccount.objects.get(number=personal_account_number)
+                        new_personal_account.flat = saved_flat
+                        new_personal_account.save()
+                    except PersonalAccount.DoesNotExist:
+                        PersonalAccount.objects.create(number=personal_account_number,
+                                                       flat=saved_flat)
+        except PersonalAccount.DoesNotExist:
+            if personal_account_number:
+                try:
+                    personal_account = PersonalAccount.objects.get(number=personal_account_number)
+                    personal_account.flat = saved_flat
+                    personal_account.save()
+                except PersonalAccount.DoesNotExist:
+                    PersonalAccount.objects.create(number=personal_account_number,
+                                                   flat=saved_flat)
+        return redirect('houses')
+
+def flat_number_is_unique(request):
+    try:
+        Flat.objects.get(number=request.GET.get('number'))
+        return JsonResponse({'answer': 'failed'})
+    except Flat.DoesNotExist:
+        return JsonResponse({'answer': 'success'})
 
 
 class PersonalAccountCreateView(CreateView):
@@ -243,3 +342,11 @@ class PersonalAccountCreateView(CreateView):
     #     for flat in flats:
     #         dictionary[flat.pk] = {}
     #     return context
+
+
+def personal_account_is_unique(request):
+    try:
+        PersonalAccount.objects.get(number=request.GET.get('number'), flat__isnull=False)
+        return JsonResponse({'answer': 'failed'})
+    except PersonalAccount.DoesNotExist:
+        return JsonResponse({'answer': 'success'})

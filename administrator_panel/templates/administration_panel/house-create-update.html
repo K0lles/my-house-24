@@ -454,8 +454,6 @@
         event.preventDefault();
         let isValid = true;
         $('#house-form').find(`input[type!='hidden']`).each(function () {
-            console.log($(this).attr('id'));
-            console.log(($(this).attr('id')).includes('__prefix__'));
             if (!($(this).attr('id')).includes('__prefix__')) {
                 if (!fieldIsValid(this)) {
                     isValid = false;

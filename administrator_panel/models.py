@@ -45,7 +45,7 @@ class Flat(models.Model):
 
 class PersonalAccount(models.Model):
     number = models.CharField(max_length=255, verbose_name='Номер', unique=True)
-    flat = models.OneToOneField(Flat, on_delete=models.CASCADE, verbose_name='Квартира', blank=True, null=True)
+    flat = models.OneToOneField(Flat, on_delete=models.SET_NULL, verbose_name='Квартира', blank=True, null=True)
     status = models.BooleanField(default=False, verbose_name='Статус')
 
 

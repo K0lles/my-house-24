@@ -1,0 +1,104 @@
+{% extends 'main_page.html' %}
+{% load static %}
+
+{% block content_header %}
+    <h1>Квартири</h1>
+{% endblock %}
+
+{% block main_content %}
+    <div class="row" style="margin-bottom: 25px;">
+        <div class="col-sm-12 text-right">
+            <a href="{% url 'flat-create' %}" class="btn btn-success">Створити квартиру</a>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-body">
+            <div class="row">
+                <table class="table table-borderless table-hover">
+                    <thead>
+                        <tr>
+                            <th>№ квартири</th>
+                            <th>Дом</th>
+                            <th>Секція</th>
+                            <th>Поверх</th>
+                            <th>Власник</th>
+                            <th>Залишок (грн)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for flat in object_list %}
+                            <tr role="button" data-href="{% url 'flat-detail' flat_pk=flat.pk %}">
+                                <td>{{ flat.number }}</td>
+                                <td>{{ flat.house.name }}</td>
+                                <td>{{ flat.section.name }}</td>
+                                <td>{{ flat.floor.name }}</td>
+                                <td>{% if not flat.owner %}(не задано){% else %}{{ flat.owner.name }} {{ flat.owner.surname }}{% endif %}</td>
+                                <td>{% if not flat.personalaccount %}(не задано){% else %}0.00{% endif %}</td>
+                                <td class="text-right">
+                                    <div class="btn-group">
+                                        <a href="{% url 'flat-update' flat_pk=flat.pk %}" class="btn btn-default">
+                                            <i class="fa fa-pencil"></i>
+                                        </a>
+                                        <button id="{{ flat.pk }}" type="button" class="btn btn-default delete-flat">
+                                            <i class="fa fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    $('button.delete-flat').on('click', function (event) {
+        event.stopPropagation();
+        Swal.fire({
+            title: 'Ви впевнені?',
+            text: "Після видалення квартиру неможливо буде повернути!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#A9A9A9',
+            cancelButtonText: 'Скасувати',
+            confirmButtonText: 'Видалити'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.ajax({
+                            url: `delete/${$(this).attr('id')}`,
+                            type: 'GET',
+                            success: function (response) {
+                                if (response['answer'] === 'success') {
+                                    $(event.target).closest('tr').remove();
+                                    Swal.fire({
+                                        position: 'top-end',
+                                        icon: 'success',
+                                        title: 'Успішно видалено!',
+                                        showConfirmButton: false,
+                                        timer: 1200,
+                                    })
+                                }
+                                else if (response['answer'] === 'failed') {
+                                    Swal.fire({
+                                        position: 'top-end',
+                                        icon: 'error',
+                                        title: 'Щось пішло не так!',
+                                        showConfirmButton: false,
+                                        timer: 1200
+                                    });
+                                }
+                            }
+                        })
+                }
+            })
+    })
+
+    $('tr').on('click', function() {
+        document.location = $(this).data('href');
+    });
+</script>
+{% endblock %}

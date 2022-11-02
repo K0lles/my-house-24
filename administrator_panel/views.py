@@ -203,7 +203,7 @@ def delete_house_user(request, house_user_pk):
 
 class FlatCreateView(CreateView):
     model = Flat
-    template_name = 'administration_panel/flat-create.html'
+    template_name = 'administration_panel/flat-create-update.html'
     form_class = FlatForm
 
     def get_context_data(self, **kwargs):
@@ -247,12 +247,30 @@ class FlatCreateView(CreateView):
             except PersonalAccount.DoesNotExist:
                 PersonalAccount.objects.create(number=personal_account_number,
                                                flat=created_flat)
-        return redirect('houses')
+        return redirect('flat-detail', flat_pk=created_flat.pk)
+
+
+class FlatDetailView(DetailView):
+    model = Flat
+    template_name = 'administration_panel/flat-detail.html'
+    pk_url_kwarg = 'flat_pk'
+
+    def get_object(self, queryset=None):
+        try:
+            return Flat.objects.select_related('house', 'section', 'floor', 'owner', 'personalaccount').get(pk=self.kwargs['flat_pk'])
+        except Flat.DoesNotExist:
+            raise Http404()
+
+
+class FlatListView(ListView):
+    model = Flat
+    template_name = 'administration_panel/flat-list.html'
+    queryset = Flat.objects.select_related('house', 'section', 'floor', 'owner', 'personalaccount').all()
 
 
 class FlatUpdateView(UpdateView):
     model = Flat
-    template_name = 'administration_panel/flat-create.html'
+    template_name = 'administration_panel/flat-create-update.html'
     form_class = FlatForm
     pk_url_kwarg = 'flat_pk'
 
@@ -318,7 +336,17 @@ class FlatUpdateView(UpdateView):
                 except PersonalAccount.DoesNotExist:
                     PersonalAccount.objects.create(number=personal_account_number,
                                                    flat=saved_flat)
-        return redirect('houses')
+        return redirect('flat-detail', flat_pk=saved_flat.pk)
+
+
+def delete_flat(request, flat_pk):
+    try:
+        flat_to_delete = Flat.objects.get(pk=flat_pk)
+        flat_to_delete.delete()
+        return JsonResponse({'answer': 'success'})
+    except Flat.DoesNotExist:
+        return JsonResponse({'answer': 'failed'})
+
 
 def flat_number_is_unique(request):
     try:

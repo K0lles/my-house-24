@@ -12,6 +12,9 @@ urlpatterns = [
     path('house/floor/<int:floor_pk>/', delete_floor, name='floor-delete'),
     path('house/house-user/<int:house_user_pk>/', delete_house_user, name='house_user-delete'),
     path('flat/create/', FlatCreateView.as_view(), name='flat-create'),
+    path('flat/<int:flat_pk>', FlatDetailView.as_view(), name='flat-detail'),
     path('flat/update/<int:flat_pk>/', FlatUpdateView.as_view(), name='flat-update'),
+    path('flat/', FlatListView.as_view(), name='flats'),
+    path('flat/delete/<int:flat_pk>/', delete_flat, name='flat-delete'),
     path('account/check-number/', personal_account_is_unique, name='account-check_number'),
 ]

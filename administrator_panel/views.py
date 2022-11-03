@@ -1,2 +1,213 @@
-from django.shortcuts import render
-from django.views.generic import ListView
+from django.http import Http404, JsonResponse
+from django.shortcuts import render, redirect
+from django.views.generic import ListView, DetailView, CreateView, UpdateView
+from django.db.models.deletion import ProtectedError
+
+from configuration.models import Role
+from .models import House
+from .forms import *
+
+
+class HouseCreateView(CreateView):
+    model = House
+    template_name = 'administration_panel/house-create-update.html'
+    form_class = HouseForm
+
+    def get_context_data(self, **kwargs):
+        context = super(HouseCreateView, self).get_context_data(**kwargs)
+        context['user_formset'] = house_user_formset(queryset=HouseUser.objects.none(), prefix='users')
+        context['section_formset'] = section_formset(queryset=Section.objects.none(), prefix='sections')
+        context['floor_formset'] = floor_formset(queryset=Floor.objects.none(), prefix='floors')
+        context['users'] = User.objects.select_related('role').all()
+
+        # dictionary for parsing js dictionary on frontend for changeUser function
+        context['user_role_dict'] = {'none': ''}  # starter value
+        for user in context['users']:
+            context['user_role_dict'][user.pk] = user.role.get_role_display()
+        context['roles'] = Role.objects.all()
+        return context
+
+    def post(self, request, *args, **kwargs):
+        form = HouseForm(request.POST, request.FILES or None)
+        user_formset_post = house_user_formset(request.POST, queryset=HouseUser.objects.none(), prefix='users')
+        section_formset_post = section_formset(request.POST, queryset=Section.objects.none(), prefix='sections')
+        floor_formset_post = floor_formset(request.POST, queryset=Floor.objects.none(), prefix='floors')
+
+        print(form.errors)
+        print(f'user formset: {user_formset_post.errors}')
+        print(f'section formset: {section_formset_post.errors}')
+        print(f'floor formset{floor_formset_post.errors}')
+
+        if form.is_valid() and user_formset_post.is_valid() and section_formset_post.is_valid() \
+                and floor_formset_post.is_valid():
+            self.form_valid(form=form,
+                            user_formset_post=user_formset_post,
+                            section_formset_post=section_formset_post,
+                            floor_formset_post=floor_formset_post)
+            return redirect('house-create')
+
+        self.object = None
+        context = self.get_context_data()
+        context['form'] = form
+        context['user_formset'] = user_formset_post
+        context['floor_formset'] = floor_formset_post
+        context['section_formset'] = section_formset_post
+        return self.render_to_response(context)
+
+    def form_valid(self, form, **kwargs):
+        house = form.save()     # is used for selecting foreign key of new form in formsets
+
+        for form in kwargs['user_formset_post']:
+            if form.cleaned_data.get('user'):
+                user_house_saved = form.save(commit=False)
+                user_house_saved.house = house
+                user_house_saved.save()
+
+        for form in kwargs['section_formset_post']:
+            if form.cleaned_data.get('name'):
+                section_saved = form.save(commit=False)
+                section_saved.house = house
+                section_saved.save()
+
+        for form in kwargs['floor_formset_post']:
+            if form.cleaned_data.get('name'):
+                floor_saved = form.save(commit=False)
+                floor_saved.house = house
+                floor_saved.save()
+
+        return True
+
+
+class HouseUpdateView(UpdateView):
+    model = House
+    template_name = 'administration_panel/house-create-update.html'
+    pk_url_kwarg = 'house_pk'
+    form_class = HouseForm
+
+    def get_object(self, queryset=None):
+        try:
+            return House.objects.prefetch_related('houseuser_set', 'houseuser_set__user', 'houseuser_set__user__role',
+                                                  'floor_set', 'section_set').get(pk=self.kwargs['house_pk'])
+        except (House.DoesNotExist, ValueError, AttributeError):
+            raise Http404()
+
+    def get_context_data(self, **kwargs):
+        self.object = self.get_object()
+        context = super(HouseUpdateView, self).get_context_data(**kwargs)
+        context['user_formset'] = house_user_formset(queryset=self.object.houseuser_set.all(), prefix='users')
+        context['section_formset'] = section_formset(queryset=self.object.section_set.all(), prefix='sections')
+        context['floor_formset'] = floor_formset(queryset=self.object.floor_set.all(), prefix='floors')
+        context['users'] = User.objects.select_related('role').all()
+
+        # dictionary for parsing js dictionary on frontend for changeUser function
+        context['user_role_dict'] = {'none': ''}  # starter value
+        for user in context['users']:
+            context['user_role_dict'][user.pk] = user.role.get_role_display()
+        context['roles'] = Role.objects.all()
+        return context
+
+    def post(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        form = HouseForm(request.POST, request.FILES or None, instance=self.object)
+        user_formset_post = house_user_formset(request.POST, queryset=self.object.houseuser_set.all(), prefix='users')
+        section_formset_post = section_formset(request.POST, queryset=self.object.section_set.all(), prefix='sections')
+        floor_formset_post = floor_formset(request.POST, queryset=self.object.floor_set.all(), prefix='floors')
+
+        print(form.errors)
+        print(f'user formset: {user_formset_post.errors}')
+        print(f'section formset: {section_formset_post.errors}')
+        print(f'floor formset{floor_formset_post.errors}')
+
+        if form.is_valid() and user_formset_post.is_valid() and section_formset_post.is_valid() \
+                and floor_formset_post.is_valid():
+            self.form_valid(form=form,
+                            user_formset_post=user_formset_post,
+                            section_formset_post=section_formset_post,
+                            floor_formset_post=floor_formset_post)
+            return redirect('house-detail', house_pk=self.kwargs['house_pk'])
+
+        self.object = None
+        context = self.get_context_data()
+        context['form'] = form
+        context['user_formset'] = user_formset_post
+        context['floor_formset'] = floor_formset_post
+        context['section_formset'] = section_formset_post
+        return self.render_to_response(context)
+
+    def form_valid(self, form, **kwargs):
+        house = form.save()     # is used for selecting foreign key of new form in formsets
+
+        for form in kwargs['user_formset_post']:
+            if form.cleaned_data.get('user'):
+                user_house_saved = form.save(commit=False)
+                user_house_saved.house = house
+                user_house_saved.save()
+
+        for form in kwargs['section_formset_post']:
+            if form.cleaned_data.get('name'):
+                section_saved = form.save(commit=False)
+                section_saved.house = house
+                section_saved.save()
+
+        for form in kwargs['floor_formset_post']:
+            if form.cleaned_data.get('name'):
+                floor_saved = form.save(commit=False)
+                floor_saved.house = house
+                floor_saved.save()
+
+        return True
+
+
+class HouseDetailView(DetailView):
+    model = House
+    template_name = 'administration_panel/house-detail.html'
+    pk_url_kwarg = 'house_pk'
+
+    def get_object(self, queryset=None):
+        try:
+            return House.objects.prefetch_related('houseuser_set', 'houseuser_set__user', 'houseuser_set__user__role',
+                                                  'floor_set', 'section_set').get(pk=self.kwargs['house_pk'])
+        except (House.DoesNotExist, ValueError, AttributeError):
+            raise Http404()
+
+
+class HouseListView(ListView):
+    model = House
+    queryset = House.objects.all()
+    template_name = 'administration_panel/house-list.html'
+
+
+def delete_house(request, house_pk):
+    try:
+        house = House.objects.get(pk=house_pk)
+        house.delete()
+        return JsonResponse({'answer': 'success'})
+    except (ValueError, AttributeError, House.DoesNotExist, ProtectedError):
+        return JsonResponse({'answer': 'failed'})
+
+
+def delete_section(request, section_pk):
+    try:
+        section_to_delete = Section.objects.get(pk=section_pk)
+        section_to_delete.delete()
+        return JsonResponse({'answer': 'success'})
+    except (ValueError, AttributeError, Section.DoesNotExist):
+        return JsonResponse({'answer': 'failed'})
+
+
+def delete_floor(request, floor_pk):
+    try:
+        floor_to_delete = Floor.objects.get(pk=floor_pk)
+        floor_to_delete.delete()
+        return JsonResponse({'answer': 'success'})
+    except (ValueError, AttributeError, Floor.DoesNotExist):
+        return JsonResponse({'answer': 'failed'})
+
+
+def delete_house_user(request, house_user_pk):
+    try:
+        house_user_to_delete = HouseUser.objects.get(pk=house_user_pk)
+        house_user_to_delete.delete()
+        return JsonResponse({'answer': 'success'})
+    except (ValueError, AttributeError, Floor.DoesNotExist):
+        return JsonResponse({'answer': 'failed'})

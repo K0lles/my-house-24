@@ -38,7 +38,7 @@ class ServiceForm(ModelForm):
 
     class Meta:
         model = Service
-        fields = '__all__'
+        exclude = ('is_used',)
 
     def clean(self, *args, **kwargs):
         cleaned_data = super(ServiceForm, self).clean()
@@ -100,7 +100,6 @@ class UserForm(ModelForm):
             self._errors = {}
 
         return cleaned_data
-
 
 
 class PaymentRequisitesForm(ModelForm):

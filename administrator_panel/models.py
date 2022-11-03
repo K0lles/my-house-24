@@ -8,14 +8,19 @@ from configuration.models import User, Tariff, ArticlePayment
 
 
 class House(models.Model):
-    user = models.ManyToManyField(User, related_name='users')
+    house_user = models.ManyToManyField(User, related_name='users', through='HouseUser', through_fields=('house', 'user'))
     name = models.CharField(max_length=200, verbose_name='Назва')
     address = models.CharField(max_length=200, verbose_name='Адреса')
-    photo_1 = models.ImageField(upload_to='houses/photos/')
-    photo_2 = models.ImageField(upload_to='houses/photos/')
-    photo_3 = models.ImageField(upload_to='houses/photos/')
-    photo_4 = models.ImageField(upload_to='houses/photos/')
-    photo_5 = models.ImageField(upload_to='houses/photos/')
+    photo_1 = models.ImageField(upload_to='houses/photos/', blank=True, null=True)
+    photo_2 = models.ImageField(upload_to='houses/photos/', blank=True, null=True)
+    photo_3 = models.ImageField(upload_to='houses/photos/', blank=True, null=True)
+    photo_4 = models.ImageField(upload_to='houses/photos/', blank=True, null=True)
+    photo_5 = models.ImageField(upload_to='houses/photos/', blank=True, null=True)
+
+
+class HouseUser(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    house = models.ForeignKey(House, on_delete=models.CASCADE)
 
 
 class Section(models.Model):

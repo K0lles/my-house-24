@@ -1,0 +1,73 @@
+{% extends 'main_page.html' %}
+{% load static %}
+
+{% block content_header %}
+    <h1>{{ object.name }}</h1>
+{% endblock %}
+
+{% block main_content %}
+    <div class="card">
+        <div class="card-body">
+            <div class="row" style="margin-top: 2%; margin-bottom: 2%;">
+                <div class="col-sm-12 text-right">
+                    <a href="{% url 'house-update' house_pk=object.pk %}" class="btn btn-info">Редагувати будинок</a>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-sm-12 col-lg-4">
+                    <table class="table table-borderless">
+                        <tr>
+                            <th>Назва</th>
+                            <td>{{ object.name }}</td>
+                        </tr>
+                        <tr>
+                            <th>Адреса</th>
+                            <td>{{ object.address }}</td>
+                        </tr>
+                        <tr>
+                            <th>Секцій</th>
+                            <td>{{ object.section_set.all.count }}</td>
+                        </tr>
+                        <tr>
+                            <th>Поверхів</th>
+                            <td>{{ object.floor_set.all.count }}</td>
+                        </tr>
+                        <tr>
+                            <th style="vertical-align: middle;">Користувачі</th>
+                            <td style="vertical-align: middle;">
+                                {% for user in object.houseuser_set.all %}
+                                    <p style="display: block;"><b>{{ user.user.role.get_role_display }}: </b><a href="{% url 'user-detail' pk=user.user.pk %}">{{ user.user.name }} {{ user.user.surname }}</a></p>
+                                {% endfor %}
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+                <div class="col-sm-12 col-lg-8">
+                    <div class="row">
+                        <div class="col-sm-12 col-md-6" style="margin-bottom: 10px;">
+                            <img {% if object.photo_1 %}src="{{ object.photo_1.url }}" {% else %} src="{% static 'all_logos/empty-photo.png' %}"{% endif %} width="100%" height="350px">
+                        </div>
+                        <div class="col-sm-12 col-md-6">
+                            <div class="row">
+                                <div class="col-sm-6 col-md-6">
+                                    <img {% if object.photo_1 %}src="{{ object.photo_2.url }}" {% else %}src="{% static 'all_logos/empty-photo.png' %}"{% endif %} width="100%" height="170px">
+                                </div>
+                                <div class="col-sm-6 col-md-6">
+                                    <img {% if object.photo_1 %}src="{{ object.photo_3.url }}" {% else %}src="{% static 'all_logos/empty-photo.png' %}"{% endif %} width="100%" height="170px">
+                                </div>
+                            </div>
+                            <div class="row" style="margin-top: 10px;">
+                                <div class="col-sm-6 col-md-6">
+                                    <img {% if object.photo_1 %}src="{{ object.photo_4.url }}" {% else %}src="{% static 'all_logos/empty-photo.png' %}"{% endif %} width="100%" height="170px">
+                                </div>
+                                <div class="col-sm-6 col-md-6">
+                                    <img {% if object.photo_1 %}src="{{ object.photo_5.url }}" {% else %}src="{% static 'all_logos/empty-photo.png' %}"{% endif %} width="100%" height="170px">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

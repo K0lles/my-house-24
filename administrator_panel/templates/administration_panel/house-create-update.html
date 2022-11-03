@@ -1,0 +1,475 @@
+{% extends 'main_page.html' %}
+{% load static %}
+
+{% block content_header %}
+    <h1>{% if not form.instance.pk %}Новий будинок{% else %}{{ form.instance.name }}{% endif %}</h1>
+{% endblock %}
+
+{% block main_content %}
+    <div class="card">
+        <form id="house-form" {% if not form.instance.pk %} action="{% url 'house-create' %}" {% else %} action="{% url 'house-update' house_pk=form.instance.pk %}" {% endif %} method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-sm-12 col-lg-4" style="padding-right: 3%;">
+                        <div class="form-group">
+                            <label for="{{ form.name.auto_id }}">Назва</label>
+                            <input type="text" id="{{ form.name.auto_id }}" name="{{ form.name.html_name }}" class="form-control" onchange="fieldIsValid(this)" {% if form.instance.name %}value="{{ form.instance.name }}" {% endif %}>
+                            <p id="{{ form.name.auto_id }}-errors" style="color: red"></p>
+                        </div>
+                        <div class="form-group">
+                            <label for="{{ form.address.auto_id }}">Адреса</label>
+                            <input type="text" id="{{ form.address.auto_id }}" name="{{ form.address.html_name }}" class="form-control" onchange="fieldIsValid(this)" {% if form.instance.name %}value="{{ form.instance.address }}" {% endif %}>
+                            <p id="{{ form.address.auto_id }}-errors" style="color: red"></p>
+                        </div>
+                        <div class="form-group">
+                            <label for="{{ form.photo_1.auto_id }}">Зображення #1</label><br/>
+                            <input type="file" accept="image/*" onchange="loadFile(event, this.id)" id="{{ form.photo_1.auto_id }}" name="{{ form.photo_1.html_name }}" {% if form.instance.name %}value="{{ form.instance.photo_1 }}" {% endif %}>
+                        </div>
+                        <div class="form-group">
+                            <label for="{{ form.photo_2.auto_id }}">Зображення #2</label><br/>
+                            <input type="file" accept="image/*" onchange="loadFile(event, this.id)" id="{{ form.photo_2.auto_id }}" name="{{ form.photo_2.html_name }}" {% if form.instance.name %}value="{{ form.instance.photo_2 }}" {% endif %}>
+                        </div>
+                        <div class="form-group">
+                            <label for="{{ form.photo_3.auto_id }}">Зображення #3</label><br/>
+                            <input type="file" accept="image/*" onchange="loadFile(event, this.id)" id="{{ form.photo_3.auto_id }}" name="{{ form.photo_3.html_name }}" {% if form.instance.name %}value="{{ form.instance.photo_3 }}" {% endif %}>
+                        </div>
+                        <div class="form-group">
+                            <label for="{{ form.photo_4.auto_id }}">Зображення #4</label><br/>
+                            <input type="file" accept="image/*" onchange="loadFile(event, this.id)" id="{{ form.photo_4.auto_id }}" name="{{ form.photo_4.html_name }}" {% if form.instance.name %}value="{{ form.instance.photo_4 }}" {% endif %}>
+                        </div>
+                        <div class="form-group">
+                            <label for="{{ form.photo_5.auto_id }}">Зображення #5</label><br/>
+                            <input type="file" accept="image/*" onchange="loadFile(event, this.id)" id="{{ form.photo_5.auto_id }}" name="{{ form.photo_5.html_name }}" {% if form.instance.name %}value="{{ form.instance.photo_5 }}" {% endif %}>
+                        </div>
+                    </div>
+
+                    <div class="col-sm-12 col-lg-8">
+                        <div class="row">
+                            <div class="col-sm-12 col-md-6" style="margin-bottom: 10px;">
+                                <img id="{{ form.photo_1.auto_id }}-display" {% if form.instance.photo_1 %} src="{{ form.instance.photo_1.url }}" {% else %}src="{% static 'all_logos/empty-photo.png' %}"{% endif %} width="100%" height="350px">
+                            </div>
+                            <div class="col-sm-12 col-md-6">
+                                <div class="row">
+                                    <div class="col-sm-6 col-md-6">
+                                        <img id="{{ form.photo_2.auto_id }}-display" {% if form.instance.photo_1 %} src="{{ form.instance.photo_2.url }}" {% else %}src="{% static 'all_logos/empty-photo.png' %}"{% endif %} width="100%" height="170px">
+                                    </div>
+                                    <div class="col-sm-6 col-md-6">
+                                        <img id="{{ form.photo_3.auto_id }}-display" {% if form.instance.photo_1 %} src="{{ form.instance.photo_3.url }}" {% else %}src="{% static 'all_logos/empty-photo.png' %}"{% endif %} width="100%" height="170px">
+                                    </div>
+                                </div>
+                                <div class="row" style="margin-top: 10px;">
+                                    <div class="col-sm-6 col-md-6">
+                                        <img id="{{ form.photo_4.auto_id }}-display" {% if form.instance.photo_1 %} src="{{ form.instance.photo_4.url }}" {% else %}src="{% static 'all_logos/empty-photo.png' %}"{% endif %} width="100%" height="170px">
+                                    </div>
+                                    <div class="col-sm-6 col-md-6">
+                                        <img id="{{ form.photo_5.auto_id }}-display" {% if form.instance.photo_1 %} src="{{ form.instance.photo_5.url }}" {% else %}src="{% static 'all_logos/empty-photo.png' %}"{% endif %} width="100%" height="170px">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row" style="margin-top: 4%;">
+                    <div class="col-sm-12 col-lg-8">
+                        <nav>
+                            <div class="nav nav-tabs" id="nav-tab" role="tablist">
+                                <button class="nav-link active" id="nav-section-tab" data-bs-toggle="tab" data-bs-target="#nav-section" type="button" role="tab" aria-controls="nav-section" aria-selected="true">Секції</button>
+                                <button class="nav-link" id="nav-floor-tab" data-bs-toggle="tab" data-bs-target="#nav-floor" type="button" role="tab" aria-controls="nav-floor" aria-selected="false">Поверхи</button>
+                                <button class="nav-link" id="nav-user-tab" data-bs-toggle="tab" data-bs-target="#nav-user" type="button" role="tab" aria-controls="nav-user" aria-selected="false">Користувачі</button>
+                            </div>
+                        </nav>
+                        <div class="tab-content" id="nav-tabContent" >
+                            <div class="tab-pane fade show active" id="nav-section" role="tabpanel" aria-labelledby="nav-section-tab" style="padding-top: 3%;">
+                                {{ section_formset.management_form }}
+                                <div id="sections">
+                                    {% for form in section_formset.forms %}
+                                    {{ form.id }}
+                                    <div id="{{ form.name.auto_id }}-parent" style="margin-top: 1%;">
+                                        <div class="form-group">
+                                            <label for="{{ form.name.auto_id }}">Назва</label>
+                                            <div class="input-group">
+                                                <input class="form-control" type="text" id="{{ form.name.auto_id }}" name="{{ form.name.html_name }}" onchange="fieldIsValid(this)" value="{{ form.instance.name }}">
+                                                <span class="input-group-append">
+                                                    <button id="{{ form.name.auto_id }}-button" type="button" class="btn btn-default delete-section" onclick="deleteSection(this, {{ form.instance.pk }})">
+                                                        <i class="fa fa-trash"></i>
+                                                    </button>
+                                                </span>
+                                            </div>
+                                            <p id="{{ form.name.auto_id }}-errors" style="color: red;"></p>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                <div id="section-empty-form" style="display: none; margin-top: 1%;">
+                                    <div class="form-group">
+                                        <label for="{{ section_formset.empty_form.name.auto_id }}">Назва</label>
+                                        <div class="input-group">
+                                            <input class="form-control" type="text" id="{{ section_formset.empty_form.name.auto_id }}" name="{{ section_formset.empty_form.name.html_name }}" onchange="fieldIsValid(this)">
+                                            <span class="input-group-append">
+                                                <button id="{{ section_formset.empty_form.name.auto_id }}-button" type="button" class="btn btn-default delete-section" onclick="deleteSection(this)">
+                                                    <i class="fa fa-trash"></i>
+                                                </button>
+                                            </span>
+                                        </div>
+                                        <p id="{{ section_formset.empty_form.name.auto_id }}-errors" style="color: red;"></p>
+                                    </div>
+                                </div>
+                                <div class="row" style="margin-top: 2%;">
+                                    <div class="col-sm-12 text-right">
+                                        <button type="button" class="btn btn-success add-section">Додати</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="tab-pane fade" id="nav-floor" role="tabpanel" aria-labelledby="nav-floor-tab" style="padding-top: 3%;">
+                                {{ floor_formset.management_form }}
+                                <div id="floors">
+                                    {% for form in floor_formset.forms %}
+                                    {{ form.id }}
+                                    <div id="{{ form.name.auto_id }}-parent" style="margin-top: 1%;">
+                                        <div class="form-group">
+                                            <label for="{{ form.name.auto_id }}">Назва</label>
+                                            <div class="input-group">
+                                                <input class="form-control" type="text" id="{{ form.name.auto_id }}" name="{{ form.name.html_name }}" onchange="fieldIsValid(this)" value="{{ form.instance.name }}">
+                                                <span class="input-group-append">
+                                                    <button id="{{ form.name.auto_id }}-button" type="button" class="btn btn-default delete-floor" onclick="deleteFloor(this, {{ form.instance.pk }})">
+                                                        <i class="fa fa-trash"></i>
+                                                    </button>
+                                                </span>
+                                            </div>
+                                            <p id="{{ form.name.auto_id }}-errors" style="color: red;"></p>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                <div id="floor-empty-form" style="display: none; margin-top: 1%;">
+                                    <div class="form-group">
+                                        <label for="{{ floor_formset.empty_form.name.auto_id }}">Назва</label>
+                                        <div class="input-group">
+                                            <input class="form-control" type="text" id="{{ floor_formset.empty_form.name.auto_id }}" name="{{ floor_formset.empty_form.name.html_name }}" onchange="fieldIsValid(this)">
+                                            <span class="input-group-append">
+                                                <button id="{{ floor_formset.empty_form.name.auto_id }}-button" type="button" class="btn btn-default delete-floor" onclick="deleteFloor(this)">
+                                                    <i class="fa fa-trash"></i>
+                                                </button>
+                                            </span>
+                                        </div>
+                                        <p id="{{ floor_formset.empty_form.name.auto_id }}-errors" style="color: red;"></p>
+                                    </div>
+                                </div>
+                                <div class="row" style="margin-top: 2%;">
+                                    <div class="col-sm-12 text-right">
+                                        <button type="button" class="btn btn-success add-floor">Додати</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="tab-pane fade" id="nav-user" role="tabpanel" aria-labelledby="nav-user-tab" style="padding-top: 3%;">
+                                {{ user_formset.management_form }}
+                                <div id="users">
+                                    {% for form in user_formset.forms %}
+                                    {{ form.id }}
+                                    <div class="row" id="{{ form.user.auto_id }}-parent" style="margin-top: 1%;">
+                                        <div class="row">
+                                            <div class="col-sm-12 col-lg-7">
+                                                <label for="{{ form.user.auto_id }}">ПІБ</label>
+                                                <select onchange="changedUser(this)" class="form-select" id="{{ form.user.auto_id }}" name="{{ form.user.html_name }}">
+                                                    <option value="none">Вибрати...</option>
+                                                    {% for user in users %}
+                                                        <option value="{{ user.pk }}" {% if form.instance.user.pk == user.pk %}selected{% endif %}>{{ user.name }} {{ user.surname }} </option>
+                                                    {% endfor %}
+                                                </select>
+                                                <p id="{{ form.user.auto_id }}-errors" style="color: red;"></p>
+                                            </div>
+                                            <div class="col-sm-12 col-lg-5">
+                                                <label for="{{ form.user.auto_id }}-role">Роль</label>
+                                                <div class="input-group">
+                                                    <input class="form-control" type="text" id="{{ form.user.auto_id }}-role" name="some-roles" disabled value="{{ form.instance.user.role.get_role_display }}">
+                                                    <span class="input-group-append">
+                                                        <button id="{{ form.user.auto_id }}-button" type="button" class="btn btn-default delete-floor" onclick="deleteUserHouse(this, {{ form.instance.pk }})">
+                                                            <i class="fa fa-trash"></i>
+                                                        </button>
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                <div id="user-empty-form" style="display: none; margin-top: 1%;">
+                                    <div class="row">
+                                        <div class="col-sm-12 col-lg-7">
+                                            <label for="{{ user_formset.empty_form.user.auto_id }}">ПІБ</label>
+                                            <select onchange="changedUser(this)" class="form-select" id="{{ user_formset.empty_form.user.auto_id }}" name="{{ user_formset.empty_form.user.html_name }}">
+                                                <option value="none">Вибрати...</option>
+                                                {% for user in users %}
+                                                    <option value="{{ user.pk }}">{{ user.name }} {{ user.surname }}</option>
+                                                {% endfor %}
+                                            </select>
+                                            <p id="{{ user_formset.empty_form.user.auto_id }}-errors" style="color: red;"></p>
+                                        </div>
+                                        <div class="col-sm-12 col-lg-5">
+                                            <label for="{{ user_formset.empty_form.user.auto_id }}-role">Роль</label>
+                                            <div class="input-group">
+                                                <input class="form-control" type="text" id="{{ user_formset.empty_form.user.auto_id }}-role" name="some-roles" disabled>
+                                                <span class="input-group-append">
+                                                    <button id="{{ user_formset.empty_form.user.auto_id }}-button" type="button" class="btn btn-default delete-floor" onclick="deleteUserHouse(this)">
+                                                        <i class="fa fa-trash"></i>
+                                                    </button>
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row" style="margin-top: 2%;">
+                                    <div class="col-sm-12 text-right">
+                                        <button type="button" class="btn btn-success add-user">Додати</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row" style="margin-top: 3%;">
+                    <div class="col-sm-12 text-right">
+                        <button type="reset" class="btn btn-default" style="margin-right: 2%;">Відмінити</button>
+                        <button type="submit" onclick="formIsValid()" class="btn btn-success">Зберегти</button>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let users = {{ user_role_dict|safe }};
+
+    $(`.add-section`).on('click', function () {
+        let total_forms = $(`#id_sections-TOTAL_FORMS`);
+        let empty_form = $(`#section-empty-form`).clone();
+        empty_form.find('label[for="id_sections-__prefix__-name"]').attr('for', `id_sections-${total_forms.val()}-name`);
+        empty_form.find('#id_sections-__prefix__-name').val(`Секція ${parseInt(total_forms.val()) + 1}`);
+        empty_form.find('#id_sections-__prefix__-name').attr('name', `sections-${total_forms.val()}-name`);
+        empty_form.find('#id_sections-__prefix__-name').attr('id', `id_sections-${total_forms.val()}-name`);
+
+        empty_form.find('#id_sections-__prefix__-name-errors').attr('id', `id_sections-${total_forms.val()}-name-errors`);
+        empty_form.find('button#id_sections-__prefix__-name-button').attr('id', `id_sections-${total_forms.val()}-name-button`);
+        empty_form.attr('id', `id_sections-${total_forms.val()}-name-parent`);
+        empty_form.attr('class', 'row form-group');
+        empty_form.css('display', 'block');
+        $('#sections').append(empty_form);
+        total_forms.val(parseInt(total_forms.val()) + 1);
+    });
+
+    $(`.add-floor`).on('click', function () {
+        let total_forms = $(`#id_floors-TOTAL_FORMS`);
+        let empty_form = $(`#floor-empty-form`).clone();
+        empty_form.find('label[for="id_floors-__prefix__-name"]').attr('for', `id_floors-${total_forms.val()}-name`);
+        empty_form.find('#id_floors-__prefix__-name').val(`Поверх ${parseInt(total_forms.val()) + 1}`);
+        empty_form.find('#id_floors-__prefix__-name').attr('name', `floors-${total_forms.val()}-name`);
+        empty_form.find('#id_floors-__prefix__-name').attr('id', `id_floors-${total_forms.val()}-name`);
+
+        empty_form.find('#id_floors-__prefix__-name-errors').attr('id', `id_floors-${total_forms.val()}-name-errors`);
+        empty_form.find('button#id_floors-__prefix__-name-button').attr('id', `id_floors-${total_forms.val()}-name-button`);
+        empty_form.attr('id', `id_floors-${total_forms.val()}-name-parent`);
+        empty_form.attr('class', 'row form-group');
+        empty_form.css('display', 'block');
+        $('#floors').append(empty_form);
+        total_forms.val(parseInt(total_forms.val()) + 1);
+    })
+
+    $(`.add-user`).on('click', function () {
+        let total_forms = $(`#id_users-TOTAL_FORMS`);
+        let empty_form = $(`#user-empty-form`).clone();
+        empty_form.find('label[for="id_users-__prefix__-user"]').attr('for', `id_users-${total_forms.val()}-user`);
+        empty_form.find('#id_users-__prefix__-user').attr('name', `users-${total_forms.val()}-user`);
+        empty_form.find('#id_users-__prefix__-user').attr('id', `id_users-${total_forms.val()}-user`);
+
+        empty_form.find('#id_users-__prefix__-user-role').attr('id', `id_users-${total_forms.val()}-user-role`);
+
+        empty_form.find('#id_users-__prefix__-user-errors').attr('id', `id_users-${total_forms.val()}-user-errors`);
+        empty_form.find('button#id_users-__prefix__-user-button').attr('id', `id_users-${total_forms.val()}-user-button`);
+        empty_form.attr('id', `id_users-${total_forms.val()}-user-parent`);
+        empty_form.attr('class', 'row form-group');
+        empty_form.css('display', '');
+        $('#users').append(empty_form);
+        total_forms.val(parseInt(total_forms.val()) + 1);
+    })
+
+    function deleteSection(element, id=null) {
+        Swal.fire({
+            title: 'Ви впевнені?',
+            text: "Після видалення секцію неможливо буде повернути!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#A9A9A9',
+            cancelButtonText: 'Скасувати',
+            confirmButtonText: 'Видалити'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    let parent = $(element).attr('id').replace('-button', '');
+                    if (!id) {
+                        $(`#${parent}-parent`).remove();
+                    }
+                    else {
+                        $.ajax({
+                            url: `/administrator-panel/house/section/${id}/`,
+                            type: 'DELETE',
+                            headers: {
+                                'X-CSRFToken': $("input[name=csrfmiddlewaretoken]").val()
+                            },
+                            success: function (response) {
+                                if (response['answer'] === 'success') {
+                                    $(`#${parent}-parent`).remove();
+                                    Swal.fire({
+                                        position: 'top-end',
+                                        icon: 'success',
+                                        title: 'Успішно видалено!',
+                                        showConfirmButton: false,
+                                        timer: 1200,
+                                    })
+                                }
+                                else if (response['answer'] === 'failed') {
+                                    Swal.fire({
+                                        position: 'top-end',
+                                        icon: 'error',
+                                        title: 'Щось пішло не так!',
+                                        showConfirmButton: false,
+                                        timer: 1200
+                                    });
+                                }
+                            }
+                        })
+                    }
+                }
+            })
+    }
+    
+    function deleteFloor(element, id=null) {
+        Swal.fire({
+            title: 'Ви впевнені?',
+            text: "Після видалення поверх неможливо буде повернути!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#A9A9A9',
+            cancelButtonText: 'Скасувати',
+            confirmButtonText: 'Видалити'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    let parent = $(element).attr('id').replace('-button', '');
+                    if (!id) {
+                        $(`#${parent}-parent`).remove();
+                    }
+                    else {
+                        $.ajax({
+                            url: `/administrator-panel/house/floor/${id}/`,
+                            type: 'DELETE',
+                            headers: {
+                                'X-CSRFToken': $("input[name=csrfmiddlewaretoken]").val()
+                            },
+                            success: function (response) {
+                                if (response['answer'] === 'success') {
+                                    $(`#${parent}-parent`).remove();
+                                    Swal.fire({
+                                        position: 'top-end',
+                                        icon: 'success',
+                                        title: 'Успішно видалено!',
+                                        showConfirmButton: false,
+                                        timer: 1200,
+                                    })
+                                }
+                                else if (response['answer'] === 'failed') {
+                                    Swal.fire({
+                                        position: 'top-end',
+                                        icon: 'error',
+                                        title: 'Щось пішло не так!',
+                                        showConfirmButton: false,
+                                        timer: 1200
+                                    });
+                                }
+                            }
+                        })
+                    }
+                }
+            })
+    }
+
+    function changedUser(element) {
+        $(`#${element.id}-role`).val(users[element.value]);
+        fieldIsValid(element);
+    }
+
+    function deleteUserHouse(element, id=null) {
+        Swal.fire({
+            title: 'Ви впевнені?',
+            text: "Після видалення користувача неможливо буде повернути!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#A9A9A9',
+            cancelButtonText: 'Скасувати',
+            confirmButtonText: 'Видалити'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    let parent = $(element).attr('id').replace('-button', '');
+                    if (!id) {
+                        $(`#${parent}-parent`).remove();
+                    }
+                    else {
+                        $.ajax({
+                            url: `/administrator-panel/house/house-user/${id}/`,
+                            type: 'DELETE',
+                            headers: {
+                                'X-CSRFToken': $("input[name=csrfmiddlewaretoken]").val()
+                            },
+                            success: function (response) {
+                                if (response['answer'] === 'success') {
+                                    $(`#${parent}-parent`).remove();
+                                    Swal.fire({
+                                        position: 'top-end',
+                                        icon: 'success',
+                                        title: 'Успішно видалено!',
+                                        showConfirmButton: false,
+                                        timer: 1200,
+                                    })
+                                }
+                                else if (response['answer'] === 'failed') {
+                                    Swal.fire({
+                                        position: 'top-end',
+                                        icon: 'error',
+                                        title: 'Щось пішло не так!',
+                                        showConfirmButton: false,
+                                        timer: 1200
+                                    });
+                                }
+                            }
+                        })
+                    }
+                }
+            })
+    }
+
+    function formIsValid() {
+        event.preventDefault();
+        let isValid = true;
+        $('#house-form').find(`input[type!='hidden']`).each(function () {
+            console.log($(this).attr('id'));
+            console.log(($(this).attr('id')).includes('__prefix__'));
+            if (!($(this).attr('id')).includes('__prefix__')) {
+                if (!fieldIsValid(this)) {
+                    isValid = false;
+                }
+            }
+        })
+
+        if (isValid) {
+            $('#house-form').submit();
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+</script>
+{% endblock %}

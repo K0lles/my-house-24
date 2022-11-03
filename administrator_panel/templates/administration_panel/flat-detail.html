@@ -47,11 +47,11 @@
                         </tr>
                         <tr>
                             <th>Власник</th>
-                            <td><a href="{% url 'user-detail' pk=object.owner.pk %}">{{ object.owner.name }} {{ object.owner.surname }}</a> </td>
+                            <td>{% if object.owner %}<a href="{% url 'user-detail' pk=object.owner.pk %}">{{ object.owner.name }} {{ object.owner.surname }}{% else %}(не задано){% endif %}</a> </td>
                         </tr>
                         <tr>
                             <th>Тариф</th>
-                            <td><a href="{% url 'tariff-detail' pk=object.tariff.pk %}">{{ object.tariff.name }}</a></td>
+                            <td>{% if object.tariff %}<a href="{% url 'tariff-detail' pk=object.tariff.pk %}">{% else %}(не задано){% endif %}{{ object.tariff.name }}</a></td>
                         </tr>
                     </table>
                 </div>

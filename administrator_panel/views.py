@@ -294,7 +294,10 @@ class FlatUpdateView(UpdateView):
             house_floor[house.pk] = []
             for floor in house.floor_set.all():
                 house_floor[house.pk].append([floor.pk, floor.name])
-        context['selected_account'] = PersonalAccount.objects.get(flat=flat)
+        try:
+            context['selected_account'] = PersonalAccount.objects.get(flat=flat)
+        except PersonalAccount.DoesNotExist:
+            context['selected_account'] = None
         context['owners'] = User.objects.filter(role__role='owner')
         context['tariffs'] = Tariff.objects.all()
         context['houses'] = houses
@@ -358,18 +361,49 @@ def flat_number_is_unique(request):
 
 class PersonalAccountCreateView(CreateView):
     model = PersonalAccount
-    template_name = ''
+    template_name = 'administration_panel/personal_account-create.html'
     form_class = PersonalAccountForm
 
-    # def get_context_data(self, **kwargs):
-    #     context = super(PersonalAccountCreateView, self).get_context_data(**kwargs)
-    #     houses = House.objects.prefetch_related('flat_set', '')
-    #     flats = Flat.objects.prefetch_related('floor', 'floor__house', 'owner',).filter(personalaccount=None)
-    #     context['flats'] = Flat.objects.prefetch_related('floor', 'floor__house', 'owner',).filter(personalaccount=None)
-    #     house_flat = {}
-    #     for flat in flats:
-    #         dictionary[flat.pk] = {}
-    #     return context
+    def get_context_data(self, **kwargs):
+        context = super(PersonalAccountCreateView, self).get_context_data(**kwargs)
+        flats = Flat.objects.select_related('personalaccount', 'house', 'section', 'owner').filter(personalaccount__isnull=True)
+        house_section = {}
+        section_flat = {}
+        houses = []
+
+        for flat in flats:
+            houses.append(flat.house)
+            if not house_section.get(flat.house.id):
+                house_section[flat.house.id] = [[flat.section.id, flat.section.name]]
+            else:
+                house_section[flat.house.id].append([flat.section.id, flat.section.name])
+
+            if not section_flat.get(flat.section.id):
+                section_flat[flat.section.id] = [[flat.id, flat.number]]
+            else:
+                section_flat[flat.section.id].append([flat.id, flat.number])
+
+        context['flats'] = flats
+        context['house_section'] = house_section
+        context['section_flat'] = section_flat
+        context['houses'] = set(houses)
+        return context
+
+    def post(self, request, *args, **kwargs):
+        form = self.get_form_class()(request.POST)
+        if form.is_valid():
+            return self.form_valid(form)
+        self.object = None
+        context = self.get_context_data()
+        context['form'] = form
+        return self.render_to_response(context)
+
+    def form_valid(self, form):
+        account = form.save()
+        if not account.flat:
+            account.status = 'inactive'
+            account.save()
+        return redirect('flats')
 
 
 def personal_account_is_unique(request):

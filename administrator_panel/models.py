@@ -46,7 +46,12 @@ class Flat(models.Model):
 class PersonalAccount(models.Model):
     number = models.CharField(max_length=255, verbose_name='Номер', unique=True)
     flat = models.OneToOneField(Flat, on_delete=models.SET_NULL, verbose_name='Квартира', blank=True, null=True)
-    status = models.BooleanField(default=False, verbose_name='Статус')
+
+    class Status(models.TextChoices):
+        active = ('active', 'Активний')
+        inactive = ('inactive', 'Неактивний')
+
+    status = models.CharField(max_length=15, choices=Status.choices, default='inactive', verbose_name='Статус')
 
 
 class Notoriety(models.Model):

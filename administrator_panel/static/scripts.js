@@ -61,8 +61,8 @@ function numberTypeValidation(element) {
         }
     }
     else if (element.value <= 0.00) {
-        if (!($(`#${element.id}-errors`).text()).includes('Ціна не може бути меншою 0')) {
-            $(`#${element.id}-errors`).text('Ціна не може бути меншою 0');
+        if (!($(`#${element.id}-errors`).text()).includes('Цифра у полі не може бути меншою 0')) {
+            $(`#${element.id}-errors`).text('Цифра у полі не може бути меншою 0');
             element.style = 'border: 1px solid red';
             return false;
         }

@@ -42,7 +42,7 @@
                         </tr>
                         <tr>
                             <th>Будинок</th>
-                            <td><a href="{% url 'house-detail' house_pk=object.flat.house.pk %}">{% if object.flat %}{{ object.flat.house.name }}</a>{% else %}не указано{% endif %}</td>
+                            <td>{% if object.flat %}<a href="{% url 'house-detail' house_pk=object.flat.house.pk %}">{{ object.flat.house.name }}</a>{% else %}не указано{% endif %}</td>
                         </tr>
                         <tr>
                             <th>Секція</th>

@@ -104,7 +104,7 @@ class PersonalAccountForm(ModelForm):
     def clean(self):
         cleaned_data = super(PersonalAccountForm, self).clean()
         self._errors = {}
-        if cleaned_data.get('number'):
+        if cleaned_data.get('number') and not self.instance.pk:
             try:
                 PersonalAccount.objects.get(number=cleaned_data.get('number'))
                 self.add_error('number', 'Поле не може бути пустим')

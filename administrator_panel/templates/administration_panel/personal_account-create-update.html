@@ -2,17 +2,17 @@
 {% load static %}
 
 {% block content_header %}
-    <h1>Новий особовий рахунок</h1>
+    <h1>{% if form.instance.pk %}Особовий рахунок: {{ form.instance.number }}{% else %}Новий особовий рахунок{% endif %}</h1>
 {% endblock %}
 
 {% block main_content %}
-    <form id="personal_account-form" method="post" action="{% url 'personal-account-create' %}">
+    <form id="personal_account-form" method="post" {% if form.instance.pk %}action="{% url 'personal-account-update' account_pk=form.instance.pk %}"{% else %}action="{% url 'personal-account-create' %}{% endif %}">
     {% csrf_token %}
         <div class="row" style="margin-bottom: 25px;">
             <div class="col-sm-12 col-md-7 col-lg-6">
                 <div class="input-group">
                     <div class="input-group-append" style="background-color: #fff; border: 1px solid #ccc; padding: 6px 12px;">№</div>
-                    <input type="text" class="form-control" id="{{ form.number.auto_id }}" name="{{ form.number.html_name }}" onchange="fieldIsValid(this)" {% if form.number.errors %}style="border: 1px solid red;"{% endif %}>
+                    <input type="text" {% if form.instance.pk %}value="{{ form.instance.number }}" {% endif %} class="form-control" id="{{ form.number.auto_id }}" name="{{ form.number.html_name }}" onchange="fieldIsValid(this)" {% if form.number.errors %}style="border: 1px solid red;"{% endif %}>
                 </div>
             </div>
         </div>
@@ -22,8 +22,8 @@
                     <div class="form-group">
                         <label for="{{ form.status.auto_id }}">Статус</label>
                         <select class="form-select" id="{{ form.status.auto_id }}" name="{{ form.status.html_name }}" onchange="fieldIsValid(this)">
-                            <option value="active">Активний</option>
-                            <option value="inactive">Неактивний</option>
+                            <option value="active" {% if form.instance.status == 'active' %}selected{% endif %}>Активний</option>
+                            <option value="inactive" {% if form.instance.status == 'inactive' %}selected{% endif %}>Неактивний</option>
                         </select>
                     </div>
                     <div class="form-group">
@@ -31,7 +31,7 @@
                         <select class="form-select" id="id_house" onchange="changedHouse(this)">
                             <option>Вибрати...</option>
                             {% for house in houses %}
-                                <option value="{{ house.pk }}">{{ house.name }}</option>
+                                <option value="{{ house.pk }}" {% if house.pk == form.instance.flat.house.pk %}selected{% endif %}>{{ house.name }}</option>
                             {% endfor %}
                         </select>
                         <p id="id_house-errors" style="color: red; margin-bottom: 0;"></p>
@@ -40,6 +40,9 @@
                         <label for="id_section">Секція</label>
                         <select class="form-select" id="id_section" onchange="changedSection(this)">
                             <option>Вибрати...</option>
+                            {% if form.instance.flat %}
+                                <option value="{{ form.instance.flat.section.pk }}" selected>{{ form.instance.flat.section.name }}</option>
+                            {% endif %}
                         </select>
                         <p id="id_section-errors" style="color: red; margin-bottom: 0;"></p>
                     </div>
@@ -48,18 +51,18 @@
                         <select class="form-select" id="{{ form.flat.auto_id }}" name="{{ form.flat.html_name }}" onchange="changedFlat(this)">
                             <option>Вибрати...</option>
                             {% for flat in flats %}
-                                <option value="{{ flat.pk }}">{{ flat.number }}</option>
+                                <option value="{{ flat.pk }}" {% if flat.pk == form.instance.flat.pk %}selected{% endif %}>{{ flat.number }}</option>
                             {% endfor %}
                         </select>
                         <p id="{{ form.flat.auto_id }}-errors" style="color: red; margin-bottom: 0;"></p>
                     </div>
                     <div>
                         <b>Власник:</b>
-                        <span id="user">не задано</span>
+                        <span id="user">{% if form.instance.flat.owner %}{{ form.instance.flat.owner.name }} {{ form.instance.flat.owner.surname }}{% else %}не задано{% endif %}</span>
                     </div>
                     <div>
                         <b>Телефон:</b>
-                        <span id="user-phone">не задано</span>
+                        <span id="user-phone">{% if form.instance.flat.owner %}{{ form.instance.flat.owner.phone }}{% else %}не задано{% endif %}</span>
                     </div>
                 </div>
                 <div class="row">
@@ -98,8 +101,8 @@
 
     function changedSection(element) {
         let selectedId = $(element).children("option:selected").val();
-        if (selectedId === 'Вибрати...') return;
         $('#id_flat').find('option').remove().end().append('<option>Вибрати...</option>');
+        if (selectedId === 'Вибрати...') return;
         if (section_flat[selectedId]){
             for (let key_array in section_flat[selectedId]) {
                 let option_to_append = `<option value="${section_flat[selectedId][key_array][0]}">${section_flat[selectedId][key_array][1]}</option>`
@@ -183,7 +186,6 @@
 
     function formIsValid() {
         event.preventDefault();
-        console.log(fieldIsValid(document.getElementById('id_number')));
         if (fieldIsValid(document.getElementById('id_number'))) {
             $('#personal_account-form').submit();
             return true;

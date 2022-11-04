@@ -1,0 +1,59 @@
+{% extends 'main_page.html' %}
+{% load static %}
+
+{% block content_header %}
+    <h1>Особові рахунки</h1>
+{% endblock %}
+
+{% block main_content %}
+    <div class="row">
+        <div class="col-sm-12 col-lg-9">
+            <div class="row">
+                <div class="col-xs-12 col-md-4">
+                    <div class="small-box bg-green overflow-hidden">
+                        <div class="inner">
+                            <h3>0.00 грн</h3>
+                            <p>Стан каси</p>
+                        </div>
+                        <div class="icon">
+                            <i class="fa fa-dollar"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-xs-12 col-md-4">
+                    <div class="small-box bg-blue overflow-hidden">
+                        <div class="inner">
+                            <h3>0.00 грн</h3>
+                            <p>Баланс по рахунках</p>
+                        </div>
+                        <div class="icon">
+                            <i class="fa fa-dollar"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-xs-12 col-md-4">
+                    <div class="small-box bg-red overflow-hidden">
+                        <div class="inner">
+                            <h3>0.00 грн</h3>
+                            <p>Заборгованість по рахунках</p>
+                        </div>
+                        <div class="icon">
+                            <i class="fa fa-dollar"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xs-12 col-lg-3 text-right">
+            <div class="btn-group">
+                <button type="button" class="btn btn-success dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    Виберіть дію
+                </button>
+                <div class="dropdown-menu dropdown-menu-right">
+                    <a class="dropdown-item" href="#">Створити особовий рахунок</a>
+                    <a class="dropdown-item" href="#">Вивантажити в Excel</a>
+              </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

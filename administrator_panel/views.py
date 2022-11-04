@@ -265,7 +265,7 @@ class FlatDetailView(DetailView):
 class FlatListView(ListView):
     model = Flat
     template_name = 'administration_panel/flat-list.html'
-    queryset = Flat.objects.select_related('house', 'section', 'floor', 'owner', 'personalaccount').all()
+    queryset = Flat.objects.select_related('house', 'section', 'floor', 'owner', 'personalaccount').all().order_by('-id')
 
 
 class FlatUpdateView(UpdateView):
@@ -359,34 +359,43 @@ def flat_number_is_unique(request):
         return JsonResponse({'answer': 'success'})
 
 
+def personal_account_context(context):
+    """Separate function for forming context in both CreateView and UpdateView of PersonalAccount instances"""
+
+    flats = Flat.objects.select_related('personalaccount', 'house', 'section', 'owner').filter(
+        personalaccount__isnull=True)
+    house_section: dict[int, list[list[int, str]]] = {}  # used in frontend for dynamical changing of sections while house was changed
+    section_flat: dict[int, list[list[int, str]]] = {}   # used in frontend for dynamical changing of flats while sectin was changed
+    houses = []     # used for displaying houses in select tag in frontend
+
+    for flat in flats:
+        houses.append(flat.house)
+        if not house_section.get(flat.house.id):
+            house_section[flat.house.id] = [[flat.section.id, flat.section.name]]
+        else:
+            if [flat.section.id, flat.section.name] not in house_section[flat.house.id]:
+                house_section[flat.house.id].append([flat.section.id, flat.section.name])
+
+        if not section_flat.get(flat.section.id):
+            section_flat[flat.section.id] = [[flat.id, flat.number]]
+        else:
+            section_flat[flat.section.id].append([flat.id, flat.number])
+
+    context['flats'] = flats
+    context['house_section'] = house_section
+    context['section_flat'] = section_flat
+    context['houses'] = set(houses)
+    return context
+
+
 class PersonalAccountCreateView(CreateView):
     model = PersonalAccount
-    template_name = 'administration_panel/personal_account-create.html'
+    template_name = 'administration_panel/personal_account-create-update.html'
     form_class = PersonalAccountForm
 
     def get_context_data(self, **kwargs):
         context = super(PersonalAccountCreateView, self).get_context_data(**kwargs)
-        flats = Flat.objects.select_related('personalaccount', 'house', 'section', 'owner').filter(personalaccount__isnull=True)
-        house_section = {}
-        section_flat = {}
-        houses = []
-
-        for flat in flats:
-            houses.append(flat.house)
-            if not house_section.get(flat.house.id):
-                house_section[flat.house.id] = [[flat.section.id, flat.section.name]]
-            else:
-                house_section[flat.house.id].append([flat.section.id, flat.section.name])
-
-            if not section_flat.get(flat.section.id):
-                section_flat[flat.section.id] = [[flat.id, flat.number]]
-            else:
-                section_flat[flat.section.id].append([flat.id, flat.number])
-
-        context['flats'] = flats
-        context['house_section'] = house_section
-        context['section_flat'] = section_flat
-        context['houses'] = set(houses)
+        context = personal_account_context(context)
         return context
 
     def post(self, request, *args, **kwargs):
@@ -403,6 +412,83 @@ class PersonalAccountCreateView(CreateView):
         if not account.flat:
             account.status = 'inactive'
             account.save()
+        return redirect('flats')
+
+
+class PersonalAccountDetailView(DetailView):
+    model = PersonalAccount
+    template_name = 'administration_panel/personal_account-detail.html'
+    pk_url_kwarg = 'account_pk'
+
+    def get_object(self, queryset=None):
+        try:
+            return PersonalAccount.objects.select_related('flat__house',
+                                                   'flat__section',
+                                                   'flat', 'flat__owner').get(pk=self.kwargs['account_pk'])
+        except PersonalAccount.DoesNotExist:
+            raise Http404()
+
+
+class PersonalAccountListView(ListView):
+    model = PersonalAccount
+    template_name = 'administration_panel/personal_account-list.html'
+    queryset = PersonalAccount.objects.all().order_by('-id')
+
+
+class PersonalAccountUpdateView(UpdateView):
+    model = PersonalAccount
+    template_name = 'administration_panel/personal_account-create-update.html'
+    pk_url_kwarg = 'account_pk'
+    form_class = PersonalAccountForm
+
+    def get_object(self, queryset=None):
+        try:
+            return PersonalAccount.objects.select_related('flat', 'flat__section', 'flat__house').prefetch_related('flat__house__section_set').get(pk=self.kwargs['account_pk'])
+        except PersonalAccount.DoesNotExist:
+            raise Http404()
+
+    def get_context_data(self, **kwargs):
+        self.object = self.get_object()
+        context = super(PersonalAccountUpdateView, self).get_context_data(**kwargs)
+        context = personal_account_context(context)
+
+        # if flat related to current personal account exists
+        try:
+            # union Queryset<Flat> with flat related to current personal account for displaying it in select tag in frontend
+            context['flats'] = context['flats'].union(
+                Flat.objects.select_related('personalaccount', 'house', 'section', 'owner').filter(
+                    pk=self.object.flat.pk))
+
+            # add current flat to section's list of flats for displaying in frontend
+            if context['section_flat'].get(self.object.flat.section.id):
+                if [self.object.flat.id, self.object.flat.number] not in context['section_flat'][self.object.flat.section.id]:
+                    context['section_flat'][self.object.flat.section.id].append([self.object.flat.id, self.object.flat.number])
+            else:
+                context['section_flat'][self.object.flat.section.id] = [[self.object.flat.id, self.object.flat.number]]
+
+            # add section of current personal account's flat to list of sections in separate house
+            if self.object.flat.house not in context['houses']:
+                context['house_section'][self.object.flat.house.pk] = [[self.object.flat.section.pk, self.object.flat.section.name]]
+                context['houses'].add(self.object.flat.house)
+        except AttributeError:
+            return context
+
+        return context
+
+    def post(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        form = self.get_form_class()(request.POST, instance=self.object)
+        if form.is_valid():
+            return self.form_valid(form)
+        context = self.get_context_data()
+        context['form'] = form
+        return self.render_to_response(context)
+
+    def form_valid(self, form):
+        account_saved = form.save(commit=False)
+        if not form.cleaned_data.get('flat'):
+            account_saved.flat = None
+        account_saved.save()
         return redirect('flats')
 
 

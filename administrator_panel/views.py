@@ -1,6 +1,7 @@
 from django.db.models import Q
 from django.http import Http404, JsonResponse
 from django.shortcuts import render, redirect
+from django.urls import reverse
 from django.views.generic import ListView, DetailView, CreateView, UpdateView
 from django.db.models.deletion import ProtectedError
 
@@ -225,6 +226,12 @@ class FlatCreateView(CreateView):
         context['house_section'] = house_section
         context['house_floor'] = house_floor
         context['personal_accounts'] = PersonalAccount.objects.filter(flat__isnull=True)
+        if self.request.GET.get('prev_flat'):
+            context['base_flat'] = Flat.objects.select_related('section',
+                                                               'floor',
+                                                               'house',
+                                                               'owner').prefetch_related('house__floor_set',
+                                                                                         'house__section_set').get(pk=self.request.GET.get('prev_flat'))
         return context
 
     def post(self, request, *args, **kwargs):
@@ -247,6 +254,9 @@ class FlatCreateView(CreateView):
             except PersonalAccount.DoesNotExist:
                 PersonalAccount.objects.create(number=personal_account_number,
                                                flat=created_flat)
+        print(self.request.POST.get('create-again') == 'create-new')
+        if self.request.POST.get('create-again') == 'create-new':
+            return redirect(f'{reverse("flat-create")}?prev_flat={created_flat.pk}')
         return redirect('flat-detail', flat_pk=created_flat.pk)
 
 
@@ -423,8 +433,8 @@ class PersonalAccountDetailView(DetailView):
     def get_object(self, queryset=None):
         try:
             return PersonalAccount.objects.select_related('flat__house',
-                                                   'flat__section',
-                                                   'flat', 'flat__owner').get(pk=self.kwargs['account_pk'])
+                                                          'flat__section',
+                                                          'flat', 'flat__owner').get(pk=self.kwargs['account_pk'])
         except PersonalAccount.DoesNotExist:
             raise Http404()
 
@@ -432,7 +442,10 @@ class PersonalAccountDetailView(DetailView):
 class PersonalAccountListView(ListView):
     model = PersonalAccount
     template_name = 'administration_panel/personal_account-list.html'
-    queryset = PersonalAccount.objects.all().order_by('-id')
+    queryset = PersonalAccount.objects.select_related('flat',
+                                                      'flat__section',
+                                                      'flat__house',
+                                                      'flat__owner').all().order_by('-id')
 
 
 class PersonalAccountUpdateView(UpdateView):
@@ -490,6 +503,15 @@ class PersonalAccountUpdateView(UpdateView):
             account_saved.flat = None
         account_saved.save()
         return redirect('flats')
+
+
+def delete_personal_account(request, account_pk):
+    try:
+        account_to_delete = PersonalAccount.objects.get(pk=account_pk)
+        account_to_delete.delete()
+        return JsonResponse({'answer': 'success'})
+    except PersonalAccount.DoesNotExist:
+        return JsonResponse({'answer': 'failed'})
 
 
 def personal_account_is_unique(request):

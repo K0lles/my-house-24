@@ -14,15 +14,16 @@
     <div class="card">
         <div class="card-body">
             <div class="row">
-                <table class="table table-hover">
+                <table id="user-table" class="table table-hover table-borderless">
                     <thead>
                         <tr>
-                            <th>#</th>
-                            <th>Користувач</th>
-                            <th>Роль</th>
-                            <th>Телефон</th>
-                            <th>Email (логін)</th>
-                            <th>Статус</th>
+                            <th style="vertical-align: top;">#</th>
+                            <th>Користувач <input type="text" class="form-control"></th>
+                            <th>Роль <input type="text" class="form-control"></th>
+                            <th>Телефон <input type="text" class="form-control"></th>
+                            <th>Email (логін) <input type="text" class="form-control"></th>
+                            <th>Статус <input type="text" class="form-control"></th>
+                            <th></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -97,6 +98,41 @@
                         })
                 }
             })
+    })
+
+    $(document).ready(function () {
+        $('#user-table').DataTable({
+            ordering: false,
+            dom: 'rtp',
+            language: {
+                paginate: {
+                    "previous": "<<",
+                    "next": ">>"
+                }
+            },
+            columns: [
+                null,
+                {'data': 'Користувач'},
+                {'data': 'Роль'},
+                {'data': 'Телефон'},
+                {'data': 'Email (логін)'},
+                {'data': 'Статус'},
+                null
+            ],
+            initComplete: function () {
+                this.api()
+                    .columns()
+                    .every(function () {
+                        let that = this;
+
+                        $('input[type="text"]', this.header()).on('keyup change clear', function () {
+                            if (that.search() !== this.value) {
+                                that.search(this.value).draw();
+                            }
+                        });
+                    });
+            },
+        });
     })
 </script>
 {% endblock %}

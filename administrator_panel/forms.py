@@ -2,7 +2,7 @@ from django.db.models import Q
 from django.forms import BaseModelFormSet, ModelForm, modelformset_factory, ModelChoiceField, CharField
 
 from configuration.models import User
-from .models import House, HouseUser, Section, Floor, PersonalAccount, Flat
+from .models import House, HouseUser, Section, Floor, PersonalAccount, Flat, Receipt
 
 
 class HouseForm(ModelForm):
@@ -84,14 +84,26 @@ class FlatForm(ModelForm):
     def clean(self):
         cleaned_data = super(FlatForm, self).clean()
         self._errors = {}
+
         if not cleaned_data.get('number'):
             self.add_error('number', 'Поле не може бути пустим')
             return cleaned_data
+
         try:
-            Flat.objects.get(number=cleaned_data.get('number'), house__flat=cleaned_data.get('flat'), house__section=cleaned_data.get('section'))
-            self.add_error('number', 'Квартира із таким номером вже існує на даному поверсі')
+            flats = Flat.objects.filter(number=cleaned_data.get('number'), house__floor=cleaned_data.get('floor'), house__section=cleaned_data.get('section'))
+
+            # check if other flats in indicated house and in indicated floor do not have same number
+            if (not self.instance.pk and flats.count() == 0) or flats.count() == 0:
+                raise Flat.DoesNotExist()
+
+            # while updating check if other flats in indicated house and in indicated floor do not have same number
+            if self.instance.pk and flats.count() == 1 and flats[0].pk == self.instance.pk:
+                raise Flat.DoesNotExist()
+
+            self.add_error('number', 'Квартира із таким номером вже існує на заданому поверсі в заданому секторі')
+        except (Flat.DoesNotExist, AttributeError):
             return cleaned_data
-        except Flat.DoesNotExist:
+        finally:
             return cleaned_data
 
 

@@ -1,0 +1,175 @@
+{% extends 'main_page.html' %}
+{% load static %}
+
+{% block styles %}
+    <style>
+        textarea {
+            height: 288px;
+        }
+    </style>
+{% endblock %}
+
+{% block content_header %}
+    <h1>Новий власник</h1>
+{% endblock %}
+
+{% block main_content %}
+    <div class="card">
+        <div class="card-body">
+            <form id="owner-form" method="post" action="">
+                {% csrf_token %}
+                <div class="row">
+                    <div class="col-sm-12 col-lg-6">
+                        <div class="user-logo">
+                            <img class="img-circle pull-left img-responsive" src="{% static 'all_logos/empty-image.jpeg' %}" style="display: inline-block; margin-right: 15px;">
+                            <div class="form-group" style="display: inline-block; vertical-align: top;">
+                                <label class="form-label" for="{{ form.logo.auto_id }}">Фото</label>
+                                <input class="form-control" type="file" accept="image/*" id="{{ form.logo.auto_id }}" name="{{ form.logo.html_name }}">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-12 col-lg-6">
+                        <div class="form-group">
+                            <label class="form-label" for="{{ form.status.auto_id }}">Статус</label>
+                            <select class="form-select" id="{{ form.status.auto_id }}" name="{{ form.status.html_name }}" onchange="fieldIsValid(this)">
+                                <option value="new">Новий</option>
+                                <option value="active">Активний</option>
+                                <option value="disconnected">Відключений</option>
+                            </select>
+                            <p id="{{ form.status.auto_id }}-errors" style="color: red;"></p>
+                        </div>
+                        <div class="form-group">
+                            <label for="{{ form.owner_id.auto_id }}">ID</label>
+                            <input type="text" class="form-control" id="{{ form.owner_id.auto_id }}" name="{{ form.owner_id.html_name }}" onchange="fieldIsValid(this)">
+                            <p id="{{ form.owner_id.auto_id }}-errors" style="color: red;"></p>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-sm-12 col-lg-6">
+                        <div class="form-group">
+                            <label for="{{ form.surname.auto_id }}">Прізвище</label>
+                            <input type="text" class="form-control" id="{{ form.surname.auto_id }}" name="{{ form.surname.html_name }}" onchange="fieldIsValid(this)">
+                            <p id="{{ form.surname.auto_id }}-errors" style="color: red;"></p>
+                        </div>
+                        <div class="form-group">
+                            <label for="{{ form.name.auto_id }}">Ім'я</label>
+                            <input type="text" class="form-control" id="{{ form.name.auto_id }}" name="{{ form.name.html_name }}" onchange="fieldIsValid(this)">
+                            <p id="{{ form.name.auto_id }}-errors" style="color: red;"></p>
+                        </div>
+                        <div class="form-group">
+                            <label for="{{ form.father.auto_id }}">Побатькові</label>
+                            <input type="text" class="form-control" id="{{ form.father.auto_id }}" name="{{ form.father.html_name }}" onchange="fieldIsValid(this)">
+                            <p id="{{ form.father.auto_id }}-errors" style="color: red;"></p>
+                        </div>
+                        <div class="form-group">
+                            <label for="{{ form.birthday.auto_id }}">Дата народження</label>
+                            <div class="input-group date" id="datepicker">
+                                <span class="input-group-append">
+                                    <button type="button" class="btn btn-default" >
+                                        <i class="fa fa-calendar"></i>
+                                    </button>
+                                </span>
+                                <input type="text" class="form-control" id="{{ form.birthday.auto_id }}" name="{{ form.birthday.html_name }}">
+                            </div>
+                            <p id="{{ form.birthday.auto_id }}-errors" style="color: red;"></p>
+                        </div>
+                    </div>
+                    <div class="col-sm-12 col-lg-6">
+                        <div class="form-group">
+                            <label class="form-label" for="{{ form.notes.auto_id }}">Про власника (нотатки)</label>
+                            <textarea class="form-control" id="{{ form.notes.auto_id }}" name="{{ form.notes.html_name }}" style="height: 288px;" onchange="textAreaIsValid(this)"></textarea>
+                            <p id="{{ form.notes.auto_id }}-errors" style="color: red;"></p>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-sm-12 col-lg-6">
+                        <h2 style="font-size: 22px; border-bottom: 1px solid #eee; padding-bottom: 10px;">Контактні дані</h2>
+                        <div class="form-group">
+                            <label class="form-label" for="{{ form.phone.auto_id }}">Телефон</label>
+                            <input type="text" class="form-control" id="{{ form.phone.auto_id }}" name="{{ form.phone.html_name }}" onchange="fieldIsValid(this)">
+                            <p id="{{ form.phone.auto_id }}-errors" style="color: red;"></p>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="{{ form.viber.auto_id }}">Viber</label>
+                            <input type="text" class="form-control" id="{{ form.viber.auto_id }}" name="{{ form.viber.html_name }}" onchange="fieldIsValid(this)">
+                            <p id="{{ form.viber.auto_id }}-errors" style="color: red;"></p>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="{{ form.telegram.auto_id }}">Telegram</label>
+                            <input type="text" class="form-control" id="{{ form.telegram.auto_id }}" name="{{ form.telegram.html_name }}" onchange="fieldIsValid(this)">
+                            <p id="{{ form.telegram.auto_id }}-errors" style="color: red;"></p>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="{{ form.email.auto_id }}">Email (логін)</label>
+                            <input type="email" class="form-control" id="{{ form.email.auto_id }}" name="{{ form.email.html_name }}" onchange="fieldIsValid(this)">
+                            <p id="{{ form.email.auto_id }}-errors" style="color: red;"></p>
+                        </div>
+                    </div>
+                    <div class="col-sm-12 col-lg-6">
+                        <div class="form-group">
+                            <label for="{{ form.password.auto_id }}">Пароль</label>
+                            <div class="input-group">
+                                <input class="form-control" type="password" id="{{ form.password.auto_id }}" name="{{ form.password.html_name }}" {% if not form.instance.id %}onchange="fieldIsValid(this)"{% else %}onchange="validatePasswordUpdate(this)"{% endif %}>
+                                <span class="input-group-append">
+                                    <button type="button" class="btn btn-default" onclick='generatePassword()'>Згенерувати</button>
+                                    <button type="button" class="btn btn-primary" onclick="showHidePassword()">
+                                        <i class="fa fa-eye"></i>
+                                    </button>
+                                </span>
+                            </div>
+                            <p id="{{ form.password.auto_id }}-errors" style="color: red;"></p>
+                        </div>
+                        <div class="form-group">
+                            <label for="id_repeat-password">Повторіть пароль</label>
+                            <input class="form-control" type="password" id="id_repeat-password" name="repeat-password" {% if not form.instance.id %}onchange="fieldIsValid(this)"{% else %}onchange="validatePasswordUpdate(this)"{% endif %}>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    $('#datepicker').datepicker();
+
+    function textAreaIsValid(element) {
+        if (element.value !== '') {
+            element.style = 'border: 1px solid #58c76d; height: 288px;';
+            $(`#${element.id}-errors`).text('');
+            return true;
+        }
+        else if (element.value === '') {
+            if (!($(`#${element.id}-errors`).text()).includes('Поле не може бути пустим')) {
+                $(`#${element.id}-errors`).text('Поле не може бути пустим');
+                element.style = 'border: 1px solid red; height: 288px;';
+                return false;
+            }
+        }
+    }
+
+    function generatePassword() {
+        let randomstring = Math.random().toString(36).slice(-8);
+        $('#id_password').val(randomstring);
+        $('#id_repeat-password').val(randomstring);
+    }
+
+    function showHidePassword() {
+        let type = $('#id_password').attr('type');
+        if (type === 'password') {
+            $('#id_password').attr('type', 'text');
+            $('#id_repeat-password').attr('type', 'text');
+            $('.fa-eye').attr('class', 'fa fa-eye-slash');
+        }
+        else {
+            $('#id_password').attr('type', 'password');
+            $('#id_repeat-password').attr('type', 'password');
+            $('.fa-eye-slash').attr('class', 'fa fa-eye');
+        }
+    }
+
+</script>
+{% endblock %}

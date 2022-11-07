@@ -520,3 +520,9 @@ def personal_account_is_unique(request):
         return JsonResponse({'answer': 'failed'})
     except PersonalAccount.DoesNotExist:
         return JsonResponse({'answer': 'success'})
+
+
+class OwnerCreateView(CreateView):
+    model = User
+    template_name = 'administration_panel/owner-create-update.html'
+    form_class = OwnerForm

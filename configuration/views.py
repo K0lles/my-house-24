@@ -183,10 +183,6 @@ class TariffUpdateView(UpdateView):
         context = super(TariffUpdateView, self).get_context_data(**kwargs)
         context['services'] = Service.objects.select_related('measurement_unit').all()
         tariff_services = context['object'].tariffservice_set.all()
-        # if self.object:
-        #     tariff_services = context['object'].tariffservice_set.all()
-        # else:
-        #     tariff_services = self.get_object().tariffservice_set.all()
         context['tariff_services'] = tariff_services
         context['formset'] = tariff_service_formset(queryset=tariff_services)
         return context
@@ -271,7 +267,6 @@ class UserCreateView(CreateView):
 
     def post(self, request, *args, **kwargs):
         form = UserForm(request.POST)
-        print(form.errors)
         if form.is_valid():
             self.form_valid(form)
             return redirect('users')

@@ -70,6 +70,7 @@ class User(AbstractBaseUser):
     father = models.CharField(max_length=200, verbose_name='По батькові', blank=True, null=True)
     phone = PhoneNumberField(verbose_name='Номер телефону')
     viber = models.CharField(max_length=200, verbose_name='Viber', blank=True, null=True)
+    owner_id = models.CharField(max_length=55, verbose_name='ID', blank=True, null=True)
     telegram = models.CharField(max_length=200, verbose_name='Telegram', blank=True, null=True)
 
     class StatusChoices(models.TextChoices):
@@ -78,7 +79,7 @@ class User(AbstractBaseUser):
         disconnected = ('disconnected', 'Відключений')
 
     status = models.CharField(max_length=20, choices=StatusChoices.choices, default='new', verbose_name='Статус')
-    notes = models.TextField(verbose_name='Нотатки')
+    notes = models.TextField(verbose_name='Нотатки', blank=True, null=True)
     password = models.CharField(max_length=200, verbose_name='Пароль')
     role = models.ForeignKey(Role, on_delete=models.PROTECT, verbose_name='Роль')
     is_admin = models.BooleanField(default=False)

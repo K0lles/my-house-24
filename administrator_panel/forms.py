@@ -124,3 +124,10 @@ class PersonalAccountForm(ModelForm):
                 return cleaned_data
 
         return cleaned_data
+
+
+class OwnerForm(ModelForm):
+
+    class Meta:
+        model = User
+        exclude = ('role', 'is_active', 'is_admin')

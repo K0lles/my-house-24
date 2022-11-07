@@ -22,4 +22,5 @@ urlpatterns = [
     path('personal-account/update/<int:account_pk>/', PersonalAccountUpdateView.as_view(), name='personal-account-update'),
     path('personal-account/delete/<int:account_pk>/', delete_personal_account, name='personal-account-delete'),
     path('account/check-number/', personal_account_is_unique, name='account-check-number'),
+    path('owner/create', OwnerCreateView.as_view(), name='owner-create'),
 ]

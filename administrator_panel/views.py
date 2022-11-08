@@ -526,3 +526,29 @@ class OwnerCreateView(CreateView):
     model = User
     template_name = 'administration_panel/owner-create-update.html'
     form_class = OwnerForm
+
+    def post(self, request, *args, **kwargs):
+        form = self.get_form_class()(request.POST, request.FILES)
+        if form.is_valid():
+            return self.form_valid(form)
+        self.object = None
+        context = self.get_context_data()
+        context['form'] = form
+        return self.render_to_response(context)
+
+    def form_valid(self, form):
+        User.objects.create_user(email=form.cleaned_data.get('email'),
+                                 password=form.cleaned_data.get('password'),
+                                 name=form.cleaned_data.get('name'),
+                                 surname=form.cleaned_data.get('surname'),
+                                 role=Role.objects.get(role__exact='owner'),
+                                 birthday=form.cleaned_data.get('birthday'),
+                                 logo=form.cleaned_data.get('logo'),
+                                 father=form.cleaned_data.get('father'),
+                                 phone=form.cleaned_data.get('phone'),
+                                 viber=form.cleaned_data.get('viber'),
+                                 owner_id=form.cleaned_data.get('owner_id'),
+                                 telegram=form.cleaned_data.get('telegram'),
+                                 status=form.cleaned_data.get('status'),
+                                 notes=form.cleaned_data.get('notes'))
+        return redirect('users')

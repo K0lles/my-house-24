@@ -1,5 +1,7 @@
 from django.db.models import Q
-from django.forms import BaseModelFormSet, ModelForm, modelformset_factory, ModelChoiceField, CharField
+from django.forms import BaseModelFormSet, ModelForm, modelformset_factory, ModelChoiceField, CharField, DateField
+
+from phonenumber_field.formfields import PhoneNumberField
 
 from configuration.models import User
 from .models import House, HouseUser, Section, Floor, PersonalAccount, Flat, Receipt
@@ -127,6 +129,8 @@ class PersonalAccountForm(ModelForm):
 
 
 class OwnerForm(ModelForm):
+    birthday = DateField(input_formats=['%d.%m.%Y'], required=False)
+    phone = PhoneNumberField(required=False)
 
     class Meta:
         model = User

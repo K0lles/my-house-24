@@ -84,6 +84,7 @@ class User(AbstractBaseUser):
     role = models.ForeignKey(Role, on_delete=models.PROTECT, verbose_name='Роль')
     is_admin = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
+    created_at = models.DateField(auto_now_add=True)
 
     objects = UserManager()
 

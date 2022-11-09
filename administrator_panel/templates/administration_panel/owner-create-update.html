@@ -10,21 +10,21 @@
 {% endblock %}
 
 {% block content_header %}
-    <h1>Новий власник</h1>
+    <h1>{% if not form.instance.pk %}Новий власник{% else %}Редагування власника{% endif %}</h1>
 {% endblock %}
 
 {% block main_content %}
     <div class="card">
         <div class="card-body">
-            <form id="owner-form" method="post" action="{% url 'owner-create' %}" enctype="multipart/form-data">
+            <form id="owner-form" method="post" {% if not form.instance.pk %}action="{% url 'owner-create' %}"{% else %}action="{% url 'owner-update' owner_pk=form.instance.pk %}"{% endif %} enctype="multipart/form-data">
                 {% csrf_token %}
                 <div class="row">
                     <div class="col-sm-12 col-lg-6">
                         <div class="user-logo">
-                            <img id="{{ form.logo.auto_id }}-display" class="img-circle pull-left img-responsive" height="160" width="200" src="{% static 'all_logos/empty-image.jpeg' %}" style="display: inline-block; margin-right: 15px;">
+                            <img id="{{ form.logo.auto_id }}-display" {% if form.instance.pk %}src="{{ form.instance.logo.url }}"{% endif %} class="img-circle pull-left img-responsive" height="160" width="200" src="{% static 'all_logos/empty-image.jpeg' %}" style="display: inline-block; margin-right: 15px;">
                             <div class="form-group" style="display: inline-block; vertical-align: top;">
                                 <label class="form-label" for="{{ form.logo.auto_id }}">Фото</label>
-                                <input class="form-control" type="file" accept="image/*" id="{{ form.logo.auto_id }}" name="{{ form.logo.html_name }}" onchange="loadFile(event, this.id)">
+                                <input class="form-control" type="file" accept="image/*" id="{{ form.logo.auto_id }}" name="{{ form.logo.html_name }}" onchange="loadFile(event, this.id)" {% if form.instance.pk %}value="{{ form.instance.logo }}"{% elif not form.instance.pk and form.logo.value %}value="{{ form.logo.value }}"{% endif %}>
                             </div>
                         </div>
                     </div>
@@ -40,8 +40,8 @@
                         </div>
                         <div class="form-group">
                             <label for="{{ form.owner_id.auto_id }}">ID</label>
-                            <input type="text" class="form-control" id="{{ form.owner_id.auto_id }}" name="{{ form.owner_id.html_name }}" onchange="fieldIsValid(this)">
-                            <p id="{{ form.owner_id.auto_id }}-errors" style="color: red;"></p>
+                            <input type="text" class="form-control" id="{{ form.owner_id.auto_id }}" name="{{ form.owner_id.html_name }}" {% if form.instance.pk %}value="{{ form.instance.owner_id }}"{% elif not form.instance.pk and form.owner_id.value %}value="{{ form.owner_id.value }}"{% endif %} onchange="fieldIsValid(this)" {% if form.owner_id.errors %}style="border: 1px solid red;" {% endif %}>
+                            <p id="{{ form.owner_id.auto_id }}-errors" style="color: red;">{{ form.owner_id.errors }}</p>
                         </div>
                     </div>
                 </div>
@@ -49,17 +49,17 @@
                     <div class="col-sm-12 col-lg-6">
                         <div class="form-group">
                             <label for="{{ form.surname.auto_id }}">Прізвище</label>
-                            <input type="text" class="form-control" id="{{ form.surname.auto_id }}" name="{{ form.surname.html_name }}" onchange="fieldIsValid(this)">
-                            <p id="{{ form.surname.auto_id }}-errors" style="color: red;"></p>
+                            <input type="text" class="form-control" id="{{ form.surname.auto_id }}" name="{{ form.surname.html_name }}" {% if form.instance.pk %}value="{{ form.instance.surname }}"{% elif not form.instance.pk and form.surname.value %}value="{{ form.surname.value }}"{% endif %} onchange="fieldIsValid(this)" {% if form.surname.errors %}style="border: 1px solid red;" {% endif %}>
+                            <p id="{{ form.surname.auto_id }}-errors" style="color: red;">{{ form.surname.errors }}</p>
                         </div>
                         <div class="form-group">
                             <label for="{{ form.name.auto_id }}">Ім'я</label>
-                            <input type="text" class="form-control" id="{{ form.name.auto_id }}" name="{{ form.name.html_name }}" onchange="fieldIsValid(this)">
-                            <p id="{{ form.name.auto_id }}-errors" style="color: red;"></p>
+                            <input type="text" class="form-control" id="{{ form.name.auto_id }}" name="{{ form.name.html_name }}" {% if form.instance.pk %}value="{{ form.instance.name }}"{% elif not form.instance.pk and form.name.value %}value="{{ form.name.value }}"{% endif %} onchange="fieldIsValid(this)" {% if form.name.errors %}style="border: 1px solid red;" {% endif %}>
+                            <p id="{{ form.name.auto_id }}-errors" style="color: red;">{{ form.name.errors }}</p>
                         </div>
                         <div class="form-group">
                             <label for="{{ form.father.auto_id }}">Побатькові</label>
-                            <input type="text" class="form-control" id="{{ form.father.auto_id }}" name="{{ form.father.html_name }}" onchange="fieldIsValid(this)">
+                            <input type="text" class="form-control" id="{{ form.father.auto_id }}" name="{{ form.father.html_name }}" {% if form.instance.pk %}value="{{ form.instance.father }}"{% elif not form.instance.pk and form.father.value %}value="{{ form.father.value }}"{% endif %} onchange="fieldIsValid(this)">
                             <p id="{{ form.father.auto_id }}-errors" style="color: red;"></p>
                         </div>
                         <div class="form-group">
@@ -70,7 +70,7 @@
                                         <i class="fa fa-calendar"></i>
                                     </button>
                                 </span>
-                                <input type="text" class="form-control" id="{{ form.birthday.auto_id }}" name="{{ form.birthday.html_name }}">
+                                <input type="text" class="form-control" id="{{ form.birthday.auto_id }}" name="{{ form.birthday.html_name }}" {% if form.instance.pk %}value="{{ form.instance.birthday|date:'d.m.Y' }}"{% elif not form.instance.pk and form.birthday.value %}value="{{ form.birthday.value }}"{% endif %}>
                             </div>
                             <p id="{{ form.birthday.auto_id }}-errors" style="color: red;"></p>
                         </div>
@@ -78,7 +78,7 @@
                     <div class="col-sm-12 col-lg-6">
                         <div class="form-group">
                             <label class="form-label" for="{{ form.notes.auto_id }}">Про власника (нотатки)</label>
-                            <textarea class="form-control" id="{{ form.notes.auto_id }}" name="{{ form.notes.html_name }}" style="height: 288px;" onchange="textAreaIsValid(this)"></textarea>
+                            <textarea class="form-control" id="{{ form.notes.auto_id }}" name="{{ form.notes.html_name }}" style="height: 288px;" onchange="textAreaIsValid(this)">{% if form.instance.pk %}{{ form.instance.notes }}{% elif not form.instance.pk and form.notes.value %}{{ form.owner_id.value }}{% endif %}</textarea>
                             <p id="{{ form.notes.auto_id }}-errors" style="color: red;"></p>
                         </div>
                     </div>
@@ -88,23 +88,23 @@
                         <h2 style="font-size: 22px; border-bottom: 1px solid #eee; padding-bottom: 10px;">Контактні дані</h2>
                         <div class="form-group">
                             <label class="form-label" for="{{ form.phone.auto_id }}">Телефон</label>
-                            <input type="text" class="form-control" id="{{ form.phone.auto_id }}" name="{{ form.phone.html_name }}" onchange="fieldIsValid(this)">
+                            <input type="text" class="form-control" id="{{ form.phone.auto_id }}" name="{{ form.phone.html_name }}" {% if form.instance.pk %}value="{{ form.instance.phone }}"{% elif not form.instance.pk and form.phone.value %}value="{{ form.phone.value }}"{% endif %} onchange="fieldIsValid(this)">
                             <p id="{{ form.phone.auto_id }}-errors" style="color: red;"></p>
                         </div>
                         <div class="form-group">
                             <label class="form-label" for="{{ form.viber.auto_id }}">Viber</label>
-                            <input type="text" class="form-control" id="{{ form.viber.auto_id }}" name="{{ form.viber.html_name }}" onchange="fieldIsValid(this)">
+                            <input type="text" class="form-control" id="{{ form.viber.auto_id }}" name="{{ form.viber.html_name }}" {% if form.instance.pk %}value="{{ form.instance.viber }}"{% elif not form.instance.pk and form.viber.value %}value="{{ form.viber.value }}"{% endif %} onchange="fieldIsValid(this)">
                             <p id="{{ form.viber.auto_id }}-errors" style="color: red;"></p>
                         </div>
                         <div class="form-group">
                             <label class="form-label" for="{{ form.telegram.auto_id }}">Telegram</label>
-                            <input type="text" class="form-control" id="{{ form.telegram.auto_id }}" name="{{ form.telegram.html_name }}" onchange="fieldIsValid(this)">
+                            <input type="text" class="form-control" id="{{ form.telegram.auto_id }}" name="{{ form.telegram.html_name }}" {% if form.instance.pk %}value="{{ form.instance.telegram }}"{% elif not form.instance.pk and form.telegram.value %}value="{{ form.telegram.value }}"{% endif %} onchange="fieldIsValid(this)">
                             <p id="{{ form.telegram.auto_id }}-errors" style="color: red;"></p>
                         </div>
                         <div class="form-group">
                             <label class="form-label" for="{{ form.email.auto_id }}">Email (логін)</label>
-                            <input type="email" class="form-control" id="{{ form.email.auto_id }}" name="{{ form.email.html_name }}" onchange="fieldIsValid(this)">
-                            <p id="{{ form.email.auto_id }}-errors" style="color: red;"></p>
+                            <input type="email" class="form-control" id="{{ form.email.auto_id }}" name="{{ form.email.html_name }}" {% if form.instance.pk %}value="{{ form.instance.email }}"{% elif not form.instance.pk and form.email.value %}value="{{ form.email.value }}"{% endif %} onchange="fieldIsValid(this)" {% if form.email.errors %}style="border: 1px solid red;" {% endif %}>
+                            <p id="{{ form.email.auto_id }}-errors" style="color: red;">{{ form.email.errors }}</p>
                         </div>
                     </div>
                     <div class="col-sm-12 col-lg-6">
@@ -112,7 +112,7 @@
                         <div class="form-group">
                             <label for="{{ form.password.auto_id }}">Пароль</label>
                             <div class="input-group">
-                                <input class="form-control" type="password" id="{{ form.password.auto_id }}" name="{{ form.password.html_name }}" {% if not form.instance.id %}onchange="fieldIsValid(this)"{% else %}onchange="validatePasswordUpdate(this)"{% endif %}>
+                                <input class="form-control" type="password" id="{{ form.password.auto_id }}" name="{{ form.password.html_name }}" {% if not form.instance.id %}onchange="fieldIsValid(this)"{% else %}onchange="validatePasswordUpdate(this)"{% endif %} {% if form.password.errors %}style="border: 1px solid red;" {% endif %}>
                                 <span class="input-group-append">
                                     <button type="button" class="btn btn-default" onclick='generatePassword()'>Згенерувати</button>
                                     <button type="button" class="btn btn-primary" onclick="showHidePassword()">
@@ -120,7 +120,7 @@
                                     </button>
                                 </span>
                             </div>
-                            <p id="{{ form.password.auto_id }}-errors" style="color: red;"></p>
+                            <p id="{{ form.password.auto_id }}-errors" style="color: red;">{{ form.password.errors }}</p>
                         </div>
                         <div class="form-group">
                             <label for="id_repeat-password">Повторіть пароль</label>
@@ -131,7 +131,7 @@
                 <div class="row">
                     <div class="col-sm-12 text-right">
                         <button type="reset" class="btn btn-default">Відмінити</button>
-                        <button type="submit" class="btn btn-success" onclick="formIsValidCreate(event)">Створити</button>
+                        <button type="submit" class="btn btn-success" {% if not form.instance.pk %}onclick="formIsValidCreate(event)"{% else %}onclick="formIsValidUpdate(event)"{% endif %}>Створити</button>
                     </div>
                 </div>
             </form>
@@ -210,6 +210,12 @@
             }
         });
 
+        $(`#owner-form`).find(`input[id$='id_owner_id']`).each(function() {
+            if (!fieldIsValid(this)) {
+                isValid = false;
+            }
+        });
+
         $(`#owner-form`).find(`input[id$='id_password']`).each(function() {
             if (!fieldIsValid(this)) {
                 isValid = false;
@@ -219,6 +225,62 @@
         $(`#owner-form`).find(`input[id$='id_repeat-password']`).each(function() {
             if (!fieldIsValid(this)) {
                 isValid = false;
+            }
+        });
+
+        if (isValid) {
+            $(`#owner-form`).submit();
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+
+    function formIsValidUpdate(e) {
+        e.preventDefault();
+        let isValid = true;
+
+        $(`#owner-form`).find(`input[type='text']`).each(function () {
+            $(this).css('border', '1px solid #58c76d');
+        })
+
+        $(`#owner-form`).find('textarea').css('border', '1px solid #58c76d');
+        $(`#owner-form`).find('select').css('border', '1px solid #58c76d');
+
+        $(`#owner-form`).find(`input[id$='id_name']`).each(function() {
+            if (!fieldIsValid(this)) {
+                isValid = false;
+            }
+        });
+
+        $(`#owner-form`).find(`input[id$='id_surname']`).each(function() {
+            if (!fieldIsValid(this)) {
+                isValid = false;
+            }
+        });
+
+        $(`#owner-form`).find(`input[id$='id_email']`).each(function() {
+            if (!fieldIsValid(this)) {
+                isValid = false;
+            }
+        });
+
+        $(`#owner-form`).find(`input[id$='id_owner_id']`).each(function() {
+            if (!fieldIsValid(this)) {
+                isValid = false;
+            }
+        });
+
+        $(`#user-form`).find(`input[id$='id_password']`).each(function() {
+            if (!validatePasswordUpdate(this)) {
+                isValidPassword = false;
+            }
+        });
+
+        $(`#user-form`).find(`input[id$='id_repeat-password']`).each(function() {
+            if (!validatePasswordUpdate(this)) {
+                isValidPassword = false;
             }
         });
 

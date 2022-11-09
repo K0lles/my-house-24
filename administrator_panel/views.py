@@ -552,3 +552,22 @@ class OwnerCreateView(CreateView):
                                  status=form.cleaned_data.get('status'),
                                  notes=form.cleaned_data.get('notes'))
         return redirect('users')
+
+
+class OwnerUpdateView(UpdateView):
+    model = User
+    template_name = 'administration_panel/owner-create-update.html'
+    form_class = OwnerForm
+    pk_url_kwarg = 'owner_pk'
+
+    def get_object(self, queryset=None):
+        try:
+            return User.objects.select_related('role').get(pk=self.kwargs.get('owner_pk'), role__role='owner')
+        except (User.DoesNotExist, KeyError, AttributeError):
+            raise Http404()
+
+
+class OwnerListView(ListView):
+    model = User
+    queryset = User.objects.prefetch_related('flat_set', 'flat_set__house').filter(role__role='owner').order_by('-id')
+    template_name = 'administration_panel/owner-list.html'

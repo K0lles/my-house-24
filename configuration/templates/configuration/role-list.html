@@ -38,22 +38,6 @@
                             {{ form.id }}
                             <tr class="text-center">
                                 <td><b>{{ form.instance.get_role_display }}</b></td>
-                                {% comment %}<td>{{ form.statistic_access }}</td>
-                                <td>{{ form.checkout_access }}</td>
-                                <td>{{ form.receipt_access }}</td>
-                                <td>{{ form.bill_access }}</td>
-                                <td>{{ form.flat_access }}</td>
-                                <td>{{ form.owner_access }}</td>
-                                <td>{{ form.building_access }}</td>
-                                <td>{{ form.message_access }}</td>
-                                <td>{{ form.master_apply_access }}</td>
-                                <td>{{ form.counter_access }}</td>
-                                <td>{{ form.site_management_access }}</td>
-                                <td>{{ form.service_access }}</td>
-                                <td>{{ form.tariff_access }}</td>
-                                <td>{{ form.role_access }}</td>
-                                <td>{{ form.user_access }}</td>
-                                <td>{{ form.payment_requisite_access }}</td>{% endcomment %}
                                 <td><input id="{{ form.statistic_access.auto_id }}" name="{{ form.statistic_access.html_name }}" type="checkbox" {% if form.instance.statistic_access %}checked{% endif %} {% if form.instance.role == 'director' %}disabled{% endif %}></td>
                                 <td><input id="{{ form.checkout_access.auto_id }}" name="{{ form.checkout_access.html_name }}" type="checkbox" {% if form.instance.checkout_access %}checked{% endif %} {% if form.instance.role == 'director' %}disabled{% endif %}></td>
                                 <td><input id="{{ form.receipt_access.auto_id }}" name="{{ form.receipt_access.html_name }}" type="checkbox" {% if form.instance.receipt_access %}checked{% endif %} {% if form.instance.role == 'director' %}disabled{% endif %}></td>

@@ -135,3 +135,23 @@ class OwnerForm(ModelForm):
     class Meta:
         model = User
         exclude = ('role', 'is_active', 'is_admin')
+
+    def clean(self):
+        cleaned_data = super(OwnerForm, self).clean()
+
+        if not cleaned_data.get('name'):
+            self._errors['name'] = 'Це поле не може бути пустим'
+
+        if not cleaned_data.get('surname'):
+            self._errors['surname'] = 'Це поле не може бути пустим'
+
+        if not cleaned_data.get('owner_id'):
+            self._errors['owner_id'] = 'Це поле не може бути пустим'
+
+        if not cleaned_data.get('email'):
+            self._errors['email'] = 'Це поле не може бути пустим'
+
+        if not cleaned_data.get('password') and not self.instance.pk:
+            self._errors['password'] = 'Це поле не може бути пустим'
+
+        return cleaned_data

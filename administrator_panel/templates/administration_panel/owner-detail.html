@@ -1,0 +1,74 @@
+{% extends 'main_page.html' %}
+{% load static %}
+
+{% block content_header %}
+    <h1>{{ object.name }} {{ object.surname }}</h1>
+{% endblock %}
+
+{% block main_content %}
+    <div class="card">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-sm-12 text-right">
+                    <a href="" class="btn btn-default" style="margin-right: 20px;">Перейти в кабінет</a>
+                    <a class="btn btn-info" href="{% url 'owner-update' owner_pk=object.pk %}">Редагувати власника</a>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-sm-12">
+                    <img class="img-circle" {% if object.logo %}src="{{ object.logo.url }}"{% else %}src="{% static 'all_logos/empty-photo.png' %}"{% endif %} height="160" width="200">
+                    <table class="table table-borderless">
+                        <tr>
+                            <th>Статус</th>
+                            <td>
+                                {% if object.status == 'new' %}<span class="badge badge-warning">{{ object.get_status_display }}</span>
+                                {% elif object.status == 'active' %}<span class="badge badge-success">{{ object.get_status_display }}</span>
+                                {% else %}<span class="badge badge-danger">{{ object.get_status_display }}</span>{% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>ID</th>
+                            <td>{{ object.owner_id }}</td>
+                        </tr>
+                        <tr>
+                            <th>Прізвище</th>
+                            <td>{{ object.surname }}</td>
+                        </tr>
+                        <tr>
+                            <th>Ім'я</th>
+                            <td>{{ object.name }}</td>
+                        </tr>
+                        <tr>
+                            <th>Побатькові</th>
+                            <td>{% if object.father %}{{ object.father }}{% else %}{% endif %}</td>
+                        </tr>
+                        <tr>
+                            <th>Дата народження</th>
+                            <td>{{ object.birthday|date:'d.m.Y' }}</td>
+                        </tr>
+                        <tr>
+                            <th>Нотатки (про власника)</th>
+                            <td>{% if object.notes %}{{ object.notes }}{% endif %}</td>
+                        </tr>
+                        <tr>
+                            <th>Телефон</th>
+                            <td>{% if object.phone %}{{ object.phone }}{% endif %}</td>
+                        </tr>
+                        <tr>
+                            <th>Viber</th>
+                            <td>{% if object.viber %}{{ object.viber }}{% endif %}</td>
+                        </tr>
+                        <tr>
+                            <th>Telegram</th>
+                            <td>{% if object.telegram %}{{ object.telegram }}{% endif %}</td>
+                        </tr>
+                        <tr>
+                            <th>Email</th>
+                            <td>{{ object.email }}</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

@@ -21,10 +21,10 @@
                 <div class="row">
                     <div class="col-sm-12 col-lg-6">
                         <div class="user-logo">
-                            <img id="{{ form.logo.auto_id }}-display" {% if form.instance.pk %}src="{{ form.instance.logo.url }}"{% endif %} class="img-circle pull-left img-responsive" height="160" width="200" src="{% static 'all_logos/empty-image.jpeg' %}" style="display: inline-block; margin-right: 15px;">
+                            <img id="{{ form.logo.auto_id }}-display" {% if form.instance.pk and form.instance.logo %}src="{{ form.instance.logo.url }}"{% endif %} class="img-circle pull-left img-responsive" height="160" width="200" src="{% static 'all_logos/empty-image.jpeg' %}" style="display: inline-block; margin-right: 15px;">
                             <div class="form-group" style="display: inline-block; vertical-align: top;">
                                 <label class="form-label" for="{{ form.logo.auto_id }}">Фото</label>
-                                <input class="form-control" type="file" accept="image/*" id="{{ form.logo.auto_id }}" name="{{ form.logo.html_name }}" onchange="loadFile(event, this.id)" {% if form.instance.pk %}value="{{ form.instance.logo }}"{% elif not form.instance.pk and form.logo.value %}value="{{ form.logo.value }}"{% endif %}>
+                                <input class="form-control" type="file" accept="image/*" id="{{ form.logo.auto_id }}" name="{{ form.logo.html_name }}" onchange="loadFile(event, this.id)" {% if form.instance.pk and form.instance.logo %}value="{{ form.instance.logo }}"{% elif not form.instance.pk and form.logo.value %}value="{{ form.logo.value }}"{% endif %}>
                             </div>
                         </div>
                     </div>
@@ -59,7 +59,7 @@
                         </div>
                         <div class="form-group">
                             <label for="{{ form.father.auto_id }}">Побатькові</label>
-                            <input type="text" class="form-control" id="{{ form.father.auto_id }}" name="{{ form.father.html_name }}" {% if form.instance.pk %}value="{{ form.instance.father }}"{% elif not form.instance.pk and form.father.value %}value="{{ form.father.value }}"{% endif %} onchange="fieldIsValid(this)">
+                            <input type="text" class="form-control" id="{{ form.father.auto_id }}" name="{{ form.father.html_name }}" {% if form.instance.pk and form.instance.father %}value="{{ form.instance.father }}"{% elif not form.instance.pk and form.father.value %}value="{{ form.father.value }}"{% endif %} onchange="fieldIsValid(this)">
                             <p id="{{ form.father.auto_id }}-errors" style="color: red;"></p>
                         </div>
                         <div class="form-group">
@@ -70,7 +70,7 @@
                                         <i class="fa fa-calendar"></i>
                                     </button>
                                 </span>
-                                <input type="text" class="form-control" id="{{ form.birthday.auto_id }}" name="{{ form.birthday.html_name }}" {% if form.instance.pk %}value="{{ form.instance.birthday|date:'d.m.Y' }}"{% elif not form.instance.pk and form.birthday.value %}value="{{ form.birthday.value }}"{% endif %}>
+                                <input type="text" class="form-control" id="{{ form.birthday.auto_id }}" name="{{ form.birthday.html_name }}" {% if form.instance.pk and form.instance.birthday %}value="{{ form.instance.birthday|date:'d.m.Y' }}"{% elif not form.instance.pk and form.birthday.value %}value="{{ form.birthday.value }}"{% endif %}>
                             </div>
                             <p id="{{ form.birthday.auto_id }}-errors" style="color: red;"></p>
                         </div>
@@ -78,7 +78,7 @@
                     <div class="col-sm-12 col-lg-6">
                         <div class="form-group">
                             <label class="form-label" for="{{ form.notes.auto_id }}">Про власника (нотатки)</label>
-                            <textarea class="form-control" id="{{ form.notes.auto_id }}" name="{{ form.notes.html_name }}" style="height: 288px;" onchange="textAreaIsValid(this)">{% if form.instance.pk %}{{ form.instance.notes }}{% elif not form.instance.pk and form.notes.value %}{{ form.owner_id.value }}{% endif %}</textarea>
+                            <textarea class="form-control" id="{{ form.notes.auto_id }}" name="{{ form.notes.html_name }}" style="height: 288px;" onchange="textAreaIsValid(this)">{% if form.instance.pk and form.instance.notes %}{{ form.instance.notes }}{% elif not form.instance.pk and form.notes.value %}{{ form.owner_id.value }}{% endif %}</textarea>
                             <p id="{{ form.notes.auto_id }}-errors" style="color: red;"></p>
                         </div>
                     </div>
@@ -88,17 +88,17 @@
                         <h2 style="font-size: 22px; border-bottom: 1px solid #eee; padding-bottom: 10px;">Контактні дані</h2>
                         <div class="form-group">
                             <label class="form-label" for="{{ form.phone.auto_id }}">Телефон</label>
-                            <input type="text" class="form-control" id="{{ form.phone.auto_id }}" name="{{ form.phone.html_name }}" {% if form.instance.pk %}value="{{ form.instance.phone }}"{% elif not form.instance.pk and form.phone.value %}value="{{ form.phone.value }}"{% endif %} onchange="fieldIsValid(this)">
+                            <input type="text" class="form-control" id="{{ form.phone.auto_id }}" name="{{ form.phone.html_name }}" {% if form.instance.pk and form.instance.phone %}value="{{ form.instance.phone }}"{% elif not form.instance.pk and form.phone.value %}value="{{ form.phone.value }}"{% endif %} onchange="fieldIsValid(this)">
                             <p id="{{ form.phone.auto_id }}-errors" style="color: red;"></p>
                         </div>
                         <div class="form-group">
                             <label class="form-label" for="{{ form.viber.auto_id }}">Viber</label>
-                            <input type="text" class="form-control" id="{{ form.viber.auto_id }}" name="{{ form.viber.html_name }}" {% if form.instance.pk %}value="{{ form.instance.viber }}"{% elif not form.instance.pk and form.viber.value %}value="{{ form.viber.value }}"{% endif %} onchange="fieldIsValid(this)">
+                            <input type="text" class="form-control" id="{{ form.viber.auto_id }}" name="{{ form.viber.html_name }}" {% if form.instance.pk and form.instance.viber %}value="{{ form.instance.viber }}"{% elif not form.instance.pk and form.viber.value %}value="{{ form.viber.value }}"{% endif %} onchange="fieldIsValid(this)">
                             <p id="{{ form.viber.auto_id }}-errors" style="color: red;"></p>
                         </div>
                         <div class="form-group">
                             <label class="form-label" for="{{ form.telegram.auto_id }}">Telegram</label>
-                            <input type="text" class="form-control" id="{{ form.telegram.auto_id }}" name="{{ form.telegram.html_name }}" {% if form.instance.pk %}value="{{ form.instance.telegram }}"{% elif not form.instance.pk and form.telegram.value %}value="{{ form.telegram.value }}"{% endif %} onchange="fieldIsValid(this)">
+                            <input type="text" class="form-control" id="{{ form.telegram.auto_id }}" name="{{ form.telegram.html_name }}" {% if form.instance.pk and form.instance.telegram %}value="{{ form.instance.telegram }}"{% elif not form.instance.pk and form.telegram.value %}value="{{ form.telegram.value }}"{% endif %} onchange="fieldIsValid(this)">
                             <p id="{{ form.telegram.auto_id }}-errors" style="color: red;"></p>
                         </div>
                         <div class="form-group">
@@ -131,7 +131,7 @@
                 <div class="row">
                     <div class="col-sm-12 text-right">
                         <button type="reset" class="btn btn-default">Відмінити</button>
-                        <button type="submit" class="btn btn-success" {% if not form.instance.pk %}onclick="formIsValidCreate(event)"{% else %}onclick="formIsValidUpdate(event)"{% endif %}>Створити</button>
+                        <button type="submit" class="btn btn-success" {% if not form.instance.pk %}onclick="formIsValidCreate(event)"{% else %}onclick="formIsValidUpdate(event)"{% endif %}>{% if not form.instance.pk %}Створити{% else %}Зберегти{% endif %}</button>
                     </div>
                 </div>
             </form>

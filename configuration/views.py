@@ -321,11 +321,7 @@ class UserUpdateView(UpdateView):
         user = self.get_object()
         form = UserForm(request.POST, instance=user)
         if form.is_valid():
-            self.form_valid(form, user)
-            old_password = user.password
-            user_saved = form.save()
-            if not form.cleaned_data.get('password'):
-                user_saved.password = old_password
+            return self.form_valid(form, user)
         self.object = self.get_object()
         context = self.get_context_data()
         context['form'] = form

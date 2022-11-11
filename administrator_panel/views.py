@@ -551,7 +551,7 @@ class OwnerCreateView(CreateView):
                                  telegram=form.cleaned_data.get('telegram'),
                                  status=form.cleaned_data.get('status'),
                                  notes=form.cleaned_data.get('notes'))
-        return redirect('users')
+        return redirect('owners')
 
 
 class OwnerUpdateView(UpdateView):
@@ -566,8 +566,52 @@ class OwnerUpdateView(UpdateView):
         except (User.DoesNotExist, KeyError, AttributeError):
             raise Http404()
 
+    def post(self, request, *args, **kwargs):
+        owner = self.get_object()
+        form = OwnerForm(request.POST, request.FILES, instance=owner)
+        if form.is_valid():
+            return self.form_valid(form, owner)
+        self.object = self.get_object()
+        context = self.get_context_data()
+        context['form'] = form
+        return self.render_to_response(context)
+
+    def form_valid(self, form, owner):
+        old_password = owner.password
+        owner_saved = form.save()
+        if form.cleaned_data.get('password'):
+            owner_saved.set_password(form.cleaned_data.get('password'))
+            owner_saved.save()
+        else:
+            owner_saved.password = old_password
+            owner_saved.save()
+        return redirect('owners')
+
 
 class OwnerListView(ListView):
     model = User
     queryset = User.objects.prefetch_related('flat_set', 'flat_set__house').filter(role__role='owner').order_by('-id')
     template_name = 'administration_panel/owner-list.html'
+
+
+class OwnerDetailView(DetailView):
+    model = User
+    template_name = 'administration_panel/owner-detail.html'
+    pk_url_kwarg = 'owner_pk'
+
+    def get_object(self, queryset=None):
+        try:
+            return User.objects.get(pk=self.kwargs['owner_pk'])
+        except User.DoesNotExist:
+            raise Http404()
+
+
+def delete_owner(request, owner_pk):
+    try:
+        user = User.objects.prefetch_related('flat_set__receipt_set', 'flat_set__personalaccount').get(pk=owner_pk)
+        if not user.flat_set.all().exists():
+            user.delete()
+            return JsonResponse({'answer': 'success'})
+        return JsonResponse({'answer': 'failed'})
+    except User.DoesNotExist:
+        return JsonResponse({'answer': 'failed'})

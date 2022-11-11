@@ -138,6 +138,7 @@ class OwnerForm(ModelForm):
 
     def clean(self):
         cleaned_data = super(OwnerForm, self).clean()
+        self._errors = {}
 
         if not cleaned_data.get('name'):
             self._errors['name'] = 'Це поле не може бути пустим'
@@ -153,5 +154,12 @@ class OwnerForm(ModelForm):
 
         if not cleaned_data.get('password') and not self.instance.pk:
             self._errors['password'] = 'Це поле не може бути пустим'
+
+        try:
+            if (not self.instance.pk and cleaned_data.get('email') and User.objects.get(email=cleaned_data.get('email'))) \
+                    or User.objects.filter(email=cleaned_data.get('email')).count() > 1:
+                self._errors['email'] = 'Власник з таким email вже існує'
+        except User.DoesNotExist:
+            return cleaned_data
 
         return cleaned_data

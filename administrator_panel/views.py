@@ -615,3 +615,15 @@ def delete_owner(request, owner_pk):
         return JsonResponse({'answer': 'failed'})
     except User.DoesNotExist:
         return JsonResponse({'answer': 'failed'})
+
+
+class EvidenceCreateView(CreateView):
+    model = Evidence
+    template_name = 'administration_panel/evidence-create.html'
+    form_class = EvidenceForm
+
+    def get_context_data(self, **kwargs):
+        context = super(EvidenceCreateView, self).get_context_data(**kwargs)
+        context = personal_account_context(context)
+        context['services'] = Service.objects.select_related('measurement_unit').filter(show_in_counters=True)
+        return context

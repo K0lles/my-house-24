@@ -4,7 +4,7 @@ from django.forms import BaseModelFormSet, ModelForm, modelformset_factory, Mode
 from phonenumber_field.formfields import PhoneNumberField
 
 from configuration.models import User
-from .models import House, HouseUser, Section, Floor, PersonalAccount, Flat, Receipt
+from .models import House, HouseUser, Section, Floor, PersonalAccount, Flat, Evidence, Receipt, Service
 
 
 class HouseForm(ModelForm):
@@ -163,3 +163,14 @@ class OwnerForm(ModelForm):
             return cleaned_data
 
         return cleaned_data
+
+
+class EvidenceForm(ModelForm):
+
+    def __init__(self, *args, **kwargs):
+        super(EvidenceForm, self).__init__(*args, **kwargs)
+        self.fields['status'].choices[0] = ('', 'Вибрати...')
+
+    class Meta:
+        model = Evidence
+        fields = '__all__'

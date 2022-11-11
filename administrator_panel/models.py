@@ -4,7 +4,7 @@ from django.utils import timezone
 
 from phonenumber_field.modelfields import PhoneNumberField
 
-from configuration.models import User, Tariff, ArticlePayment
+from configuration.models import User, Tariff, ArticlePayment, Service
 
 
 class House(models.Model):
@@ -127,15 +127,16 @@ class Template(models.Model):
 
 
 class Evidence(models.Model):
-    house = models.ForeignKey(House, on_delete=models.PROTECT, verbose_name='Дім')
+    number = models.CharField(max_length=15)
     flat = models.ForeignKey(Flat, on_delete=models.PROTECT, verbose_name='Квартира')
-    section = models.ForeignKey(Section, on_delete=models.PROTECT, verbose_name='Секція')
-    tariff = models.ForeignKey(Tariff, on_delete=models.PROTECT, verbose_name='Рахунок')
+    service = models.ForeignKey(Service, on_delete=models.PROTECT, verbose_name='Рахунок')
 
     class StatusChoices(models.TextChoices):
         new = ('new', 'Новий')
         null = ('null', 'Нульовий')
         taken = ('taken', 'Врахований')
+        taken_and_paid = ('taken and paid', 'Врахований і оплачений')
 
-    status = models.CharField(max_length=10, choices=StatusChoices.choices, verbose_name='Статус')
+    status = models.CharField(max_length=20, choices=StatusChoices.choices, verbose_name='Статус')
     counter_evidence = models.FloatField(validators=[MinValueValidator(0.0)])
+    date_from = models.DateField(default=timezone.now)

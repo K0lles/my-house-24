@@ -27,4 +27,5 @@ urlpatterns = [
     path('owner/<int:owner_pk>/', OwnerDetailView.as_view(), name='owner-detail'),
     path('owner/update/<int:owner_pk>/', OwnerUpdateView.as_view(), name='owner-update'),
     path('owner/delete/<int:owner_pk>/', delete_owner, name='owner-delete'),
+    path('evidence/create/', EvidenceCreateView.as_view(), name='evidence-create'),
 ]

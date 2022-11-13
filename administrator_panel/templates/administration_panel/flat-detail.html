@@ -1,0 +1,61 @@
+{% extends 'main_page.html' %}
+{% load static %}
+
+{% block content_header %}
+    <h1>Квартира №{{ object.number }}</h1>
+{% endblock %}
+
+{% block main_content %}
+    <div class="card">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-sm-12 col-lg-6">
+                    <h5 style="font-size: 18px; color: grey">Перегляд квартири</h5>
+                </div>
+                <div class="col-sm-12 col-lg-6 text-right">
+                    <div class="btn-group">
+                        <button class="btn btn-default" type="button" {% if not object.personalaccount %}disabled{% endif %} style="margin-right: 10px;"><i class="fa fa-dollar"></i> Прийняти платіж</button>
+                        <button class="btn btn-default" type="button" {% if not object.personalaccount %}disabled{% endif %} style="margin-right: 10px;"><i class="fa fa-clone"></i> Оформити квитанцію</button>
+                        <a class="btn btn-info" href="{% url 'flat-update' flat_pk=object.pk %}">Редагувати квартиру</a>
+                    </div>
+                </div>
+                <div class="row">
+                    <table class="table table-borderless">
+                        <tr>
+                            <th>Особовий рахунок</th>
+                            <td style="horiz-align: left">{% if not object.personalaccount %}не задано{% else %}{{ object.personalaccount.number }}{% endif %}</td>
+                        </tr>
+                        <tr>
+                            <th>Номер квартири</th>
+                            <td>{{ object.number }}</td>
+                        </tr>
+                        <tr>
+                            <th>Площа</th>
+                            <td>{{ object.square|floatformat }}</td>
+                        </tr>
+                        <tr>
+                            <th>Дім</th>
+                            <td><a href="{% url 'house-detail' house_pk=object.house.pk %}">{{ object.house.name }}</a></td>
+                        </tr>
+                        <tr>
+                            <th>Секція</th>
+                            <td>{{ object.section.name }}</td>
+                        </tr>
+                        <tr>
+                            <th>Поверх</th>
+                            <td>{{ object.floor.name }}</td>
+                        </tr>
+                        <tr>
+                            <th>Власник</th>
+                            <td>{% if object.owner %}<a href="{% url 'user-detail' pk=object.owner.pk %}">{{ object.owner.name }} {{ object.owner.surname }}{% else %}(не задано){% endif %}</a> </td>
+                        </tr>
+                        <tr>
+                            <th>Тариф</th>
+                            <td>{% if object.tariff %}<a href="{% url 'tariff-detail' pk=object.tariff.pk %}">{% else %}(не задано){% endif %}{{ object.tariff.name }}</a></td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

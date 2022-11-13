@@ -61,8 +61,8 @@ function numberTypeValidation(element) {
         }
     }
     else if (element.value <= 0.00) {
-        if (!($(`#${element.id}-errors`).text()).includes('Ціна не може бути меншою 0')) {
-            $(`#${element.id}-errors`).text('Ціна не може бути меншою 0');
+        if (!($(`#${element.id}-errors`).text()).includes('Цифра у полі не може бути меншою 0')) {
+            $(`#${element.id}-errors`).text('Цифра у полі не може бути меншою 0');
             element.style = 'border: 1px solid red';
             return false;
         }
@@ -128,7 +128,6 @@ function passwordTypeValidation(element) {
 
 function validatePasswordUpdate(element) {
     if (element.id === 'id_repeat-password') {
-        console.log('we are here')
         if ($('#id_password').val() !== element.value) {
             if (!($(`#id_password-errors`).text()).includes('Паролі повинні співпадати')) {
                 $(`#id_password-errors`).text('Паролі повинні співпадати');
@@ -151,33 +150,6 @@ function validatePasswordUpdate(element) {
     return true;
 }
 
-/*function formIsValid() {
-    function formIsValid(e) {
-        e.preventDefault();
-        let isValidName = true;
-        let isValidSelect = true;
-
-        $(`#article-payment-form`).find(`input[id$='_name']`).each(function() {
-            if (!fieldIsValid(this)) {
-                isValidName = false;
-            }
-        });
-
-        $(`#article-payment-form`).find(`select[id$='_type']`).each(function() {
-            if (!fieldIsValid(this)) {
-                isValidSelect = false;
-            }
-        });
-
-        if (isValidName && isValidSelect) {
-            $(`#article-payment-form`).submit();
-            return true;
-        }
-        else {
-            return false;
-        }
-    }
-}*/
 
 $('tr[data-href]').on('click', function() {
     document.location = $(this).data('href');

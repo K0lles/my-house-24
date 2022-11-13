@@ -1,0 +1,64 @@
+{% extends 'main_page.html' %}
+{% load static %}
+
+{% block content_header %}
+    <h1>Особовий рахунок: {{ object.number }}</h1>
+{% endblock %}
+
+{% block main_content %}
+    <div class="row">
+        <div class="col-xs-12 col-md-7 col-lg-6">
+            <div class="form-group">
+                <div class="input-group">
+                    <div class="input-group-append" style="background-color: #fff; border: 1px solid #ccc; padding: 6px 12px;">№</div>
+                     <div class="form-control pull-right">{{ object.number }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-sm-12 col-lg-6">
+                    <h5 style="font-size: 18px; color: grey">Перегляд особового рахунку</h5>
+                </div>
+                <div class="col-sm-12 col-lg-6 text-right">
+                    <div class="btn-group">
+                        <button class="btn btn-default" type="button" {% if not object.flat %}disabled{% endif %} style="margin-right: 10px;"><i class="fa fa-dollar"></i> Прийняти платіж</button>
+                        <button class="btn btn-default" type="button" {% if not object.flat %}disabled{% endif %} style="margin-right: 10px;"><i class="fa fa-clone"></i> Оформити квитанцію</button>
+                        <a class="btn btn-info" href="{% url 'personal-account-update' account_pk=object.pk %}">Редагувати особовий рахунок</a>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <table class="table table-borderless">
+                    <tbody>
+                        <tr>
+                            <th>Статус</th>
+                            <td>{% if object.status == 'active' %}<span class="badge badge-success">{{ object.get_status_display }}</span>
+                                {% elif object.status == 'inactive' %}<span class="badge badge-danger">{{ object.get_status_display }}</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Будинок</th>
+                            <td>{% if object.flat %}<a href="{% url 'house-detail' house_pk=object.flat.house.pk %}">{{ object.flat.house.name }}</a>{% else %}не указано{% endif %}</td>
+                        </tr>
+                        <tr>
+                            <th>Секція</th>
+                            <td>{% if object.flat %}{{ object.flat.section.name }}{% else %}не указано{% endif %}</td>
+                        </tr>
+                        <tr>
+                            <th>Квартира</th>
+                            <td>{% if object.flat %}<a href="{% url 'flat-detail' flat_pk=object.flat.pk %}">{{ object.flat.number }}</a>{% else %}не указано{% endif %}</td>
+                        </tr>
+                        <tr>
+                            <th>Власник</th>
+                            <td>{% if object.flat.owner %}<a href="{% url 'user-detail' pk=object.flat.owner.pk %}">{{ object.flat.owner.name }} {{ object.flat.owner.surname }}</a>{% else %}не указано{% endif %}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+{% endblock %}

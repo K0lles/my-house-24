@@ -1,7 +1,8 @@
+from django.db.models import Q
 from django.forms import BaseModelFormSet, ModelForm, modelformset_factory, ModelChoiceField, CharField
 
 from configuration.models import User
-from .models import House, HouseUser, Section, Floor
+from .models import House, HouseUser, Section, Floor, PersonalAccount, Flat, Receipt
 
 
 class HouseForm(ModelForm):
@@ -26,7 +27,6 @@ class HouseUserForm(ModelForm):
 
     def clean(self):
         cleaned_data = super(HouseUserForm, self).clean()
-        print(f"validated house user {cleaned_data}")
         self._errors = {}
 
         return cleaned_data
@@ -46,7 +46,6 @@ class SectionForm(ModelForm):
 
     def clean(self):
         cleaned_data = super(SectionForm, self).clean()
-        print(f"section floor {cleaned_data}")
         self._errors = {}
 
         return cleaned_data
@@ -66,7 +65,6 @@ class FloorForm(ModelForm):
 
     def clean(self):
         cleaned_data = super(FloorForm, self).clean()
-        print(f"validated floor {cleaned_data}")
         self._errors = {}
 
         return cleaned_data
@@ -75,3 +73,54 @@ class FloorForm(ModelForm):
 floor_formset = modelformset_factory(Floor,
                                      form=FloorForm,
                                      extra=0)
+
+
+class FlatForm(ModelForm):
+
+    class Meta:
+        model = Flat
+        fields = '__all__'
+
+    def clean(self):
+        cleaned_data = super(FlatForm, self).clean()
+        self._errors = {}
+
+        if not cleaned_data.get('number'):
+            self.add_error('number', 'Поле не може бути пустим')
+            return cleaned_data
+
+        try:
+            flats = Flat.objects.filter(number=cleaned_data.get('number'), house__floor=cleaned_data.get('floor'), house__section=cleaned_data.get('section'))
+
+            # check if other flats in indicated house and in indicated floor do not have same number
+            if (not self.instance.pk and flats.count() == 0) or flats.count() == 0:
+                raise Flat.DoesNotExist()
+
+            # while updating check if other flats in indicated house and in indicated floor do not have same number
+            if self.instance.pk and flats.count() == 1 and flats[0].pk == self.instance.pk:
+                raise Flat.DoesNotExist()
+
+            self.add_error('number', 'Квартира із таким номером вже існує на заданому поверсі в заданому секторі')
+        except (Flat.DoesNotExist, AttributeError):
+            return cleaned_data
+        finally:
+            return cleaned_data
+
+
+class PersonalAccountForm(ModelForm):
+
+    class Meta:
+        model = PersonalAccount
+        fields = '__all__'
+
+    def clean(self):
+        cleaned_data = super(PersonalAccountForm, self).clean()
+        self._errors = {}
+        if cleaned_data.get('number') and not self.instance.pk:
+            try:
+                PersonalAccount.objects.get(number=cleaned_data.get('number'))
+                self.add_error('number', 'Поле не може бути пустим')
+            except PersonalAccount.DoesNotExist:
+                return cleaned_data
+
+        return cleaned_data

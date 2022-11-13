@@ -14,17 +14,18 @@
     <div class="card">
         <div class="card-body">
             <div class="row">
-                <table class="table table-borderless table-hover">
+                <table id="house-table" class="table table-borderless table-hover">
                     <thead>
                         <tr>
-                            <th>#</th>
-                            <th>Назва</th>
-                            <th>Адреса</th>
+                            <th style="vertical-align: top;">#</th>
+                            <th>Назва <input type="text" class="form-control"></th>
+                            <th>Адреса <input type="text" class="form-control"></th>
+                            <th></th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for house in house_list %}
-                            <tr role="button" data-href="{% url 'house-update' house_pk=house.pk %}">
+                            <tr role="button" data-href="{% url 'house-detail' house_pk=house.pk %}">
                                 <td>{{ forloop.counter }}</td>
                                 <td>{{ house.name }}</td>
                                 <td>{{ house.address }}</td>
@@ -91,8 +92,36 @@
             })
     })
 
-    $('tr').on('click', function() {
-        document.location = $(this).data('href');
-    });
+    $(document).ready(function () {
+        $('#house-table').DataTable({
+            ordering: false,
+            dom: 'rtp',
+            language: {
+                paginate: {
+                    "previous": "<<",
+                    "next": ">>"
+                }
+            },
+            columns: [
+                null,
+                {'data': 'Назва'},
+                {'data': 'Адреса'},
+                null
+            ],
+            initComplete: function () {
+                this.api()
+                    .columns()
+                    .every(function () {
+                        let that = this;
+
+                        $('input[type="text"]', this.header()).on('keyup change clear', function () {
+                            if (that.search() !== this.value) {
+                                that.search(this.value).draw();
+                            }
+                        });
+                    });
+            },
+        });
+    })
 </script>
 {% endblock %}

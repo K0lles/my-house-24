@@ -1,0 +1,226 @@
+{% extends 'main_page.html' %}
+{% load static %}
+
+{% block content_header %}
+    <h1>Особові рахунки</h1>
+{% endblock %}
+
+{% block main_content %}
+    <div class="row">
+        <div class="col-sm-12 col-lg-9">
+            <div class="row">
+                <div class="col-xs-12 col-md-4">
+                    <div class="small-box bg-green overflow-hidden">
+                        <div class="inner">
+                            <h3>0.00 грн</h3>
+                            <p>Стан каси</p>
+                        </div>
+                        <div class="icon">
+                            <i class="fa fa-dollar"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-xs-12 col-md-4">
+                    <div class="small-box bg-blue overflow-hidden">
+                        <div class="inner">
+                            <h3>0.00 грн</h3>
+                            <p>Баланс по рахунках</p>
+                        </div>
+                        <div class="icon">
+                            <i class="fa fa-dollar"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-xs-12 col-md-4">
+                    <div class="small-box bg-red overflow-hidden">
+                        <div class="inner">
+                            <h3>0.00 грн</h3>
+                            <p>Заборгованість по рахунках</p>
+                        </div>
+                        <div class="icon">
+                            <i class="fa fa-dollar"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xs-12 col-lg-3 text-right">
+            <div class="btn-group">
+                <button type="button" class="btn btn-success dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    Виберіть дію
+                </button>
+                <div class="dropdown-menu dropdown-menu-right">
+                    <a class="dropdown-item" href="{% url 'personal-account-create' %}">Створити особовий рахунок</a>
+                    <a class="dropdown-item" href="#">Вивантажити в Excel</a>
+              </div>
+            </div>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-sm-12 text-right">
+                    <a href="{% url 'personal-accounts' %}" class="btn btn-default">Очистити</a>
+                </div>
+            </div>
+            <div class="row">
+                <table class="table table-borderless table-hover" id="personal-account-table">
+                    <thead>
+                        <tr>
+                            <th>
+                                № <input type="text" class="form-control">
+                            </th>
+                            <th >
+                                Статус
+                                <input type="text" class="form-control">
+                            </th>
+                            <th>
+                                Квартира
+                                <input type="text" class="form-control">
+                            </th>
+                            <th>
+                                Будинок
+                                <input type="text" class="form-control">
+                            </th>
+                            <th>
+                                Секція
+                                <input type="text" class="form-control">
+                            </th>
+                            <th>
+                                Власник
+                                <input type="text" class="form-control">
+                            </th>
+                            <th>
+                                Залишок (грн)
+                                <input type="text" class="form-control">
+                            </th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for account in object_list %}
+                        <tr role="button" data-href="{% url 'personal-account-detail' account_pk=account.pk %}">
+                            <td>{{ account.number }}</td>
+                            <td>{% if account.status == 'active' %}<span class="badge badge-success">{{ account.get_status_display }}</span>
+                                {% elif account.status == 'inactive' %}<span class="badge badge-danger">{{ account.get_status_display }}</span>
+                                {% endif %}
+                            </td>
+                            <td>{% if account.flat %}{{ account.flat.number }}{% else %}не указана{% endif %}</td>
+                            <td>{% if account.flat %}{{ account.flat.house.name }}{% else %}не указаний{% endif %}</td>
+                            <td>{% if account.flat %}{{ account.flat.section.name }}{% else %}не указана{% endif %}</td>
+                            <td>{% if account.flat and account.flat.owner %}{{ account.flat.owner.name }} {{ account.flat.owner.surname }}{% else %}не указаний{% endif %}</td>
+                            <td>{% if account.flat %}0.00 грн{% else %}немає{% endif %}</td>
+                            <td class="text-right">
+                                <div class="btn-group">
+                                    <a href="{% url 'personal-account-update' account_pk=account.pk %}" class="btn btn-default">
+                                        <i class="fa fa-pencil"></i>
+                                    </a>
+                                    <button id="{{ account.pk }}" type="button" class="btn btn-default delete-personal_account">
+                                        <i class="fa fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+
+    $('button.delete-personal_account').on('click', function (event) {
+        event.stopPropagation();
+        Swal.fire({
+            title: 'Ви впевнені?',
+            text: "Після видалення особовий рахунок неможливо буде повернути!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#A9A9A9',
+            cancelButtonText: 'Скасувати',
+            confirmButtonText: 'Видалити'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.ajax({
+                            url: `delete/${$(this).attr('id')}/`,
+                            type: 'GET',
+                            success: function (response) {
+                                if (response['answer'] === 'success') {
+                                    $(event.target).closest('tr').remove();
+                                    Swal.fire({
+                                        position: 'top-end',
+                                        icon: 'success',
+                                        title: 'Успішно видалено!',
+                                        showConfirmButton: false,
+                                        timer: 1200,
+                                    })
+                                }
+                                else if (response['answer'] === 'failed') {
+                                    Swal.fire({
+                                        position: 'top-end',
+                                        icon: 'error',
+                                        title: 'Щось пішло не так!',
+                                        showConfirmButton: false,
+                                        timer: 1200
+                                    });
+                                }
+                            }
+                        })
+                }
+            })
+    })
+
+    $(document).ready(function () {
+        $('#personal-account-table').DataTable({
+            ordering: false,
+            dom: 'rtp',
+            language: {
+                paginate: {
+                    "previous": "<<",
+                    "next": ">>"
+                }
+            },
+            columns: [
+                {'data': '№'},
+                {'data': 'Статус'},
+                {'data': 'Квартира'},
+                {'data': 'Будинок'},
+                {'data': 'Секція'},
+                {'data': 'Власник'},
+                {'data': 'Залишок'},
+                null
+            ],
+            initComplete: function () {
+                this.api()
+                    .columns()
+                    .every(function () {
+                        let that = this;
+
+                        $('input[type="text"]', this.header()).on('keyup change clear', function () {
+                            if (that.search() !== this.value) {
+                                that.search(this.value).draw();
+                            }
+                        });
+
+                        {% comment %}$(`select`).on('change', function () {
+                            console.log(this.id);
+                            let val = $.fn.dataTable.util.escapeRegex($(this).val());
+                            that.search(val ? '^' + val + '$' : '', true, false).draw();
+
+                            that.data().unique().sort().each(function (d, j) {
+                                this.append('<option value="' + d + '">' + d + '</option>');
+                            });
+
+                        }){% endcomment %}
+
+                    });
+            },
+        });
+    })
+
+</script>
+{% endblock %}

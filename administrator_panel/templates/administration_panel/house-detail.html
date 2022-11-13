@@ -8,7 +8,7 @@
 {% block main_content %}
     <div class="card">
         <div class="card-body">
-            <div class="row" style="margin-top: 2%; margin-bottom: 2%;">
+            <div class="row" style="margin-bottom: 2%;">
                 <div class="col-sm-12 text-right">
                     <a href="{% url 'house-update' house_pk=object.pk %}" class="btn btn-info">Редагувати будинок</a>
                 </div>
@@ -50,18 +50,18 @@
                         <div class="col-sm-12 col-md-6">
                             <div class="row">
                                 <div class="col-sm-6 col-md-6">
-                                    <img {% if object.photo_1 %}src="{{ object.photo_2.url }}" {% else %}src="{% static 'all_logos/empty-photo.png' %}"{% endif %} width="100%" height="170px">
+                                    <img {% if object.photo_2 %}src="{{ object.photo_2.url }}" {% else %}src="{% static 'all_logos/empty-photo.png' %}"{% endif %} width="100%" height="170px">
                                 </div>
                                 <div class="col-sm-6 col-md-6">
-                                    <img {% if object.photo_1 %}src="{{ object.photo_3.url }}" {% else %}src="{% static 'all_logos/empty-photo.png' %}"{% endif %} width="100%" height="170px">
+                                    <img {% if object.photo_3 %}src="{{ object.photo_3.url }}" {% else %}src="{% static 'all_logos/empty-photo.png' %}"{% endif %} width="100%" height="170px">
                                 </div>
                             </div>
                             <div class="row" style="margin-top: 10px;">
                                 <div class="col-sm-6 col-md-6">
-                                    <img {% if object.photo_1 %}src="{{ object.photo_4.url }}" {% else %}src="{% static 'all_logos/empty-photo.png' %}"{% endif %} width="100%" height="170px">
+                                    <img {% if object.photo_4 %}src="{{ object.photo_4.url }}" {% else %}src="{% static 'all_logos/empty-photo.png' %}"{% endif %} width="100%" height="170px">
                                 </div>
                                 <div class="col-sm-6 col-md-6">
-                                    <img {% if object.photo_1 %}src="{{ object.photo_5.url }}" {% else %}src="{% static 'all_logos/empty-photo.png' %}"{% endif %} width="100%" height="170px">
+                                    <img {% if object.photo_5 %}src="{{ object.photo_5.url }}" {% else %}src="{% static 'all_logos/empty-photo.png' %}"{% endif %} width="100%" height="170px">
                                 </div>
                             </div>
                         </div>

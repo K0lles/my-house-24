@@ -34,20 +34,24 @@ class Floor(models.Model):
 
 
 class Flat(models.Model):
-    number = models.IntegerField(unique=True, validators=[MinValueValidator(0)])
+    number = models.IntegerField(validators=[MinValueValidator(0)])
     house = models.ForeignKey(House, on_delete=models.PROTECT, verbose_name='Дім')
     section = models.ForeignKey(Section, on_delete=models.PROTECT, verbose_name='Секція')
     floor = models.ForeignKey(Floor, on_delete=models.PROTECT, verbose_name='Поверх')
-    owner = models.ForeignKey(User, on_delete=models.PROTECT, verbose_name='Власник')
-    tariff = models.ForeignKey(Tariff, on_delete=models.PROTECT, verbose_name='Тариф')
+    owner = models.ForeignKey(User, on_delete=models.PROTECT, verbose_name='Власник', blank=True, null=True)
+    tariff = models.ForeignKey(Tariff, on_delete=models.PROTECT, verbose_name='Тариф', blank=True, null=True)
     square = models.FloatField(validators=[MinValueValidator(0)], verbose_name='Площа')
 
 
 class PersonalAccount(models.Model):
-    house = models.ForeignKey(House, on_delete=models.CASCADE, verbose_name='Дом')
-    section = models.ForeignKey(Section, on_delete=models.CASCADE, verbose_name='Секція')
-    flat = models.ForeignKey(Flat, on_delete=models.CASCADE, verbose_name='Квартира')
-    status = models.BooleanField(default=False, verbose_name='Статус')
+    number = models.CharField(max_length=255, verbose_name='Номер', unique=True)
+    flat = models.OneToOneField(Flat, on_delete=models.SET_NULL, verbose_name='Квартира', blank=True, null=True)
+
+    class Status(models.TextChoices):
+        active = ('active', 'Активний')
+        inactive = ('inactive', 'Неактивний')
+
+    status = models.CharField(max_length=15, choices=Status.choices, default='inactive', verbose_name='Статус')
 
 
 class Notoriety(models.Model):
@@ -70,11 +74,10 @@ class Notoriety(models.Model):
 
 
 class Receipt(models.Model):
-    owner = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name='Власник')
     account = models.ForeignKey(PersonalAccount, on_delete=models.CASCADE, verbose_name='Особовий рахунок')
-    house = models.ForeignKey(House, on_delete=models.CASCADE, verbose_name='Дім')
-    section = models.ForeignKey(Section, on_delete=models.PROTECT, verbose_name='Секція')
     flat = models.ForeignKey(Flat, on_delete=models.CASCADE, verbose_name='Квартира')
+    date_from = models.DateField(verbose_name='Період з', default=timezone.now)
+    date_to = models.DateField(verbose_name='Період по', default=timezone.now)
     tariff = models.ForeignKey(Tariff, on_delete=models.CASCADE, verbose_name='Тариф')
     is_completed = models.BooleanField(default=False)
 

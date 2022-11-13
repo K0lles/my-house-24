@@ -1,0 +1,84 @@
+{% extends 'main_page.html' %}
+{% load static %}
+
+{% block content_header %}
+    <h1>Показання лічильника</h1>
+{% endblock %}
+
+{% block main_content %}
+    <div class="row">
+        <div class="col-sm-12 col-md-7 col-lg-6" style="display: flex; justify-content: flex-start;">
+            <div class="form-group">
+                <div class="input-group">
+                    <div class="input-group-append" style="background-color: #fff; border: 1px solid #ccc; padding: 6px 12px;">
+                        №
+                    </div>
+                    <div class="form-control pull-right">{{ object.number }}</div>
+                </div>
+            </div>
+            <span style="margin: 8px 15px 0 15px;">
+                від
+            </span>
+            <div class="form-group">
+                <div class="input-group">
+                    <div class="input-group-append">
+                        <button type="button" class="btn btn-default" >
+                            <i class="fa fa-calendar"></i>
+                        </button>
+                    </div>
+                    <div class="form-control pull-right">{{ object.date_from|date:'d.m.Y' }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-sm-12 text-right">
+                    <a href="{% url 'evidence-update' evidence_pk=object.pk %}" class="btn btn-info">Редагувати показання</a>
+                </div>
+            </div>
+            <table class="table table-borderless">
+                <tbody>
+                    <tr>
+                        <th>Лічильник</th>
+                        <td>{{ object.service.name }}</td>
+                    </tr>
+                    <tr>
+                        <th>Будинок</th>
+                        <td><a href="{% url 'house-detail' house_pk=object.flat.house.pk %}">{{ object.flat.house.name }}</a></td>
+                    </tr>
+                    <tr>
+                        <th>Секція</th>
+                        <td>{{ object.flat.section.name }}</td>
+                    </tr>
+                    <tr>
+                        <th>Квартира</th>
+                        <td><a href="{% url 'flat-detail' flat_pk=object.flat.pk %}">{{ object.flat.number }}</a></td>
+                    </tr>
+                    <tr>
+                        <th>Користувач</th>
+                        <td>{% if object.flat.owner %}<a href="{% url 'owner-detail' owner_pk=object.flat.owner.pk %}">{{ object.flat.owner.name }} {{ object.flat.owner.surname }} {{ object.flat.owner.father }}</a>{% else %}не указаний{% endif %}</td>
+                    </tr>
+                    <tr>
+                        <th>Поточні показання</th>
+                        <td>{{ object.counter_evidence }}</td>
+                    </tr>
+                    <tr>
+                        <th>Од. вим.</th>
+                        <td>{{ object.service.measurement_unit.name }}</td>
+                    </tr>
+                    <tr>
+                        <th>Статус</th>
+                        <td>
+                            {% if object.status == 'new' %}<span class="badge badge-warning">{{ object.get_status_display }}</span>
+                            {% elif object.status == 'taken' or evidence.status == 'taken and paid' %}<span class="badge badge-success">{{ object.get_status_display }}</span>
+                            {% elif object.status == 'null' %}<span class="badge badge-primary">{{ object.get_status_display }}</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}

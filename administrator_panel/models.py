@@ -127,7 +127,7 @@ class Template(models.Model):
 
 
 class Evidence(models.Model):
-    number = models.CharField(max_length=15)
+    number = models.CharField(max_length=15, unique=True)
     flat = models.ForeignKey(Flat, on_delete=models.PROTECT, verbose_name='Квартира')
     service = models.ForeignKey(Service, on_delete=models.PROTECT, verbose_name='Рахунок')
 

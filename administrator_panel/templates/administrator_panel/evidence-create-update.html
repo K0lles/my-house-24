@@ -6,7 +6,8 @@
 {% endblock %}
 
 {% block main_content %}
-    <form id="evidence-form" method="post">
+    <form id="evidence-form" method="post" {% if not form.instance.pk %}action="{% url 'evidence-create' %}"{% else %}action="{% url 'evidence-update' evidence_pk=form.instance.pk %}"{% endif %}>
+        {% csrf_token %}
         <div class="row">
             <div class="col-sm-12 col-md-7 col-lg-6" style="display: flex; justify-content: flex-start;">
                 <div class="form-group">
@@ -14,9 +15,9 @@
                         <div class="input-group-append" style="background-color: #fff; border: 1px solid #ccc; padding: 6px 12px;">
                             №
                         </div>
-                        <input type="text" class="form-control" id="{{ form.number.auto_id }}" name="{{ form.number.html_name }}" onchange="fieldIsValid(this)">
+                        <input type="text" class="form-control" id="{{ form.number.auto_id }}" name="{{ form.number.html_name }}" {% if form.number.value and not form.instance.pk %}value="{{ form.instance.number.value }}"{% elif form.instance.pk %}value="{{ form.instance.number }}"{% endif %} onchange="fieldIsValid(this)" {% if form.number.errors %}style="border: 1px solid red;" {% endif %}>
                     </div>
-                    <p id="{{ form.number.auto_id }}-errors" style="color: red;"></p>
+                    <p id="{{ form.number.auto_id }}-errors" style="color: red;">{{ form.number.errors }}</p>
                 </div>
                 <span style="margin: 8px 15px 0 15px;">
                     від
@@ -28,9 +29,9 @@
                                 <i class="fa fa-calendar"></i>
                             </button>
                         </span>
-                        <input type="text" class="form-control" id="{{ form.date_from.auto_id }}" name="{{ form.date_from.html_name }}" value="{{ form.date_from.value|date:'d.m.Y' }}" onchange="fieldIsValid(this)">
+                        <input type="text" class="form-control" id="{{ form.date_from.auto_id }}" name="{{ form.date_from.html_name }}" {% if not base_evidence and not form.instance.pk %}value="{{ form.date_from.value|date:'d.m.Y' }}"{% elif base_evidence %}value="{{ base_evidence.date_from|date:'d.m.Y' }}"{% else %}value="{{ form.instance.date_from|date:'d.m.Y' }}"{% endif %} onchange="fieldIsValid(this)" {% if form.date_from.errors %}style="border: 1px solid red;" {% endif %}>
                     </div>
-                    <p id="{{ form.date_from.auto_id }}-errors" style="color: red;"></p>
+                    <p id="{{ form.date_from.auto_id }}-errors" style="color: red;">{{ form.date_from.errors }}</p>
                 </div>
             </div>
         </div>
@@ -43,8 +44,11 @@
                             <select class="form-select" id="id_house" onchange="changedHouse(this)">
                                 <option>Вибрати...</option>
                                 {% for house in houses %}
-                                    <option value="{{ house.pk }}" {% if house.pk == form.instance.flat.house.pk %}selected{% endif %}>{{ house.name }}</option>
+                                    <option value="{{ house.pk }}" {% if house.pk == form.instance.flat.house.pk %}selected{% endif %} {% if base_evidence and base_evidence.flat.house.pk == house.pk %}selected{% endif %}>{{ house.name }}</option>
                                 {% endfor %}
+                                {% if base_evidence and base_evidence.flat.house not in houses %}
+                                    <option value="{{ base_evidence.house.pk }}" selected>{{ base_evidence.flat.house.name }}</option>
+                                {% endif %}
                             </select>
                             <p id="id_house-errors" style="color: red; margin-bottom: 0;"></p>
                         </div>
@@ -52,6 +56,11 @@
                             <label for="id_section">Секція</label>
                             <select class="form-select" id="id_section" onchange="changedSection(this)">
                                 <option>Вибрати...</option>
+                                {% if base_evidence %}
+                                    {% for section in base_evidence.flat.house.section_set.all %}
+                                        <option value="{{ section.pk }}" {% if section.pk == base_evidence.flat.section.pk %}selected{% endif %}>{{ section.name }}</option>
+                                    {% endfor %}
+                                {% endif %}
                                 {% if form.instance.flat %}
                                     <option value="{{ form.instance.flat.section.pk }}" selected>{{ form.instance.flat.section.name }}</option>
                                 {% endif %}
@@ -60,39 +69,42 @@
                         </div>
                         <div class="form-group">
                             <label for="{{ form.flat.auto_id }}">Квартира</label>
-                            <select class="form-select" id="{{ form.flat.auto_id }}" name="{{ form.flat.html_name }}" onchange="changedFlat(this)">
+                            <select class="form-select" id="{{ form.flat.auto_id }}" name="{{ form.flat.html_name }}" onchange="changedFlat(this)" {% if form.flat.errors %}style="border: 1px solid red;" {% endif %}>
                                 <option>Вибрати...</option>
                                 {% for flat in flats %}
-                                    <option value="{{ flat.pk }}" {% if flat.pk == form.instance.flat.pk %}selected{% endif %}>{{ flat.number }}</option>
+                                    <option value="{{ flat.pk }}" {% if flat.pk == form.instance.flat.pk %}selected{% elif base_evidence and base_evidence.flat.pk == flat.pk %}selected{% endif %}>{{ flat.number }}</option>
                                 {% endfor %}
+                                {% if base_evidence and base_evidence.flat not in flats %}
+                                    <option value="{{ base_evidence.flat.pk }}" selected>{{ base_evidence.flat.number }}</option>
+                                {% endif %}
                             </select>
-                            <p id="{{ form.flat.auto_id }}-errors" style="color: red; margin-bottom: 0;"></p>
+                            <p id="{{ form.flat.auto_id }}-errors" style="color: red; margin-bottom: 0;">{{ form.flat.errors }}</p>
                         </div>
                         <div class="form-group">
-                            <label for="{{ form.service.auto_id }}">Рахунок</label>
-                            <select class="form-select" id="{{ form.service.auto_id }}" name="{{ form.service.html_name }}" onchange="fieldIsValid(this)">
+                            <label for="{{ form.service.auto_id }}">Лічильник</label>
+                            <select class="form-select" id="{{ form.service.auto_id }}" name="{{ form.service.html_name }}" onchange="fieldIsValid(this)" {% if form.service.errors %}style="border: 1px solid red;" {% endif %}>
                                 <option value="none">Вибрати...</option>
                                 {% for service in services %}
-                                    <option value="{{ service.pk }}">{{ service.name }}/{{ service.measurement_unit.name }}</option>
+                                    <option value="{{ service.pk }}" {% if base_evidence and base_evidence.service.pk == service.pk %}selected{% elif form.instance.service.pk == service.pk %}selected{% endif %}>{{ service.name }}/{{ service.measurement_unit.name }}</option>
                                 {% endfor %}
                             </select>
-                            <p id="{{ form.service.auto_id }}-errors" style="color: red;"></p>
+                            <p id="{{ form.service.auto_id }}-errors" style="color: red;">{{ form.service.errors }}</p>
                         </div>
                     </div>
                     <div class="col-sm-12 col-lg-6">
                         <div class="form-group">
                             <label for="{{ form.status.auto_id }}">Статус</label>
-                            <select class="form-select" id="{{ form.status.auto_id }}" name="{{ form.status.html_name }}" onchange="fieldIsValid(this)">
+                            <select class="form-select" id="{{ form.status.auto_id }}" name="{{ form.status.html_name }}" onchange="fieldIsValid(this)" {% if form.status.errors %}style="border: 1px solid red;" {% endif %}>
                                 {% for value, text in form.status.field.choices %}
-                                    <option value="{{ value }}">{{ text }}</option>
+                                    <option value="{{ value }}" {% if base_evidence and base_evidence.status == value %}selected{% elif form.instance.pk and form.instance.status == value %}selected{% endif %}>{{ text }}</option>
                                 {% endfor %}
                             </select>
-                            <p id="{{ form.status.auto_id }}-errors" style="color: red;"></p>
+                            <p id="{{ form.status.auto_id }}-errors" style="color: red;">{{ form.status.errors }}</p>
                         </div>
                         <div class="form-group">
                             <label for="{{ form.counter_evidence.auto_id }}">Показання рахунку</label>
-                            <input type="number" step="0.01" class="form-control" id="{{ form.counter_evidence.auto_id }}" name="{{ form.counter_evidence.html_name }}" onchange="fieldIsValid(this)">
-                            <p id="{{ form.counter_evidence.auto_id }}-errors" style="color: red;"></p>
+                            <input type="number" step="0.01" class="form-control" id="{{ form.counter_evidence.auto_id }}" name="{{ form.counter_evidence.html_name }}" {% if base_evidence %}value="{{ base_evidence.counter_evidence }}"{% elif form.instance.pk %}value="{{ form.instance.counter_evidence }}"{% endif %} onchange="fieldIsValid(this)" {% if form.counter_evidence.errors %}style="border: 1px solid red;" {% endif %}>
+                            <p id="{{ form.counter_evidence.auto_id }}-errors" style="color: red;">{{ form.counter_evidence.errors }}</p>
                         </div>
                     </div>
                 </div>
@@ -100,7 +112,7 @@
             <div class="row" style="margin-top: 25px; margin-bottom: 25px;">
                 <div class="col-sm-12 text-right">
                     <button type="reset" class="btn btn-default" style="margin-right: 5px;">Скасувати</button>
-                    <button type="submit" class="btn btn-success" style="margin-right: 5px;">Створити</button>
+                    <button type="submit" class="btn btn-success" onclick="formIsValid()" style="margin-right: 5px;">{% if not form.instance.pk %}Створити{% else %}Зберегти{% endif %}</button>
                     {% if not form.instance.pk %}
                         <input type="text" id="id_create-again" name="create-again" style="display: none;">
                         <button type="submit" class="btn btn-success" onclick="isValidAndCreateNew()">Створити та додати новий</button>
@@ -117,7 +129,13 @@
         format: 'dd.mm.yyyy'
     });
 
-    $('#id_number').val(generateNumber());
+
+
+    let rule_to_create = {{ create_new_number|safe }};
+
+    if (rule_to_create['create'] === 'true') {
+        $('#id_number').val(generateNumber());
+    }
 
     let house_section = {{ house_section|safe }};
     let section_flat = {{ section_flat|safe }};
@@ -162,18 +180,6 @@
             $('#user-phone').text('не задано');
             return
         }
-        {% for flat in flats %}
-            if (parseInt(selectedId) === parseInt({{ flat.pk }})) {
-                if ('{{ flat.owner }}' === 'None') {
-                    $('#user').text('немає даних');
-                    $('#user-phone').text('не немає даних');
-                }
-                else {
-                    $(`#user`).text('{{ flat.owner.name }} {{ flat.owner.surname }}');
-                    $(`#user-phone`).text('{{ flat.owner.phone }}');
-                }
-            }
-        {% endfor %}
         let selectedSectionId;
         let selectedHouseId;
         for (let key in section_flat) {
@@ -230,58 +236,7 @@
         event.preventDefault();
         let isValid = true;
 
-        $('#flat-form').find(`input[type!='hidden']`).each(function () {
-
-            if ($(this).attr('id') === 'id_number') {
-                if (!fieldIsValid(this)) isValid = false;
-            }
-
-            if ($(this).attr('id') === 'id_square') {
-                if (!fieldIsValid(this)) isValid = false;
-            }
-
-            if ($(this).attr('id') === 'id_house') {
-                if (!fieldIsValid(this)) isValid = false;
-            }
-
-            if ($(this).attr('id') === 'id_section') {
-                if (!fieldIsValid(this)) isValid = false;
-            }
-
-            if ($(this).attr('id') === 'id_floor') {
-                if (!fieldIsValid(this)) isValid = false;
-            }
-
-        })
-
-        $(`#flat-form`).find(`select`).each(function () {
-            if ($(this).attr('id') === 'id_house') {
-                if (!fieldIsValid(this)) isValid = false;
-            }
-
-            if ($(this).attr('id') === 'id_section') {
-                if (!fieldIsValid(this)) isValid = false;
-            }
-
-            if ($(this).attr('id') === 'id_floor') {
-                if (!fieldIsValid(this)) isValid = false;
-            }
-        })
-
-        if (isValid) {
-            $('#flat-form').submit();
-            return true;
-        }
-        else {
-            return false;
-        }
-    }
-
-    function isValidAndCreateNew() {
-        event.preventDefault();
-        let isValid = true;
-
-        $('#flat-form').find(`input[type!='hidden']`).each(function () {
+        $('#evidence-form').find(`input[type!='hidden']`).each(function () {
 
             if ($(this).attr('id') === 'id_number') {
                 if (!fieldIsValid(this)) isValid = false;
@@ -305,7 +260,66 @@
 
         })
 
-        $(`#flat-form`).find(`select`).each(function () {
+        $(`#evidence-form`).find(`select`).each(function () {
+            if ($(this).attr('id') === 'id_service') {
+                if (!fieldIsValid(this)) isValid = false;
+            }
+
+            if ($(this).attr('id') === 'id_house') {
+                if (!fieldIsValid(this)) isValid = false;
+            }
+
+            if ($(this).attr('id') === 'id_section') {
+                if (!fieldIsValid(this)) isValid = false;
+            }
+
+            if ($(this).attr('id') === 'id_floor') {
+                if (!fieldIsValid(this)) isValid = false;
+            }
+
+            if ($(this).attr('id') === 'id_status') {
+                if (!fieldIsValid(this)) isValid = false;
+            }
+        })
+
+        if (isValid) {
+            $('#evidence-form').submit();
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+
+    function isValidAndCreateNew() {
+        event.preventDefault();
+        let isValid = true;
+
+        $('#evidence-form').find(`input[type!='hidden']`).each(function () {
+
+            if ($(this).attr('id') === 'id_number') {
+                if (!fieldIsValid(this)) isValid = false;
+            }
+
+            if ($(this).attr('id') === 'id_house') {
+                if (!fieldIsValid(this)) isValid = false;
+            }
+
+            if ($(this).attr('id') === 'id_section') {
+                if (!fieldIsValid(this)) isValid = false;
+            }
+
+            if ($(this).attr('id') === 'id_floor') {
+                if (!fieldIsValid(this)) isValid = false;
+            }
+
+            if ($(this).attr('id') === 'id_counter_evidence') {
+                if (!fieldIsValid(this)) isValid = false;
+            }
+
+        })
+
+        $(`#evidence-form`).find(`select`).each(function () {
             if ($(this).attr('id') === 'id_service') {
                 if (!fieldIsValid(this)) isValid = false;
             }

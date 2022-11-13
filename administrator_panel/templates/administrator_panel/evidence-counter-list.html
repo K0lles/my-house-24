@@ -1,0 +1,121 @@
+{% extends 'main_page.html' %}
+{% load static %}
+
+{% block content_header %}
+    <h1>Показання, кв. {{ object_list.0.flat.number }}</h1>
+{% endblock %}
+
+{% block main_content %}
+    <div class="row" style="margin-bottom: 25px;">
+        <div class="col-sm-12 text-right">
+            <a href="{% url 'evidence-create' %}?base_evidence={{ object_list.0.pk }}" class="btn btn-success">Додати показання</a>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-sm-12 text-right">
+                    <a href="{% url 'evidences-grouped' %}" class="btn btn-default">Очистити</a>
+                </div>
+            </div>
+            <table id="evidence-table" class="table table-responsive table-hover table-borderless">
+                <thead>
+                    <tr>
+                        <th>№<input type="text" class="form-control"></th>
+                        <th>Статус<input type="text" class="form-control"></th>
+                        <th style="vertical-align: middle;">Місяць</th>
+                        <th>Будинок<input type="text" class="form-control"></th>
+                        <th>Секція<input type="text" class="form-control"></th>
+                        <th>№ Квартири<input type="text" class="form-control"></th>
+                        <th>Лічильник<input type="text" class="form-control"></th>
+                        <th>Поточні показання<input type="text" class="form-control"></th>
+                        <th>Од. вим.<input type="text" class="form-control"></th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for evidence in object_list %}
+                        <tr data-href="{% url 'evidence-detail' evidence_pk=evidence.pk %}">
+                            <td>{{ evidence.number }}</td>
+                            <td>
+                                {% if evidence.status == 'new' %}<span class="badge badge-warning">{{ evidence.get_status_display }}</span>
+                                {% elif evidence.status == 'taken' or evidence.status == 'taken and paid' %}<span class="badge badge-success">{{ evidence.get_status_display }}</span>
+                                {% elif evidence.status == 'null' %}<span class="badge badge-primary">{{ evidence.get_status_display }}</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ evidence.date_from|date:'F Y' }}</td>
+                            <td>{{ evidence.flat.house.name }}</td>
+                            <td>{{ evidence.flat.section.name }}</td>
+                            <td>{{ evidence.flat.number }}</td>
+                            <td>{{ evidence.service.name }}</td>
+                            <td>{{ evidence.counter_evidence }}</td>
+                            <td>{{ evidence.service.measurement_unit.name }}</td>
+                            <td class="text-right">
+                                <div class="btn-group">
+                                    <a href="{% url 'evidence-update' evidence_pk=evidence.pk %}" title="Редагувати показання" class="btn btn-default">
+                                        <i class="fa fa-pencil"></i>
+                                    </a>
+                                    <button id="1" type="button" title="Видалити показання" class="btn btn-default delete-evidence">
+                                        <i class="fa fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    $(document).ready(function () {
+        $('#evidence-table').DataTable({
+            dom: 'rtp',
+            language: {
+                paginate: {
+                    "previous": "<<",
+                    "next": ">>"
+                }
+            },
+            columns: [
+                {'data': '№'},
+                {'data': 'Статус'},
+                {'data': 'Місяць'},
+                {'data': 'Будинок'},
+                {'data': 'Секція'},
+                {'data': '№ Квартири'},
+                {'data': 'Лічильник'},
+                {'data': 'Поточні показання'},
+                {'data': 'Од. вим.'},
+                null
+            ],
+            columnDefs: [
+                {orderable: false, targets: 0},
+                {orderable: true, targets: 1},
+                {orderable: true, targets: 2},
+                {orderable: false, targets: 3},
+                {orderable: false, targets: 4},
+                {orderable: false, targets: 5},
+                {orderable: false, targets: 6},
+                {orderable: false, targets: 7},
+                {orderable: false, targets: 8},
+            ],
+            initComplete: function () {
+                this.api()
+                    .columns()
+                    .every(function () {
+                        let that = this;
+
+                        $('input[type="text"]', this.header()).on('keyup change clear', function () {
+                            if (that.search() !== this.value) {
+                                that.search(this.value).draw();
+                            }
+                        });
+                    });
+            },
+        });
+    })
+</script>
+{% endblock %}

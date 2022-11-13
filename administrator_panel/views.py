@@ -1,5 +1,6 @@
-from django.db.models import Q
-from django.http import Http404, JsonResponse
+from django.db.models import Q, Count
+from django.db.models.functions import Concat
+from django.http import Http404, JsonResponse, HttpResponseRedirect
 from django.shortcuts import render, redirect
 from django.urls import reverse
 from django.views.generic import ListView, DetailView, CreateView, UpdateView
@@ -11,7 +12,7 @@ from .forms import *
 
 class HouseCreateView(CreateView):
     model = House
-    template_name = 'administration_panel/house-create-update.html'
+    template_name = 'administrator_panel/house-create-update.html'
     form_class = HouseForm
 
     def get_context_data(self, **kwargs):
@@ -76,7 +77,7 @@ class HouseCreateView(CreateView):
 
 class HouseUpdateView(UpdateView):
     model = House
-    template_name = 'administration_panel/house-create-update.html'
+    template_name = 'administrator_panel/house-create-update.html'
     pk_url_kwarg = 'house_pk'
     form_class = HouseForm
 
@@ -149,7 +150,7 @@ class HouseUpdateView(UpdateView):
 
 class HouseDetailView(DetailView):
     model = House
-    template_name = 'administration_panel/house-detail.html'
+    template_name = 'administrator_panel/house-detail.html'
     pk_url_kwarg = 'house_pk'
 
     def get_object(self, queryset=None):
@@ -163,7 +164,7 @@ class HouseDetailView(DetailView):
 class HouseListView(ListView):
     model = House
     queryset = House.objects.all()
-    template_name = 'administration_panel/house-list.html'
+    template_name = 'administrator_panel/house-list.html'
 
 
 def delete_house(request, house_pk):
@@ -204,7 +205,7 @@ def delete_house_user(request, house_user_pk):
 
 class FlatCreateView(CreateView):
     model = Flat
-    template_name = 'administration_panel/flat-create-update.html'
+    template_name = 'administrator_panel/flat-create-update.html'
     form_class = FlatForm
 
     def get_context_data(self, **kwargs):
@@ -262,7 +263,7 @@ class FlatCreateView(CreateView):
 
 class FlatDetailView(DetailView):
     model = Flat
-    template_name = 'administration_panel/flat-detail.html'
+    template_name = 'administrator_panel/flat-detail.html'
     pk_url_kwarg = 'flat_pk'
 
     def get_object(self, queryset=None):
@@ -274,13 +275,13 @@ class FlatDetailView(DetailView):
 
 class FlatListView(ListView):
     model = Flat
-    template_name = 'administration_panel/flat-list.html'
+    template_name = 'administrator_panel/flat-list.html'
     queryset = Flat.objects.select_related('house', 'section', 'floor', 'owner', 'personalaccount').all().order_by('-id')
 
 
 class FlatUpdateView(UpdateView):
     model = Flat
-    template_name = 'administration_panel/flat-create-update.html'
+    template_name = 'administrator_panel/flat-create-update.html'
     form_class = FlatForm
     pk_url_kwarg = 'flat_pk'
 
@@ -369,11 +370,10 @@ def flat_number_is_unique(request):
         return JsonResponse({'answer': 'success'})
 
 
-def personal_account_context(context):
+def personal_account_context(context, flats=Flat.objects.none()):
     """Separate function for forming context in both CreateView and UpdateView of PersonalAccount instances"""
 
-    flats = Flat.objects.select_related('personalaccount', 'house', 'section', 'owner').filter(
-        personalaccount__isnull=True)
+    flats = flats
     house_section: dict[int, list[list[int, str]]] = {}  # used in frontend for dynamical changing of sections while house was changed
     section_flat: dict[int, list[list[int, str]]] = {}   # used in frontend for dynamical changing of flats while sectin was changed
     houses = []     # used for displaying houses in select tag in frontend
@@ -400,12 +400,12 @@ def personal_account_context(context):
 
 class PersonalAccountCreateView(CreateView):
     model = PersonalAccount
-    template_name = 'administration_panel/personal_account-create-update.html'
+    template_name = 'administrator_panel/personal_account-create-update.html'
     form_class = PersonalAccountForm
 
     def get_context_data(self, **kwargs):
         context = super(PersonalAccountCreateView, self).get_context_data(**kwargs)
-        context = personal_account_context(context)
+        context = personal_account_context(context, Flat.objects.select_related('personalaccount', 'house', 'section', 'owner').filter(personalaccount__isnull=True))
         return context
 
     def post(self, request, *args, **kwargs):
@@ -427,7 +427,7 @@ class PersonalAccountCreateView(CreateView):
 
 class PersonalAccountDetailView(DetailView):
     model = PersonalAccount
-    template_name = 'administration_panel/personal_account-detail.html'
+    template_name = 'administrator_panel/personal_account-detail.html'
     pk_url_kwarg = 'account_pk'
 
     def get_object(self, queryset=None):
@@ -441,7 +441,7 @@ class PersonalAccountDetailView(DetailView):
 
 class PersonalAccountListView(ListView):
     model = PersonalAccount
-    template_name = 'administration_panel/personal_account-list.html'
+    template_name = 'administrator_panel/personal_account-list.html'
     queryset = PersonalAccount.objects.select_related('flat',
                                                       'flat__section',
                                                       'flat__house',
@@ -450,7 +450,7 @@ class PersonalAccountListView(ListView):
 
 class PersonalAccountUpdateView(UpdateView):
     model = PersonalAccount
-    template_name = 'administration_panel/personal_account-create-update.html'
+    template_name = 'administrator_panel/personal_account-create-update.html'
     pk_url_kwarg = 'account_pk'
     form_class = PersonalAccountForm
 
@@ -463,7 +463,7 @@ class PersonalAccountUpdateView(UpdateView):
     def get_context_data(self, **kwargs):
         self.object = self.get_object()
         context = super(PersonalAccountUpdateView, self).get_context_data(**kwargs)
-        context = personal_account_context(context)
+        context = personal_account_context(context, Flat.objects.select_related('personalaccount', 'house', 'section', 'owner').filter(personalaccount__isnull=True))
 
         # if flat related to current personal account exists
         try:
@@ -524,7 +524,7 @@ def personal_account_is_unique(request):
 
 class OwnerCreateView(CreateView):
     model = User
-    template_name = 'administration_panel/owner-create-update.html'
+    template_name = 'administrator_panel/owner-create-update.html'
     form_class = OwnerForm
 
     def post(self, request, *args, **kwargs):
@@ -556,7 +556,7 @@ class OwnerCreateView(CreateView):
 
 class OwnerUpdateView(UpdateView):
     model = User
-    template_name = 'administration_panel/owner-create-update.html'
+    template_name = 'administrator_panel/owner-create-update.html'
     form_class = OwnerForm
     pk_url_kwarg = 'owner_pk'
 
@@ -591,12 +591,12 @@ class OwnerUpdateView(UpdateView):
 class OwnerListView(ListView):
     model = User
     queryset = User.objects.prefetch_related('flat_set', 'flat_set__house').filter(role__role='owner').order_by('-id')
-    template_name = 'administration_panel/owner-list.html'
+    template_name = 'administrator_panel/owner-list.html'
 
 
 class OwnerDetailView(DetailView):
     model = User
-    template_name = 'administration_panel/owner-detail.html'
+    template_name = 'administrator_panel/owner-detail.html'
     pk_url_kwarg = 'owner_pk'
 
     def get_object(self, queryset=None):
@@ -619,11 +619,96 @@ def delete_owner(request, owner_pk):
 
 class EvidenceCreateView(CreateView):
     model = Evidence
-    template_name = 'administration_panel/evidence-create.html'
+    template_name = 'administrator_panel/evidence-create-update.html'
     form_class = EvidenceForm
 
     def get_context_data(self, **kwargs):
         context = super(EvidenceCreateView, self).get_context_data(**kwargs)
-        context = personal_account_context(context)
+        context = personal_account_context(context, Flat.objects.prefetch_related('house', 'section').filter(personalaccount__isnull=False))
         context['services'] = Service.objects.select_related('measurement_unit').filter(show_in_counters=True)
+        context['create_new_number'] = {'create': 'true'}
+        if self.request.GET.get('base_evidence'):
+            context['base_evidence'] = Evidence.objects.select_related('flat', 'flat__house', 'flat__section', 'service').prefetch_related('flat__house__section_set', 'flat__section__flat_set').get(pk=self.request.GET.get('base_evidence'))
         return context
+
+    def post(self, request, *args, **kwargs):
+        form = self.get_form_class()(request.POST)
+        if form.is_valid():
+            return self.form_valid(form)
+        self.object = None
+        context = self.get_context_data()
+        context['form'] = form
+        return self.render_to_response(context)
+
+    def form_valid(self, form):
+        evidence_saved = form.save()
+        if self.request.POST.get('create-again'):
+            return redirect(f"{reverse('evidence-create')}?base_evidence={evidence_saved.pk}")
+        return redirect('evidence-detail', evidence_pk=evidence_saved.pk)
+
+
+class EvidenceDetailView(DetailView):
+    model = Evidence
+    template_name = 'administrator_panel/evidence-detail.html'
+    pk_url_kwarg = 'evidence_pk'
+
+
+class GroupedEvidenceListView(ListView):
+    model = Evidence
+    template_name = 'administrator_panel/evidence-grouped-list.html'
+    queryset = Evidence.objects.select_related('service',
+                                               'flat',
+                                               'flat__house',
+                                               'flat__section',
+                                               'service__measurement_unit').all().annotate(distinct_name=Concat('flat', 'service')).distinct('distinct_name')
+
+
+class ServiceEvidenceListView(ListView):
+    model = Evidence
+    template_name = 'administrator_panel/evidence-counter-list.html'
+
+    def get_queryset(self):
+        flat_pk = self.request.GET.get('flat')
+        service_pk = self.request.GET.get('service')
+        try:
+            return Evidence.objects.select_related('flat', 'service', 'flat__house', 'flat__section').filter(flat=Flat.objects.get(pk=flat_pk), service=Service.objects.get(pk=service_pk)).order_by('-id')
+        except (Evidence.DoesNotExist, Flat.DoesNotExist, Service.DoesNotExist, KeyError, AttributeError):
+            raise Http404()
+
+
+class EvidenceUpdateView(UpdateView):
+    model = Evidence
+    template_name = 'administrator_panel/evidence-create-update.html'
+    form_class = EvidenceForm
+    pk_url_kwarg = 'evidence_pk'
+
+    def get_object(self, queryset=None):
+        try:
+            return Evidence.objects.select_related('flat',
+                                                   'service',
+                                                   'flat__house',
+                                                   'flat__section',
+                                                   'flat__owner').get(pk=self.kwargs.get('evidence_pk'))
+        except (Evidence.DoesNotExist, AttributeError, KeyError):
+            raise Http404()
+
+    def get_context_data(self, **kwargs):
+        context = super(EvidenceUpdateView, self).get_context_data(**kwargs)
+        context = personal_account_context(context, Flat.objects.prefetch_related('house', 'section').filter(
+            personalaccount__isnull=False))
+        context['services'] = Service.objects.select_related('measurement_unit').filter(show_in_counters=True)
+        context['create_new_number'] = {'create': 'false'}
+        return context
+
+    def post(self, request, *args, **kwargs):
+        form = self.get_form_class()(request.POST, instance=self.get_object())
+        if form.is_valid():
+            return self.form_valid(form)
+        self.object = self.get_object()
+        context = self.get_context_data()
+        context['form'] = form
+        return self.render_to_response(context)
+
+    def form_valid(self, form):
+        evidence_saved = form.save()
+        return redirect('evidence-detail', evidence_pk=evidence_saved.pk)

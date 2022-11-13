@@ -1,5 +1,6 @@
 from django.db.models import Q
-from django.forms import BaseModelFormSet, ModelForm, modelformset_factory, ModelChoiceField, CharField, DateField
+from django.forms import BaseModelFormSet, ModelForm, modelformset_factory, ModelChoiceField, CharField, DateField, DateInput
+from django.utils import timezone
 
 from phonenumber_field.formfields import PhoneNumberField
 
@@ -166,6 +167,7 @@ class OwnerForm(ModelForm):
 
 
 class EvidenceForm(ModelForm):
+    date_from = DateField(input_formats=['%d.%m.%Y'], initial=timezone.now())
 
     def __init__(self, *args, **kwargs):
         super(EvidenceForm, self).__init__(*args, **kwargs)
@@ -174,3 +176,40 @@ class EvidenceForm(ModelForm):
     class Meta:
         model = Evidence
         fields = '__all__'
+
+    def clean(self):
+        cleaned_data = super(EvidenceForm, self).clean()
+
+        self._errors = {}
+
+        if self.instance.pk:
+            got_evidence = Evidence.objects.filter(number=cleaned_data.get('number'))
+            if got_evidence.count() != 0 and (got_evidence[0].pk != self.instance.pk and got_evidence.count() == 1):
+                self._errors['number'] = 'Рахунок з даним номером вже існує'
+
+        elif not self.instance.pk:
+            try:
+                Evidence.objects.get(number=cleaned_data.get('number'))
+                self._errors['number'] = 'Рахунок з даним номером вже існує'
+            except Evidence.DoesNotExist:
+                pass
+
+        if not cleaned_data.get('number'):
+            self._errors['number'] = 'Це поле не може бути пустим'
+
+        if not cleaned_data.get('flat'):
+            self._errors['flat'] = 'Це поле не може бути пустим'
+
+        if not cleaned_data.get('service'):
+            self._errors['service'] = 'Це поле не може бути пустим'
+
+        if not cleaned_data.get('status'):
+            self._errors['status'] = 'Це поле не може бути пустим'
+
+        if not cleaned_data.get('counter_evidence'):
+            self._errors['counter_evidence'] = 'Це поле не може бути пустим'
+
+        if not cleaned_data.get('date_from'):
+            self._errors['date_from'] = 'Це поле не може бути пустим'
+
+        return cleaned_data

@@ -1,5 +1,7 @@
 from django.db.models import Q
-from django.forms import BaseModelFormSet, ModelForm, modelformset_factory, ModelChoiceField, CharField
+from django.forms import BaseModelFormSet, ModelForm, modelformset_factory, ModelChoiceField, CharField, DateField
+
+from phonenumber_field.formfields import PhoneNumberField
 
 from configuration.models import User
 from .models import House, HouseUser, Section, Floor, PersonalAccount, Flat, Receipt
@@ -122,5 +124,42 @@ class PersonalAccountForm(ModelForm):
                 self.add_error('number', 'Поле не може бути пустим')
             except PersonalAccount.DoesNotExist:
                 return cleaned_data
+
+        return cleaned_data
+
+
+class OwnerForm(ModelForm):
+    birthday = DateField(input_formats=['%d.%m.%Y'], required=False)
+    phone = PhoneNumberField(required=False)
+
+    class Meta:
+        model = User
+        exclude = ('role', 'is_active', 'is_admin')
+
+    def clean(self):
+        cleaned_data = super(OwnerForm, self).clean()
+        self._errors = {}
+
+        if not cleaned_data.get('name'):
+            self._errors['name'] = 'Це поле не може бути пустим'
+
+        if not cleaned_data.get('surname'):
+            self._errors['surname'] = 'Це поле не може бути пустим'
+
+        if not cleaned_data.get('owner_id'):
+            self._errors['owner_id'] = 'Це поле не може бути пустим'
+
+        if not cleaned_data.get('email'):
+            self._errors['email'] = 'Це поле не може бути пустим'
+
+        if not cleaned_data.get('password') and not self.instance.pk:
+            self._errors['password'] = 'Це поле не може бути пустим'
+
+        try:
+            if (not self.instance.pk and cleaned_data.get('email') and User.objects.get(email=cleaned_data.get('email'))) \
+                    or User.objects.filter(email=cleaned_data.get('email')).count() > 1:
+                self._errors['email'] = 'Власник з таким email вже існує'
+        except User.DoesNotExist:
+            return cleaned_data
 
         return cleaned_data

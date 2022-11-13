@@ -1,0 +1,168 @@
+{% extends 'main_page.html' %}
+{% load static %}
+
+{% block content_header %}
+    <h1>Власники</h1>
+{% endblock %}
+
+{% block main_content %}
+    <div class="row" style="margin-bottom: 25px;">
+        <div class="col-sm-12 text-right">
+            <div class="btn-group">
+                <button type="button" class="btn btn-success dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    Виберіть дію
+                </button>
+                <div class="dropdown-menu dropdown-menu-right">
+                    <a class="dropdown-item" href="{% url 'owner-create' %}">Створити власника</a>
+                    <a class="dropdown-item" href="#">Надіслати повідомлення боржникам</a>
+                    <a class="dropdown-item" href="#">Надіслати запрошення</a>
+              </div>
+            </div>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-body">
+            <div class="row">
+                <table id="owner-table" class="table table-borderless table-hover table-responsive">
+                    <thead>
+                        <tr>
+                            <th>ID<input type="text" class="form-control"> </th>
+                            <th>ПІБ<input type="text" class="form-control"></th>
+                            <th>Телефон<input type="text" class="form-control"></th>
+                            <th>Email<input type="text" class="form-control"></th>
+                            <th>Будинок<input type="text" class="form-control"></th>
+                            <th>Квартира<input type="text" class="form-control"></th>
+                            <th>Доданий<input type="text" class="form-control"></th>
+                            <th>Статус<input type="text" class="form-control"></th>
+                            <th>Є борг<input type="text" class="form-control"></th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for owner in object_list %}
+                            <tr data-href="{% url 'owner-detail' owner_pk=owner.pk %}">
+                                <td style="vertical-align: middle;">{{ owner.owner_id }}</td>
+                                <td style="vertical-align: middle;">{{ owner.name }} {{ owner.surname }} {% if owner.father %}{{ owner.father }}{% endif %}</td>
+                                <td style="vertical-align: middle;">{{ owner.phone }}</td>
+                                <td style="vertical-align: middle;">{{ owner.email }}</td>
+                                <td style="vertical-align: middle;">
+                                    {% for flat in owner.flat_set.all %}
+                                        <a href="{% url 'house-detail' house_pk=flat.house.pk %}">{{ flat.house.name }}</a>,<br/>
+                                    {% endfor %}
+                                </td>
+                                <td style="vertical-align: middle;">
+                                    {% for flat in owner.flat_set.all %}
+                                        <a href="{% url 'flat-detail' flat_pk=flat.pk %}">№ {{ flat.number }}</a>,<br/>
+                                    {% endfor %}
+                                </td>
+                                <td style="vertical-align: middle;">{{ owner.created_at|date:'d.m.Y' }}</td>
+                                <td style="vertical-align: middle;">
+                                    {% if owner.status == 'new' %}<span class="badge badge-warning">{{ owner.get_status_display }}</span>
+                                    {% elif owner.status == 'active' %}<span class="badge badge-success">{{ owner.get_status_display }}</span>
+                                    {% else %}<span class="badge badge-danger">{{ owner.get_status_display }}</span>{% endif %}
+                                </td>
+                                <td style="vertical-align: middle;">
+                                    Немає
+                                </td>
+                                <td class="text-right" style="vertical-align: middle;">
+                                    <div class="btn-group">
+                                        <a class="btn btn-default btn-sm" title="Надіслати повідомлення" href="#">
+                                            <i class="fa fa-envelope"></i>
+                                        </a>
+                                        <button id="{{ owner.pk }}" type="button" class="btn btn-default btn-sm delete-owner" title="Видалити">
+                                            <i class="fa fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    $(document).ready(function () {
+        $('#owner-table').DataTable({
+            ordering: false,
+            dom: 'rtp',
+            language: {
+                paginate: {
+                    "previous": "<<",
+                    "next": ">>"
+                }
+            },
+            columns: [
+                {'data': 'ID'},
+                {'data': 'ПІБ'},
+                {'data': 'Телефон'},
+                {'data': 'Email'},
+                {'data': 'Будинок'},
+                {'data': 'Квартира'},
+                {'data': 'Доданий'},
+                {'data': 'Статус'},
+                {'data': 'Є борг'},
+                null
+            ],
+            initComplete: function () {
+                this.api()
+                    .columns()
+                    .every(function () {
+                        let that = this;
+
+                        $('input[type="text"]', this.header()).on('keyup change clear', function () {
+                            if (that.search() !== this.value) {
+                                that.search(this.value).draw();
+                            }
+                        });
+                    });
+            },
+        });
+    })
+
+    $('button.delete-owner').on('click', function (event) {
+        event.stopPropagation();
+        Swal.fire({
+            title: 'Ви впевнені?',
+            text: "Після видалення власника неможливо буде повернути!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#A9A9A9',
+            cancelButtonText: 'Скасувати',
+            confirmButtonText: 'Видалити'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.ajax({
+                            url: `delete/${$(this).attr('id')}/`,
+                            type: 'GET',
+                            success: function (response) {
+                                if (response['answer'] === 'success') {
+                                    $(event.target).closest('tr').remove();
+                                    Swal.fire({
+                                        position: 'top-end',
+                                        icon: 'success',
+                                        title: 'Успішно видалено!',
+                                        showConfirmButton: false,
+                                        timer: 1200,
+                                    })
+                                }
+                                else if (response['answer'] === 'failed') {
+                                    Swal.fire({
+                                        position: 'top-end',
+                                        icon: 'error',
+                                        title: 'Щось пішло не так!',
+                                        showConfirmButton: false,
+                                        timer: 1200
+                                    });
+                                }
+                            }
+                        })
+                }
+            })
+    })
+</script>
+{% endblock %}

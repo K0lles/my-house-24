@@ -520,3 +520,98 @@ def personal_account_is_unique(request):
         return JsonResponse({'answer': 'failed'})
     except PersonalAccount.DoesNotExist:
         return JsonResponse({'answer': 'success'})
+
+
+class OwnerCreateView(CreateView):
+    model = User
+    template_name = 'administration_panel/owner-create-update.html'
+    form_class = OwnerForm
+
+    def post(self, request, *args, **kwargs):
+        form = self.get_form_class()(request.POST, request.FILES)
+        if form.is_valid():
+            return self.form_valid(form)
+        self.object = None
+        context = self.get_context_data()
+        context['form'] = form
+        return self.render_to_response(context)
+
+    def form_valid(self, form):
+        User.objects.create_user(email=form.cleaned_data.get('email'),
+                                 password=form.cleaned_data.get('password'),
+                                 name=form.cleaned_data.get('name'),
+                                 surname=form.cleaned_data.get('surname'),
+                                 role=Role.objects.get(role__exact='owner'),
+                                 birthday=form.cleaned_data.get('birthday'),
+                                 logo=form.cleaned_data.get('logo'),
+                                 father=form.cleaned_data.get('father'),
+                                 phone=form.cleaned_data.get('phone'),
+                                 viber=form.cleaned_data.get('viber'),
+                                 owner_id=form.cleaned_data.get('owner_id'),
+                                 telegram=form.cleaned_data.get('telegram'),
+                                 status=form.cleaned_data.get('status'),
+                                 notes=form.cleaned_data.get('notes'))
+        return redirect('owners')
+
+
+class OwnerUpdateView(UpdateView):
+    model = User
+    template_name = 'administration_panel/owner-create-update.html'
+    form_class = OwnerForm
+    pk_url_kwarg = 'owner_pk'
+
+    def get_object(self, queryset=None):
+        try:
+            return User.objects.select_related('role').get(pk=self.kwargs.get('owner_pk'), role__role='owner')
+        except (User.DoesNotExist, KeyError, AttributeError):
+            raise Http404()
+
+    def post(self, request, *args, **kwargs):
+        owner = self.get_object()
+        form = OwnerForm(request.POST, request.FILES, instance=owner)
+        if form.is_valid():
+            return self.form_valid(form, owner)
+        self.object = self.get_object()
+        context = self.get_context_data()
+        context['form'] = form
+        return self.render_to_response(context)
+
+    def form_valid(self, form, owner):
+        old_password = owner.password
+        owner_saved = form.save()
+        if form.cleaned_data.get('password'):
+            owner_saved.set_password(form.cleaned_data.get('password'))
+            owner_saved.save()
+        else:
+            owner_saved.password = old_password
+            owner_saved.save()
+        return redirect('owners')
+
+
+class OwnerListView(ListView):
+    model = User
+    queryset = User.objects.prefetch_related('flat_set', 'flat_set__house').filter(role__role='owner').order_by('-id')
+    template_name = 'administration_panel/owner-list.html'
+
+
+class OwnerDetailView(DetailView):
+    model = User
+    template_name = 'administration_panel/owner-detail.html'
+    pk_url_kwarg = 'owner_pk'
+
+    def get_object(self, queryset=None):
+        try:
+            return User.objects.get(pk=self.kwargs['owner_pk'])
+        except User.DoesNotExist:
+            raise Http404()
+
+
+def delete_owner(request, owner_pk):
+    try:
+        user = User.objects.prefetch_related('flat_set__receipt_set', 'flat_set__personalaccount').get(pk=owner_pk)
+        if not user.flat_set.all().exists():
+            user.delete()
+            return JsonResponse({'answer': 'success'})
+        return JsonResponse({'answer': 'failed'})
+    except User.DoesNotExist:
+        return JsonResponse({'answer': 'failed'})

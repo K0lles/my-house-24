@@ -94,7 +94,6 @@ class UserForm(ModelForm):
 
     def clean(self):
         cleaned_data = super(UserForm, self).clean()
-        print(self.instance)
 
         if self.instance:
             self._errors = {}

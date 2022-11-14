@@ -1,0 +1,105 @@
+{% extends 'main_page.html' %}
+{% load static %}
+
+{% block content_header %}
+    <h1>Показання</h1>
+{% endblock %}
+
+{% block main_content %}
+    <div class="row" style="margin-bottom: 25px;">
+        <div class="col-sm-12 text-right">
+            <a href="{% url 'evidence-create' %}" class="btn btn-success">Додати показання</a>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-sm-12 text-right">
+                    <a href="{% url 'evidences-grouped' %}" class="btn btn-default">Очистити</a>
+                </div>
+            </div>
+            <table id="evidence-table" class="table table-responsive table-borderless table-hover">
+                <thead>
+                    <tr>
+                        <th>Будинок<input type="text" class="form-control"></th>
+                        <th>Секція<input type="text" class="form-control"></th>
+                        <th>№ Квартири<input type="text" class="form-control"></th>
+                        <th>Лічильник<input type="text" class="form-control"></th>
+                        <th>Поточні показання<input type="text" class="form-control"></th>
+                        <th>Од. вим.<input type="text" class="form-control"></th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for evidence in object_list %}
+                        <tr data-href="{% url 'evidence-counter' %}?flat={{ evidence.flat.pk }}&service={{ evidence.service.pk }}">
+                            <td>{{ evidence.flat.house.name }}</td>
+                            <td>{{ evidence.flat.section.name }}</td>
+                            <td>{{ evidence.flat.number }}</td>
+                            <td>{{ evidence.service.name }}</td>
+                            <td>{{ evidence.counter_evidence }}</td>
+                            <td>{{ evidence.service.measurement_unit.name }}</td>
+                            <td class="text-right">
+                                <div class="btn-group">
+                                    <a href="{% url 'evidence-create' %}?base_evidence={{ evidence.pk }}" class="btn btn-default" title="Зняти нові показання">
+                                        <i class="fa fa-dashboard"></i>
+                                    </a>
+                                    <a href="{% url 'evidence-counter' %}?flat={{ evidence.flat.pk }}&service={{ evidence.service.pk }}" class="btn btn-default" title="Відкрити історію показань лічильника">
+                                        <i class="fa fa-eye"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    $(document).ready(function () {
+        $('#evidence-table').DataTable({
+            dom: 'rtp',
+            language: {
+                paginate: {
+                    "previous": "<<",
+                    "next": ">>"
+                }
+            },
+            columns: [
+                {'data': 'Будинок'},
+                {'data': 'Секція'},
+                {'data': '№ Квартири'},
+                {'data': 'Лічильник'},
+                {'data': 'Поточні показання'},
+                {'data': 'Од. вим.'},
+                null
+            ],
+            columnDefs: [
+                {orderable: false, targets: 0},
+                {orderable: false, targets: 1},
+                {orderable: true, targets: 2},
+                {orderable: false, targets: 3},
+                {orderable: false, targets: 4},
+                {orderable: false, targets: 5},
+                {orderable: false, targets: 6},
+            ],
+            initComplete: function () {
+                this.api()
+                    .columns()
+                    .every(function () {
+                        let that = this;
+
+                        $('input[type="text"]', this.header()).on('keyup change clear', function () {
+                            if (that.search() !== this.value) {
+                                that.search(this.value).draw();
+                            }
+                        });
+                    });
+            },
+        });
+    })
+</script>
+{% endblock %}

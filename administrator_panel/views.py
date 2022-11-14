@@ -712,3 +712,15 @@ class EvidenceUpdateView(UpdateView):
     def form_valid(self, form):
         evidence_saved = form.save()
         return redirect('evidence-detail', evidence_pk=evidence_saved.pk)
+
+
+def delete_evidence(request, evidence_pk):
+    try:
+        evidence_to_delete = Evidence.objects.get(pk=evidence_pk)
+        evidence_to_delete.delete()
+        return JsonResponse({'answer': 'success'})
+    except Evidence.DoesNotExist:
+        return JsonResponse({'answer': 'failed'})
+
+
+

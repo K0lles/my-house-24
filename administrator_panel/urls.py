@@ -32,4 +32,5 @@ urlpatterns = [
     path('evidence/<int:evidence_pk>/', EvidenceDetailView.as_view(), name='evidence-detail'),
     path('evidence/create/', EvidenceCreateView.as_view(), name='evidence-create'),
     path('evidence/update/<int:evidence_pk>/', EvidenceUpdateView.as_view(), name='evidence-update'),
+    path('evidence/counter/delete/<int:evidence_pk>/', delete_evidence, name='evidence_delete'),
 ]

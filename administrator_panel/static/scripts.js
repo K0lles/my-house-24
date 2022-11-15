@@ -149,6 +149,10 @@ function validatePasswordUpdate(element) {
     return true;
 }
 
+function alwaysIsValid(element) {
+    element.style = 'border: 1px solid #58c76d';
+}
+
 
 $('tr[data-href]').on('click', function() {
     document.location = $(this).data('href');

@@ -6,7 +6,7 @@ from django.urls import reverse
 from django.views.generic import ListView, DetailView, CreateView, UpdateView
 from django.db.models.deletion import ProtectedError
 
-from configuration.models import Role, Tariff
+from configuration.models import Role, Tariff, Service, MeasurementUnit
 from .forms import *
 
 
@@ -671,7 +671,7 @@ class ServiceEvidenceListView(ListView):
         flat_pk = self.request.GET.get('flat')
         service_pk = self.request.GET.get('service')
         try:
-            return Evidence.objects.select_related('flat', 'service', 'flat__house', 'flat__section').filter(flat=Flat.objects.get(pk=flat_pk), service=Service.objects.get(pk=service_pk)).order_by('-id')
+            return Evidence.objects.select_related('flat', 'service', 'flat__house', 'flat__section', 'service__measurement_unit').filter(flat=Flat.objects.get(pk=flat_pk), service=Service.objects.get(pk=service_pk)).order_by('-id')
         except (Evidence.DoesNotExist, Flat.DoesNotExist, Service.DoesNotExist, KeyError, AttributeError):
             raise Http404()
 
@@ -723,4 +723,28 @@ def delete_evidence(request, evidence_pk):
         return JsonResponse({'answer': 'failed'})
 
 
+class ReceiptCreateView(CreateView):
+    model = Receipt
+    template_name = 'administrator_panel/receipt-create.html'
+    form_class = ReceiptForm
+
+    def get_context_data(self, **kwargs):
+        context = super(ReceiptCreateView, self).get_context_data(**kwargs)
+        context = personal_account_context(context, flats=Flat.objects.select_related('house', 'section', 'personalaccount', 'tariff').filter(personalaccount__isnull=False, personalaccount__status='active'))
+        context['personal_accounts'] = PersonalAccount.objects.select_related('flat', 'flat__owner').filter(flat__isnull=False)
+        context['receipt_service_formset'] = receipt_service_formset(queryset=ReceiptService.objects.none())
+        context['tariffs'] = Tariff.objects.all()
+        context['services'] = Service.objects.select_related('measurement_unit').all()
+        context['measurement_units'] = MeasurementUnit.objects.all()
+        context['flat_personal_account'] = {}
+        context['flat_tariff'] = {}
+
+        for flat in context['flats']:
+            context['flat_personal_account'][flat.id] = flat.personalaccount.number
+            if flat.tariff:
+                context['flat_tariff'][flat.id] = flat.tariff.id
+            else:
+                context['flat_tariff'][flat.id] = 'none'
+
+        return context
 

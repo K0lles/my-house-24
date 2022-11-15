@@ -33,4 +33,5 @@ urlpatterns = [
     path('evidence/create/', EvidenceCreateView.as_view(), name='evidence-create'),
     path('evidence/update/<int:evidence_pk>/', EvidenceUpdateView.as_view(), name='evidence-update'),
     path('evidence/counter/delete/<int:evidence_pk>/', delete_evidence, name='evidence_delete'),
+    path('receipt/create/', ReceiptCreateView.as_view(), name='receipt-create'),
 ]

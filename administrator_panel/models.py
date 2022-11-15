@@ -74,12 +74,12 @@ class Notoriety(models.Model):
 
 
 class Receipt(models.Model):
+    number = models.CharField(max_length=8, unique=True)
     account = models.ForeignKey(PersonalAccount, on_delete=models.CASCADE, verbose_name='Особовий рахунок')
-    flat = models.ForeignKey(Flat, on_delete=models.CASCADE, verbose_name='Квартира')
     date_from = models.DateField(verbose_name='Період з', default=timezone.now)
     date_to = models.DateField(verbose_name='Період по', default=timezone.now)
     tariff = models.ForeignKey(Tariff, on_delete=models.CASCADE, verbose_name='Тариф')
-    is_completed = models.BooleanField(default=False)
+    is_completed = models.BooleanField(default=True)
 
     class StatusChoices(models.TextChoices):
         paid = ('paid', 'Оплачена')
@@ -88,7 +88,7 @@ class Receipt(models.Model):
 
     status = models.CharField(max_length=20, choices=StatusChoices.choices, default='paid', verbose_name='Статус')
     phone = PhoneNumberField(verbose_name='Номер телефону')
-    created_at = models.DateTimeField(default=timezone.now)
+    created_at = models.DateField(default=timezone.now)
 
 
 class Application(models.Model):
@@ -140,3 +140,10 @@ class Evidence(models.Model):
     status = models.CharField(max_length=20, choices=StatusChoices.choices, verbose_name='Статус')
     counter_evidence = models.FloatField(validators=[MinValueValidator(0.0)])
     date_from = models.DateField(default=timezone.now)
+
+
+class ReceiptService(models.Model):
+    receipt = models.ForeignKey(Receipt, on_delete=models.CASCADE, related_name='receipt')
+    service = models.ForeignKey(Service, on_delete=models.PROTECT, related_name='service')
+    amount = models.FloatField()
+    price = models.FloatField()

@@ -1,11 +1,10 @@
-from django.db.models import Q
-from django.forms import BaseModelFormSet, ModelForm, modelformset_factory, ModelChoiceField, CharField, DateField, DateInput
+from django.forms import ModelForm, modelformset_factory, ModelChoiceField, CharField, DateField
 from django.utils import timezone
 
 from phonenumber_field.formfields import PhoneNumberField
 
 from configuration.models import User
-from .models import House, HouseUser, Section, Floor, PersonalAccount, Flat, Evidence, Receipt, Service
+from .models import House, HouseUser, Section, Floor, PersonalAccount, Flat, Evidence, Receipt, ReceiptService
 
 
 class HouseForm(ModelForm):
@@ -213,3 +212,23 @@ class EvidenceForm(ModelForm):
             self._errors['date_from'] = 'Це поле не може бути пустим'
 
         return cleaned_data
+
+
+class ReceiptForm(ModelForm):
+
+    class Meta:
+        model = Receipt
+        fields = '__all__'
+
+
+class ReceiptServiceForm(ModelForm):
+    receipt = ModelChoiceField(required=False, queryset=Receipt.objects.all())
+
+    class Meta:
+        model = ReceiptService
+        fields = '__all__'
+
+
+receipt_service_formset = modelformset_factory(ReceiptService,
+                                               form=ReceiptServiceForm,
+                                               extra=0)

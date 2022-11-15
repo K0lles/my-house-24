@@ -1,0 +1,375 @@
+{% extends 'main_page.html' %}
+{% load static %}
+
+{% block content_header %}
+    <h1>Нова квитанція</h1>
+{% endblock %}
+
+{% block main_content %}
+    <div class="row">
+        <div class="col-sm-12 col-md-7 col-lg-6" style="display: flex; justify-content: flex-start;">
+            <div class="form-group">
+                <div class="input-group">
+                    <div class="input-group-append" style="background-color: #fff; border: 1px solid #ccc; padding: 6px 12px;">
+                        №
+                    </div>
+                    <input type="text" class="form-control" id="{{ form.number.auto_id }}" name="{{ form.number.html_name }}" {% if form.number.value and not form.instance.pk %}value="{{ form.instance.number.value }}"{% elif form.instance.pk %}value="{{ form.instance.number }}"{% endif %} onchange="fieldIsValid(this)" {% if form.number.errors %}style="border: 1px solid red;" {% endif %}>
+                </div>
+                <p id="{{ form.number.auto_id }}-errors" style="color: red;">{{ form.number.errors }}</p>
+            </div>
+            <span style="margin: 8px 15px 0 15px;">
+                від
+            </span>
+            <div class="form-group">
+                <div class="input-group date" id="datepicker-first">
+                    <span class="input-group-append">
+                        <button type="button" class="btn btn-default" >
+                            <i class="fa fa-calendar"></i>
+                        </button>
+                    </span>
+                    <input type="text" class="form-control" id="{{ form.created_at.auto_id }}" name="{{ form.created_at.html_name }}" {% if not base_evidence and not form.instance.pk %}value="{{ form.created_at.value|date:'d.m.Y' }}"{% elif base_evidence %}value="{{ base_evidence.created_at|date:'d.m.Y' }}"{% else %}value="{{ form.instance.created_at|date:'d.m.Y' }}"{% endif %} onchange="fieldIsValid(this)" {% if form.created_at.errors %}style="border: 1px solid red;" {% endif %}>
+                </div>
+                <p id="{{ form.created_at.auto_id }}-errors" style="color: red;">{{ form.created_at.errors }}</p>
+            </div>
+        </div>
+        <div class="col-sm-12 col-md-7 col-lg-6 text-right">
+            <div class="btn-group">
+                <button type="button" class="btn btn-success dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    Виберіть дію
+                </button>
+                <div class="dropdown-menu dropdown-menu-right">
+                    <a class="dropdown-item" href="#">Додати нову квитанцію</a>
+                    <a class="dropdown-item" href="#">Вивантажити в Excel</a>
+              </div>
+            </div>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-sm-12 col-lg-6">
+                    <div class="form-group">
+                        <label class="form-label" for="id_house">Будинок</label>
+                        <select class="form-select" id="id_house" onchange="changedHouse(this)">
+                            <option value="none">Вибрати...</option>
+                            {% for house in houses %}
+                                <option value="{{ house.pk }}">{{ house.name }}</option>
+                            {% endfor %}
+                        </select>
+                        <p id="id_house-errors" style="color: red;">{{ form.created_at.errors }}</p>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="id_section">Секція</label>
+                        <select class="form-select" id="id_section" onchange="changedSection(this)">
+                            <option value="none">Вибрати...</option>
+                        </select>
+                        <p id="id_section-errors" style="color: red;">{{ form.created_at.errors }}</p>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="id_flat">Квартира</label>
+                        <select class="form-select" id="id_flat" onchange="changedFlat(this)">
+                            <option value="none">Вибрати...</option>
+                            {% for flat in flats %}
+                                <option value="{{ flat.pk }}">{{ flat.number }}</option>
+                            {% endfor %}
+                        </select>
+                        <p id="id_flat-errors" style="color: red;">{{ form.created_at.errors }}</p>
+                    </div>
+                </div>
+                <div class="col-sm-12 col-lg-6">
+                    <div class="form-group">
+                        <input class="form-check-inline" type="checkbox" id="{{ form.is_completed.auto_id }}" name="{{ form.is_completed.html_name }}" {% if not form.instance.pk %}checked{% endif %}>
+                        <label class="form-label" for="{{ form.is_completed.auto_id }}">Проведена</label>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="{{ form.status.auto_id }}">Статус</label>
+                        <select class="form-select" id="{{ form.status.auto_id }}" name="{{ form.status.html_name }}" onchange="fieldIsValid(this)">
+                            <option>Вибрати...</option>
+                            {% for value, text in form.status.field.choices %}
+                                <option value="{{ value }}">{{ text }}</option>
+                            {% endfor %}
+                        </select>
+                        <p id="{{ form.status.auto_id }}-errors" style="color: red;">{{ form.created_at.errors }}</p>
+                    </div>
+                    <div class="form-group">
+                        <label for="{{ form.tariff.auto_id }}" class="form-label">Тариф</label>
+                        <select class="form-select" id="{{ form.tariff.auto_id }}" name="{{ form.tariff.html_name }}" onchange="alwaysIsValid(this)">
+                            <option value="none">Вибрати...</option>
+                            {% for tariff in tariffs %}
+                                <option value="{{ tariff.pk }}">{{ tariff.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="row">
+                        <div class="col-sm-6">
+                            <div class="form-group">
+                                <label for="{{ form.date_from.auto_id }}" class="form-label">Період з</label>
+                                <div class="input-group date" id="datepicker-second">
+                                    <span class="input-group-append">
+                                        <button type="button" class="btn btn-default" >
+                                            <i class="fa fa-calendar"></i>
+                                        </button>
+                                    </span>
+                                <input type="text" class="form-control" id="{{ form.date_from.auto_id }}" name="{{ form.date_from.html_name }}" {% if not base_evidence and not form.instance.pk %}value="{{ form.date_from.value|date:'d.m.Y' }}"{% elif base_evidence %}value="{{ base_evidence.date_from|date:'d.m.Y' }}"{% else %}value="{{ form.instance.date_from|date:'d.m.Y' }}"{% endif %} onchange="fieldIsValid(this)" {% if form.date_from.errors %}style="border: 1px solid red;" {% endif %}>
+                                <p id="{{ form.date_from.auto_id }}-errors" style="color: red;">{{ form.created_at.errors }}</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="form-group">
+                                <label for="{{ form.date_to.auto_id }}" class="form-label">Період по</label>
+                            <div class="input-group date" id="datepicker-third">
+                                <span class="input-group-append">
+                                    <button type="button" class="btn btn-default" >
+                                        <i class="fa fa-calendar"></i>
+                                    </button>
+                                </span>
+                                <input type="text" class="form-control" id="{{ form.date_to.auto_id }}" name="{{ form.date_to.html_name }}" {% if not base_evidence and not form.instance.pk %}value="{{ form.date_to.value|date:'d.m.Y' }}"{% elif base_evidence %}value="{{ base_evidence.date_to|date:'d.m.Y' }}"{% else %}value="{{ form.instance.date_to|date:'d.m.Y' }}"{% endif %} onchange="fieldIsValid(this)" {% if form.date_to.errors %}style="border: 1px solid red;" {% endif %}>
+                                <p id="{{ form.date_to.auto_id }}-errors" style="color: red;">{{ form.created_at.errors }}</p>
+                            </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-sm-12 col-lg-6">
+                    <div class="form-group">
+                        <label class="form-label" for="{{ form.account.auto_id }}">Особовий рахунок</label>
+                        <input type="text" class="form-control" id="{{ form.account.auto_id }}" name="{{ form.account.html_name }}" {% if not form.instance.pk and form.account.value %}value="{{ form.account.value }}" {% endif %} onchange="searchFlatByPersonal(this)">
+                        <p id="{{ form.account.auto_id }}-errors" style="color: red;">{{ form.created_at.errors }}</p>
+                    </div>
+                    <p><b>Власник: </b><span id="owner">не указано</span></p>
+                    <p><b>Телефон: </b><span id="owner-phone">не указано</span></p>
+                </div>
+            </div>
+            <div class="col-sm-12">
+                {{ receipt_service_formset.management_form }}
+                <div class="row">
+                    <table class="table table-responsive table-borderless">
+                        <thead>
+                            <tr>
+                                <th>Послуга</th>
+                                <th>Розхід</th>
+                                <th>Од. вим.</th>
+                                <th>Ціна за од., грн</th>
+                                <th>Вартість, грн</th>
+                            </tr>
+                        </thead>
+                        <tbody id="services-list">
+                            <tr>
+                                <td>
+                                    <select class="form-select" id="{{ receipt_service_formset.empty_form.service.auto_id }}" name="{{ receipt_service_formset.empty_form.service.html_name }}">
+                                        <option>Вибрати...</option>
+                                        {% for service in services %}
+                                            <option value="{{ service.pk }}">{{ service.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </td>
+                                <td>
+                                    <input class="form-control" type="number" step="0.01" id="{{ receipt_service_formset.empty_form.amount.auto_id }}" name="{{ receipt_service_formset.empty_form.amount.html_name }}">
+                                </td>
+                                <td>
+                                    <select class="form-select" id="{{ receipt_service_formset.empty_form.service.auto_id }}-measurement_unit">
+                                        <option>Вибрати...</option>
+                                        {% for measurement_unit in measurement_units %}
+                                            <option value="{{ measurement_unit.pk }}">{{ measurement_unit.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </td>
+                                <td>
+                                    <input class="form-control" type="number" step="0.01" id="{{ receipt_service_formset.empty_form.price.auto_id }}" name="{{ receipt_service_formset.empty.form.price.html_name }}">
+                                </td>
+                                <td>
+                                    <input class="form-control" type="number" step="0.01" id="{{ receipt_service_formset.empty_form.service.auto_id }}-total-price">
+                                </td>
+                                <td>
+                                    <button type="button" class="btn btn-default">
+                                        <i class="fa fa-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td colspan="4">
+                                    <button class="btn btn-default add-service" >Додати послугу</button>
+                                    <button class="btn btn-default set-by-default">Установити всі послуги згідно тарифу</button>
+                                    <button class="btn btn-default add-evidences-counters">Добавити показання лічильників</button>
+                                </td>
+                                <td>
+                                    <div class="h5">
+                                        Всього:
+                                        <b>
+                                            <span>0.00 </span>
+                                        </b>
+                                        грн
+                                    </div>
+                                </td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    $('#datepicker-first').datepicker({
+        format: 'dd.mm.yyyy'
+    });
+    $('#datepicker-second').datepicker({
+        format: 'dd.mm.yyyy'
+    });
+    $('#datepicker-third').datepicker({
+        format: 'dd.mm.yyyy'
+    });
+
+    $('#id_number').val(generateNumber());
+
+    let house_section = {{ house_section|safe }};
+    let section_flat = {{ section_flat|safe }};
+    let flat_personal_account = {{ flat_personal_account|safe }};
+    let flat_tariff = {{ flat_tariff|safe }};
+
+    function changedHouse(element) {
+        let selectedId = $(element).children("option:selected").val();
+        $('#id_section').find('option').remove().end().append('<option>Вибрати...</option>');
+        $('#id_flat').find('option').remove().end().append('<option>Вибрати...</option>');
+        if (selectedId === 'Вибрати...') {
+            $('#user').text('не задано');
+            $('#user-phone').text('не задано');
+        }
+        if (house_section[selectedId]){
+            for (let key_array in house_section[selectedId]) {
+                let option_to_append = `<option value="${house_section[selectedId][key_array][0]}">${house_section[selectedId][key_array][1]}</option>`
+                $('#id_section').append(option_to_append);
+            }
+        }
+        element.style = 'border: 1px solid #58c76d';
+        $(`#${element.id}-errors`).text('');
+    }
+
+    function changedSection(element) {
+        let selectedId = $(element).children("option:selected").val();
+        $('#id_flat').find('option').remove().end().append('<option>Вибрати...</option>');
+        if (selectedId === 'Вибрати...') return;
+        if (section_flat[selectedId]){
+            for (let key_array in section_flat[selectedId]) {
+                let option_to_append = `<option value="${section_flat[selectedId][key_array][0]}">${section_flat[selectedId][key_array][1]}</option>`
+                $('#id_flat').append(option_to_append);
+            }
+        }
+        element.style = 'border: 1px solid #58c76d';
+        $(`#${element.id}-errors`).text('');
+    }
+
+    function changedFlat(element) {
+        let selectedId = $(element).children("option:selected").val();
+        fieldIsValid(element);
+        if (selectedId === 'Вибрати...') {
+            $('#owner').text('не задано');
+            $('#owner-phone').text('не задано');
+            $('#id_account').val('');
+            $('select#id_tariff').val('none').change();
+            return
+        }
+        let selectedSectionId;
+        let selectedHouseId;
+        for (let key in section_flat) {
+            for (let el in section_flat[key]) {
+                if (parseInt(selectedId) === section_flat[key][el][0]) {
+                    selectedSectionId = key;
+                }
+            }
+        }
+
+        for (let key in house_section) {
+            for (let el in house_section[key]) {
+                if (parseInt(selectedSectionId) === house_section[key][el][0]) {
+                    selectedHouseId = key;
+                }
+            }
+        }
+
+        $('#id_house').children().each(function () {
+            if ($(this).val() === selectedHouseId) {
+                $(this).attr('selected', true);
+            }
+            else {
+                $(this).attr('selected', false);
+            }
+        });
+        changedHouse($('#id_house'));
+
+        $('#id_section').children().each(function () {
+            if ($(this).val() === selectedSectionId) {
+                $(this).attr('selected', true);
+            }
+            else {
+                $(this).attr('selected', false);
+            }
+        });
+
+        changedSection($('#id_section'));
+
+        $('#id_flat').children().each(function () {
+            if ($(this).val() === selectedId) {
+                $(this).attr('selected', true);
+            }
+            else {
+                $(this).attr('selected', false);
+            }
+        })
+
+        {% for flat in flats %}
+            if (parseInt(selectedId) === parseInt({{ flat.pk }})) {
+                if ('{{ flat.owner }}' === 'None') {
+                    $('#owner').text('не указано');
+                    $('#owner-phone').text('не указано');
+                }
+                else {
+                    $(`#owner`).text('{{ flat.owner.name }} {{ flat.owner.surname }}');
+                    $(`#owner-phone`).text('{{ flat.owner.phone }}');
+                }
+            }
+        {% endfor %}
+
+        $('#id_account').val(flat_personal_account[(parseInt(selectedId))]);
+
+        let selected_flat_tariff = flat_tariff[parseInt(selectedId)]
+        $('select#id_tariff').children().each(function () {
+            if ($(this).val() == selected_flat_tariff) $(this).attr('selected', true);
+        });
+
+        {#fieldIsValid(document.getElementById('id_account'));#}
+        element.style = 'border: 1px solid #58c76d';
+        $(`#${element.id}-errors`).text('');
+    }
+
+    function searchFlatByPersonal(element) {
+        let currentAccount = $(element).val();
+        let isFound = false;
+        for (let key in flat_personal_account) {
+            if (flat_personal_account[key] == currentAccount) {
+                console.log(key);
+                console.log(typeof key)
+                $(`select#id_flat option[text=${key.toString()}]`).attr('selected', true);
+                {#$('#id_flat').change();#}
+                fieldIsValid(element);
+
+            }
+        }
+        if (!isFound) {
+            $('select#id_tariff').val('none').change();
+            $('select#id_section option[value="none"]').attr('selected', true);
+            $('select#id_flat option[value="none"]').attr('selected', true);
+            $('select#id_house').val('none').change();
+            $(`#${element.id}-errors`).text('Введіть корректний особовий рахунок');
+            element.style = 'border: 1px solid red';
+        }
+    }
+</script>
+{% endblock %}

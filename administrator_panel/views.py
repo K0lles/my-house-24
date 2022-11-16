@@ -52,7 +52,7 @@ class HouseCreateView(CreateView):
         return self.render_to_response(context)
 
     def form_valid(self, form, **kwargs):
-        house = form.save()     # is used for selecting foreign key of new form in formsets
+        house = form.save()  # is used for selecting foreign key of new form in formsets
 
         for form in kwargs['user_formset_post']:
             if form.cleaned_data.get('user'):
@@ -127,7 +127,7 @@ class HouseUpdateView(UpdateView):
         return self.render_to_response(context)
 
     def form_valid(self, form, **kwargs):
-        house = form.save()     # is used for selecting foreign key of new form in formsets
+        house = form.save()  # is used for selecting foreign key of new form in formsets
 
         for form in kwargs['user_formset_post']:
             if form.cleaned_data.get('user'):
@@ -232,7 +232,8 @@ class FlatCreateView(CreateView):
                                                                'floor',
                                                                'house',
                                                                'owner').prefetch_related('house__floor_set',
-                                                                                         'house__section_set').get(pk=self.request.GET.get('prev_flat'))
+                                                                                         'house__section_set').get(
+                pk=self.request.GET.get('prev_flat'))
         return context
 
     def post(self, request, *args, **kwargs):
@@ -268,7 +269,8 @@ class FlatDetailView(DetailView):
 
     def get_object(self, queryset=None):
         try:
-            return Flat.objects.select_related('house', 'section', 'floor', 'owner', 'personalaccount').get(pk=self.kwargs['flat_pk'])
+            return Flat.objects.select_related('house', 'section', 'floor', 'owner', 'personalaccount').get(
+                pk=self.kwargs['flat_pk'])
         except Flat.DoesNotExist:
             raise Http404()
 
@@ -276,7 +278,8 @@ class FlatDetailView(DetailView):
 class FlatListView(ListView):
     model = Flat
     template_name = 'administrator_panel/flat-list.html'
-    queryset = Flat.objects.select_related('house', 'section', 'floor', 'owner', 'personalaccount').all().order_by('-id')
+    queryset = Flat.objects.select_related('house', 'section', 'floor', 'owner', 'personalaccount').all().order_by(
+        '-id')
 
 
 class FlatUpdateView(UpdateView):
@@ -374,9 +377,11 @@ def personal_account_context(context, flats=Flat.objects.none()):
     """Separate function for forming context in both CreateView and UpdateView of PersonalAccount instances"""
 
     flats = flats
-    house_section: dict[int, list[list[int, str]]] = {}  # used in frontend for dynamical changing of sections while house was changed
-    section_flat: dict[int, list[list[int, str]]] = {}   # used in frontend for dynamical changing of flats while sectin was changed
-    houses = []     # used for displaying houses in select tag in frontend
+    house_section: dict[
+        int, list[list[int, str]]] = {}  # used in frontend for dynamical changing of sections while house was changed
+    section_flat: dict[
+        int, list[list[int, str]]] = {}  # used in frontend for dynamical changing of flats while sectin was changed
+    houses = []  # used for displaying houses in select tag in frontend
 
     for flat in flats:
         houses.append(flat.house)
@@ -405,7 +410,9 @@ class PersonalAccountCreateView(CreateView):
 
     def get_context_data(self, **kwargs):
         context = super(PersonalAccountCreateView, self).get_context_data(**kwargs)
-        context = personal_account_context(context, Flat.objects.select_related('personalaccount', 'house', 'section', 'owner').filter(personalaccount__isnull=True))
+        context = personal_account_context(context, Flat.objects.select_related('personalaccount', 'house', 'section',
+                                                                                'owner').filter(
+            personalaccount__isnull=True))
         return context
 
     def post(self, request, *args, **kwargs):
@@ -456,14 +463,17 @@ class PersonalAccountUpdateView(UpdateView):
 
     def get_object(self, queryset=None):
         try:
-            return PersonalAccount.objects.select_related('flat', 'flat__section', 'flat__house').prefetch_related('flat__house__section_set').get(pk=self.kwargs['account_pk'])
+            return PersonalAccount.objects.select_related('flat', 'flat__section', 'flat__house').prefetch_related(
+                'flat__house__section_set').get(pk=self.kwargs['account_pk'])
         except PersonalAccount.DoesNotExist:
             raise Http404()
 
     def get_context_data(self, **kwargs):
         self.object = self.get_object()
         context = super(PersonalAccountUpdateView, self).get_context_data(**kwargs)
-        context = personal_account_context(context, Flat.objects.select_related('personalaccount', 'house', 'section', 'owner').filter(personalaccount__isnull=True))
+        context = personal_account_context(context, Flat.objects.select_related('personalaccount', 'house', 'section',
+                                                                                'owner').filter(
+            personalaccount__isnull=True))
 
         # if flat related to current personal account exists
         try:
@@ -474,14 +484,17 @@ class PersonalAccountUpdateView(UpdateView):
 
             # add current flat to section's list of flats for displaying in frontend
             if context['section_flat'].get(self.object.flat.section.id):
-                if [self.object.flat.id, self.object.flat.number] not in context['section_flat'][self.object.flat.section.id]:
-                    context['section_flat'][self.object.flat.section.id].append([self.object.flat.id, self.object.flat.number])
+                if [self.object.flat.id, self.object.flat.number] not in context['section_flat'][
+                    self.object.flat.section.id]:
+                    context['section_flat'][self.object.flat.section.id].append(
+                        [self.object.flat.id, self.object.flat.number])
             else:
                 context['section_flat'][self.object.flat.section.id] = [[self.object.flat.id, self.object.flat.number]]
 
             # add section of current personal account's flat to list of sections in separate house
             if self.object.flat.house not in context['houses']:
-                context['house_section'][self.object.flat.house.pk] = [[self.object.flat.section.pk, self.object.flat.section.name]]
+                context['house_section'][self.object.flat.house.pk] = [
+                    [self.object.flat.section.pk, self.object.flat.section.name]]
                 context['houses'].add(self.object.flat.house)
         except AttributeError:
             return context
@@ -624,11 +637,14 @@ class EvidenceCreateView(CreateView):
 
     def get_context_data(self, **kwargs):
         context = super(EvidenceCreateView, self).get_context_data(**kwargs)
-        context = personal_account_context(context, Flat.objects.prefetch_related('house', 'section').filter(personalaccount__isnull=False))
+        context = personal_account_context(context, Flat.objects.prefetch_related('house', 'section').filter(
+            personalaccount__isnull=False))
         context['services'] = Service.objects.select_related('measurement_unit').filter(show_in_counters=True)
         context['create_new_number'] = {'create': 'true'}
         if self.request.GET.get('base_evidence'):
-            context['base_evidence'] = Evidence.objects.select_related('flat', 'flat__house', 'flat__section', 'service').prefetch_related('flat__house__section_set', 'flat__section__flat_set').get(pk=self.request.GET.get('base_evidence'))
+            context['base_evidence'] = Evidence.objects.select_related('flat', 'flat__house', 'flat__section',
+                                                                       'service').prefetch_related(
+                'flat__house__section_set', 'flat__section__flat_set').get(pk=self.request.GET.get('base_evidence'))
         return context
 
     def post(self, request, *args, **kwargs):
@@ -660,7 +676,8 @@ class GroupedEvidenceListView(ListView):
                                                'flat',
                                                'flat__house',
                                                'flat__section',
-                                               'service__measurement_unit').all().annotate(distinct_name=Concat('flat', 'service')).distinct('distinct_name')
+                                               'service__measurement_unit').all().annotate(
+        distinct_name=Concat('flat', 'service')).distinct('distinct_name')
 
 
 class ServiceEvidenceListView(ListView):
@@ -671,7 +688,9 @@ class ServiceEvidenceListView(ListView):
         flat_pk = self.request.GET.get('flat')
         service_pk = self.request.GET.get('service')
         try:
-            return Evidence.objects.select_related('flat', 'service', 'flat__house', 'flat__section', 'service__measurement_unit').filter(flat=Flat.objects.get(pk=flat_pk), service=Service.objects.get(pk=service_pk)).order_by('-id')
+            return Evidence.objects.select_related('flat', 'service', 'flat__house', 'flat__section',
+                                                   'service__measurement_unit').filter(
+                flat=Flat.objects.get(pk=flat_pk), service=Service.objects.get(pk=service_pk)).order_by('-id')
         except (Evidence.DoesNotExist, Flat.DoesNotExist, Service.DoesNotExist, KeyError, AttributeError):
             raise Http404()
 
@@ -730,8 +749,12 @@ class ReceiptCreateView(CreateView):
 
     def get_context_data(self, **kwargs):
         context = super(ReceiptCreateView, self).get_context_data(**kwargs)
-        context = personal_account_context(context, flats=Flat.objects.select_related('house', 'section', 'personalaccount', 'tariff', 'owner').filter(personalaccount__isnull=False, personalaccount__status='active'))
-        context['personal_accounts'] = PersonalAccount.objects.select_related('flat', 'flat__owner').filter(flat__isnull=False)
+        context = personal_account_context(context,
+                                           flats=Flat.objects.select_related('house', 'section', 'personalaccount',
+                                                                             'tariff', 'owner').filter(
+                                               personalaccount__isnull=False, personalaccount__status='active'))
+        context['personal_accounts'] = PersonalAccount.objects.select_related('flat', 'flat__owner').filter(
+            flat__isnull=False)
         context['receipt_service_formset'] = receipt_service_formset(queryset=ReceiptService.objects.none())
         context['tariffs'] = Tariff.objects.prefetch_related('tariffservice_set',
                                                              'tariffservice_set__service',
@@ -753,8 +776,20 @@ class ReceiptCreateView(CreateView):
     def post(self, request, *args, **kwargs):
         form = self.get_form_class()(self.request.POST)
         receipt_formset = receipt_service_formset(request.POST, queryset=ReceiptService.objects.none())
-        print(form.errors)
-        print(receipt_formset.errors)
-        print(form.cleaned_data)
-        print(receipt_formset.cleaned_data)
+        if form.is_valid and receipt_formset.is_valid():
+            return self.form_valid(form, receipt_formset=receipt_formset)
+        self.object = None
+        context = self.get_context_data()
+        context['form'] = form
+        context['receipt_service_formset'] = receipt_formset
+        return self.render_to_response(context)
+
+    def form_valid(self, form, receipt_formset):
+        receipt_saved = form.save()
+        for receipt_service_form in receipt_formset.forms:
+            if receipt_service_form.cleaned_data.get('service') and receipt_service_form.cleaned_data.get('amount') \
+                    and receipt_service_form.cleaned_data.get('price') and receipt_service_form.cleaned_data.get('total_price'):
+                form_saved = receipt_service_form.save(commit=False)
+                form_saved.receipt = receipt_saved
+                form_saved.save()
         return redirect('receipt-create')

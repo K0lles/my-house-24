@@ -78,7 +78,7 @@ class Receipt(models.Model):
     account = models.ForeignKey(PersonalAccount, on_delete=models.CASCADE, verbose_name='Особовий рахунок')
     date_from = models.DateField(verbose_name='Період з', default=timezone.now)
     date_to = models.DateField(verbose_name='Період по', default=timezone.now)
-    tariff = models.ForeignKey(Tariff, on_delete=models.CASCADE, verbose_name='Тариф')
+    tariff = models.ForeignKey(Tariff, on_delete=models.CASCADE, verbose_name='Тариф', blank=True, null=True)
     is_completed = models.BooleanField(default=True)
 
     class StatusChoices(models.TextChoices):
@@ -87,7 +87,6 @@ class Receipt(models.Model):
         not_paid = ('not paid', 'Не оплачена')
 
     status = models.CharField(max_length=20, choices=StatusChoices.choices, default='paid', verbose_name='Статус')
-    phone = PhoneNumberField(verbose_name='Номер телефону')
     created_at = models.DateField(default=timezone.now)
 
 

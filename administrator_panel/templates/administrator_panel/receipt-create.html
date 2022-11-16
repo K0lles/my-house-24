@@ -156,6 +156,7 @@
                                     <th>Од. вим.</th>
                                     <th>Ціна за од., грн</th>
                                     <th>Вартість, грн</th>
+                                    <th></th>
                                 </tr>
                                 <tr id="empty-form" style="display: none;">
                                     <td>
@@ -343,7 +344,7 @@
                 if ($(this).val()) sum += parseFloat($(this).val());
             }
         })
-        $('#overall-summ').text(sum);
+        $('#overall-summ').text(sum.toFixed(2));
     }
 
     $('#id_number').val(generateNumber());
@@ -514,6 +515,7 @@
         let tariff_id = $(`#id_tariff`).val();
         $('#services-list').empty();
         let counter = 0;
+        $('#overall-summ').text("0.00");
         TOTAL_FORMS.val('0');
         let row = ""
         {% for tariff in tariffs %}
@@ -594,5 +596,6 @@
             return false;
         }
     }
+
 </script>
 {% endblock %}

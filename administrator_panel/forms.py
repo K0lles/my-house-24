@@ -218,10 +218,20 @@ class ReceiptForm(ModelForm):
     date_to = DateField(input_formats=['%d.%m.%Y'], initial=timezone.now())
     date_from = DateField(input_formats=['%d.%m.%Y'], initial=timezone.now())
     created_at = DateField(input_formats=['%d.%m.%Y'], initial=timezone.now())
+    account = CharField(max_length=255)
 
     class Meta:
         model = Receipt
         fields = '__all__'
+
+    def clean(self):
+        cleaned_data = super(ReceiptForm, self).clean()
+        try:
+            cleaned_data['account'] = PersonalAccount.objects.get(number=cleaned_data.get('account'))
+        except PersonalAccount.DoesNotExist:
+            self._errors['account'] = 'Перевірте правильність '
+
+        return cleaned_data
 
 
 class ReceiptServiceForm(ModelForm):
@@ -230,6 +240,12 @@ class ReceiptServiceForm(ModelForm):
     class Meta:
         model = ReceiptService
         fields = '__all__'
+
+    def clean(self):
+        cleaned_data = super(ReceiptServiceForm, self).clean()
+        self._errors = {}
+
+        return cleaned_data
 
 
 receipt_service_formset = modelformset_factory(ReceiptService,

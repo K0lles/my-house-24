@@ -733,12 +733,14 @@ class ReceiptCreateView(CreateView):
         context = personal_account_context(context, flats=Flat.objects.select_related('house', 'section', 'personalaccount', 'tariff').filter(personalaccount__isnull=False, personalaccount__status='active'))
         context['personal_accounts'] = PersonalAccount.objects.select_related('flat', 'flat__owner').filter(flat__isnull=False)
         context['receipt_service_formset'] = receipt_service_formset(queryset=ReceiptService.objects.none())
-        context['tariffs'] = Tariff.objects.all()
+        context['tariffs'] = Tariff.objects.prefetch_related('tariffservice_set',
+                                                             'tariffservice_set__service',
+                                                             'tariffservice_set__service__measurement_unit').all()
         context['services'] = Service.objects.select_related('measurement_unit').all()
-        context['measurement_units'] = MeasurementUnit.objects.all()
         context['flat_personal_account'] = {}
         context['flat_tariff'] = {}
 
+        # dictionary where flat.pk is key and flat's personal account is value. If no account - 'none'
         for flat in context['flats']:
             context['flat_personal_account'][flat.id] = flat.personalaccount.number
             if flat.tariff:
@@ -747,4 +749,3 @@ class ReceiptCreateView(CreateView):
                 context['flat_tariff'][flat.id] = 'none'
 
         return context
-

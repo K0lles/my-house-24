@@ -730,7 +730,7 @@ class ReceiptCreateView(CreateView):
 
     def get_context_data(self, **kwargs):
         context = super(ReceiptCreateView, self).get_context_data(**kwargs)
-        context = personal_account_context(context, flats=Flat.objects.select_related('house', 'section', 'personalaccount', 'tariff').filter(personalaccount__isnull=False, personalaccount__status='active'))
+        context = personal_account_context(context, flats=Flat.objects.select_related('house', 'section', 'personalaccount', 'tariff', 'owner').filter(personalaccount__isnull=False, personalaccount__status='active'))
         context['personal_accounts'] = PersonalAccount.objects.select_related('flat', 'flat__owner').filter(flat__isnull=False)
         context['receipt_service_formset'] = receipt_service_formset(queryset=ReceiptService.objects.none())
         context['tariffs'] = Tariff.objects.prefetch_related('tariffservice_set',
@@ -749,3 +749,12 @@ class ReceiptCreateView(CreateView):
                 context['flat_tariff'][flat.id] = 'none'
 
         return context
+
+    def post(self, request, *args, **kwargs):
+        form = self.get_form_class()(self.request.POST)
+        receipt_formset = receipt_service_formset(request.POST, queryset=ReceiptService.objects.none())
+        print(form.errors)
+        print(receipt_formset.errors)
+        print(form.cleaned_data)
+        print(receipt_formset.cleaned_data)
+        return redirect('receipt-create')

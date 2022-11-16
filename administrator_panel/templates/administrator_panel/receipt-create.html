@@ -6,217 +6,226 @@
 {% endblock %}
 
 {% block main_content %}
-    <div class="row">
-        <div class="col-sm-12 col-md-7 col-lg-6" style="display: flex; justify-content: flex-start;">
-            <div class="form-group">
-                <div class="input-group">
-                    <div class="input-group-append" style="background-color: #fff; border: 1px solid #ccc; padding: 6px 12px;">
-                        №
+    <form id="receipt-form" action="{% url 'receipt-create' %}" method="post">
+    {% csrf_token %}
+        <div class="row">
+            <div class="col-sm-12 col-md-7 col-lg-6" style="display: flex; justify-content: flex-start;">
+                <div class="form-group">
+                    <div class="input-group">
+                        <div class="input-group-append" style="background-color: #fff; border: 1px solid #ccc; padding: 6px 12px;">
+                            №
+                        </div>
+                        <input type="text" class="form-control" id="{{ form.number.auto_id }}" name="{{ form.number.html_name }}" {% if form.number.value and not form.instance.pk %}value="{{ form.instance.number.value }}"{% elif form.instance.pk %}value="{{ form.instance.number }}"{% endif %} onchange="fieldIsValid(this)" {% if form.number.errors %}style="border: 1px solid red;" {% endif %}>
                     </div>
-                    <input type="text" class="form-control" id="{{ form.number.auto_id }}" name="{{ form.number.html_name }}" {% if form.number.value and not form.instance.pk %}value="{{ form.instance.number.value }}"{% elif form.instance.pk %}value="{{ form.instance.number }}"{% endif %} onchange="fieldIsValid(this)" {% if form.number.errors %}style="border: 1px solid red;" {% endif %}>
+                    <p id="{{ form.number.auto_id }}-errors" style="color: red;">{{ form.number.errors }}</p>
                 </div>
-                <p id="{{ form.number.auto_id }}-errors" style="color: red;">{{ form.number.errors }}</p>
+                <span style="margin: 8px 15px 0 15px;">
+                    від
+                </span>
+                <div class="form-group">
+                    <div class="input-group date" id="datepicker-first">
+                        <span class="input-group-append">
+                            <button type="button" class="btn btn-default" >
+                                <i class="fa fa-calendar"></i>
+                            </button>
+                        </span>
+                        <input type="text" class="form-control" id="{{ form.created_at.auto_id }}" name="{{ form.created_at.html_name }}" {% if not base_evidence and not form.instance.pk %}value="{{ form.created_at.value|date:'d.m.Y' }}"{% elif base_evidence %}value="{{ base_evidence.created_at|date:'d.m.Y' }}"{% else %}value="{{ form.instance.created_at|date:'d.m.Y' }}"{% endif %} onchange="fieldIsValid(this)" {% if form.created_at.errors %}style="border: 1px solid red;" {% endif %}>
+                    </div>
+                    <p id="{{ form.created_at.auto_id }}-errors" style="color: red;">{{ form.created_at.errors }}</p>
+                </div>
             </div>
-            <span style="margin: 8px 15px 0 15px;">
-                від
-            </span>
-            <div class="form-group">
-                <div class="input-group date" id="datepicker-first">
-                    <span class="input-group-append">
-                        <button type="button" class="btn btn-default" >
-                            <i class="fa fa-calendar"></i>
-                        </button>
-                    </span>
-                    <input type="text" class="form-control" id="{{ form.created_at.auto_id }}" name="{{ form.created_at.html_name }}" {% if not base_evidence and not form.instance.pk %}value="{{ form.created_at.value|date:'d.m.Y' }}"{% elif base_evidence %}value="{{ base_evidence.created_at|date:'d.m.Y' }}"{% else %}value="{{ form.instance.created_at|date:'d.m.Y' }}"{% endif %} onchange="fieldIsValid(this)" {% if form.created_at.errors %}style="border: 1px solid red;" {% endif %}>
+            <div class="col-sm-12 col-md-7 col-lg-6 text-right">
+                <div class="btn-group">
+                    <button type="button" class="btn btn-success dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        Виберіть дію
+                    </button>
+                    <div class="dropdown-menu dropdown-menu-right">
+                        <a class="dropdown-item" href="#">Додати нову квитанцію</a>
+                        <a class="dropdown-item" href="#">Вивантажити в Excel</a>
+                  </div>
                 </div>
-                <p id="{{ form.created_at.auto_id }}-errors" style="color: red;">{{ form.created_at.errors }}</p>
             </div>
         </div>
-        <div class="col-sm-12 col-md-7 col-lg-6 text-right">
-            <div class="btn-group">
-                <button type="button" class="btn btn-success dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                    Виберіть дію
-                </button>
-                <div class="dropdown-menu dropdown-menu-right">
-                    <a class="dropdown-item" href="#">Додати нову квитанцію</a>
-                    <a class="dropdown-item" href="#">Вивантажити в Excel</a>
-              </div>
-            </div>
-        </div>
-    </div>
-    <div class="card">
-        <div class="card-body">
-            <div class="row">
-                <div class="col-sm-12 col-lg-6">
-                    <div class="form-group">
-                        <label class="form-label" for="id_house">Будинок</label>
-                        <select class="form-select" id="id_house" onchange="changedHouse(this)">
-                            <option value="none">Вибрати...</option>
-                            {% for house in houses %}
-                                <option value="{{ house.pk }}">{{ house.name }}</option>
-                            {% endfor %}
-                        </select>
-                        <p id="id_house-errors" style="color: red;">{{ form.created_at.errors }}</p>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label" for="id_section">Секція</label>
-                        <select class="form-select" id="id_section" onchange="changedSection(this)">
-                            <option value="none">Вибрати...</option>
-                        </select>
-                        <p id="id_section-errors" style="color: red;">{{ form.created_at.errors }}</p>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label" for="id_flat">Квартира</label>
-                        <select class="form-select" id="id_flat" onchange="changedFlat(this)">
-                            <option value="none">Вибрати...</option>
-                            {% for flat in flats %}
-                                <option value="{{ flat.pk }}">{{ flat.number }}</option>
-                            {% endfor %}
-                        </select>
-                        <p id="id_flat-errors" style="color: red;">{{ form.created_at.errors }}</p>
-                    </div>
-                </div>
-                <div class="col-sm-12 col-lg-6">
-                    <div class="form-group">
-                        <input class="form-check-inline" type="checkbox" id="{{ form.is_completed.auto_id }}" name="{{ form.is_completed.html_name }}" {% if not form.instance.pk %}checked{% endif %}>
-                        <label class="form-label" for="{{ form.is_completed.auto_id }}">Проведена</label>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label" for="{{ form.status.auto_id }}">Статус</label>
-                        <select class="form-select" id="{{ form.status.auto_id }}" name="{{ form.status.html_name }}" onchange="fieldIsValid(this)">
-                            <option>Вибрати...</option>
-                            {% for value, text in form.status.field.choices %}
-                                <option value="{{ value }}">{{ text }}</option>
-                            {% endfor %}
-                        </select>
-                        <p id="{{ form.status.auto_id }}-errors" style="color: red;">{{ form.created_at.errors }}</p>
-                    </div>
-                    <div class="form-group">
-                        <label for="{{ form.tariff.auto_id }}" class="form-label">Тариф</label>
-                        <select class="form-select" id="{{ form.tariff.auto_id }}" name="{{ form.tariff.html_name }}" onchange="alwaysIsValid(this)">
-                            <option value="none">Вибрати...</option>
-                            {% for tariff in tariffs %}
-                                <option value="{{ tariff.pk }}">{{ tariff.name }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div class="row">
-                        <div class="col-sm-6">
-                            <div class="form-group">
-                                <label for="{{ form.date_from.auto_id }}" class="form-label">Період з</label>
-                                <div class="input-group date" id="datepicker-second">
-                                    <span class="input-group-append">
-                                        <button type="button" class="btn btn-default" >
-                                            <i class="fa fa-calendar"></i>
-                                        </button>
-                                    </span>
-                                    <input type="text" class="form-control" id="{{ form.date_from.auto_id }}" name="{{ form.date_from.html_name }}" {% if not base_evidence and not form.instance.pk %}value="{{ form.date_from.value|date:'d.m.Y' }}"{% elif base_evidence %}value="{{ base_evidence.date_from|date:'d.m.Y' }}"{% else %}value="{{ form.instance.date_from|date:'d.m.Y' }}"{% endif %} onchange="fieldIsValid(this)" {% if form.date_from.errors %}style="border: 1px solid red;" {% endif %}>
-                                </div>
-                                <p id="{{ form.date_from.auto_id }}-errors" style="color: red;">{{ form.created_at.errors }}</p>
-                            </div>
-                        </div>
-                        <div class="col-sm-6">
-                            <div class="form-group">
-                                <label for="{{ form.date_to.auto_id }}" class="form-label">Період по</label>
-                                <div class="input-group date" id="datepicker-third">
-                                    <span class="input-group-append">
-                                        <button type="button" class="btn btn-default" >
-                                            <i class="fa fa-calendar"></i>
-                                        </button>
-                                    </span>
-                                    <input type="text" class="form-control" id="{{ form.date_to.auto_id }}" name="{{ form.date_to.html_name }}" {% if not base_evidence and not form.instance.pk %}value="{{ form.date_to.value|date:'d.m.Y' }}"{% elif base_evidence %}value="{{ base_evidence.date_to|date:'d.m.Y' }}"{% else %}value="{{ form.instance.date_to|date:'d.m.Y' }}"{% endif %} onchange="fieldIsValid(this)" {% if form.date_to.errors %}style="border: 1px solid red;" {% endif %}>
-                                </div>
-                                <p id="{{ form.date_to.auto_id }}-errors" style="color: red;">{{ form.created_at.errors }}</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-sm-12 col-lg-6">
-                    <div class="form-group">
-                        <label class="form-label" for="{{ form.account.auto_id }}">Особовий рахунок</label>
-                        <input type="text" class="form-control" id="{{ form.account.auto_id }}" name="{{ form.account.html_name }}" {% if not form.instance.pk and form.account.value %}value="{{ form.account.value }}" {% endif %} onchange="searchFlatByPersonal(this)">
-                        <p id="{{ form.account.auto_id }}-errors" style="color: red;">{{ form.created_at.errors }}</p>
-                    </div>
-                    <p><b>Власник: </b><span id="owner">не указано</span></p>
-                    <p><b>Телефон: </b><span id="owner-phone">не указано</span></p>
-                </div>
-            </div>
-            <div class="col-sm-12">
-                {{ receipt_service_formset.management_form }}
+        <div class="card">
+            <div class="card-body">
                 <div class="row">
-                    <table class="table table-responsive table-borderless">
-                        <thead>
-                            <tr>
-                                <th>Послуга</th>
-                                <th>Розхід</th>
-                                <th>Од. вим.</th>
-                                <th>Ціна за од., грн</th>
-                                <th>Вартість, грн</th>
-                            </tr>
-                            <tr id="empty-form" style="display: none;">
-                                <td>
-                                    <select class="form-select" id="{{ receipt_service_formset.empty_form.service.auto_id }}" name="{{ receipt_service_formset.empty_form.service.html_name }}" onchange="changedService(this)">
-                                        <option value="none">Вибрати...</option>
-                                        {% for service in services %}
-                                            <option value="{{ service.pk }}">{{ service.name }}</option>
-                                        {% endfor %}
-                                    </select>
-                                    <p id="{{ receipt_service_formset.empty_form.service.auto_id }}-errors" style="color: red;"></p>
-                                </td>
-                                <td>
-                                    <input class="form-control" type="number" step="0.01" id="{{ receipt_service_formset.empty_form.amount.auto_id }}" name="{{ receipt_service_formset.empty_form.amount.html_name }}" onchange="changedAmount(this)">
-                                    <p id="{{ receipt_service_formset.empty_form.amount.auto_id }}-errors" style="color: red;"></p>
-                                </td>
-                                <td>
-                                    <select disabled class="form-select" id="{{ receipt_service_formset.empty_form.service.auto_id }}-measurement-unit">
-                                        <option>Вибрати...</option>
-                                        {% for service in services %}
-                                            <option value="{{ service.pk }}">{{ service.measurement_unit.name }}</option>
-                                        {% endfor %}
-                                    </select>
-                                </td>
-                                <td>
-                                    <input class="form-control" type="number" step="0.01" id="{{ receipt_service_formset.empty_form.price.auto_id }}" name="{{ receipt_service_formset.empty.form.price.html_name }}" onchange="changedPrice(this)">
-                                    <p id="{{ receipt_service_formset.empty_form.price.auto_id }}-errors" style="color: red;"></p>
-                                </td>
-                                <td>
-                                    <input class="form-control" type="number" step="0.01" id="{{ receipt_service_formset.empty_form.total_price.auto_id }}" name="{{ receipt_service_formset.empty_form.total_price.html_name }}">
-                                    <p id="{{ receipt_service_formset.empty_form.total_price.auto_id }}-errors" style="color: red;"></p>
-                                </td>
-                                <td>
-                                    <button type="button" class="btn btn-default delete-service">
-                                        <i class="fa fa-trash"></i>
-                                    </button>
-                                </td>
-                            </tr>
-                        </thead>
-                        <tbody id="services-list">
-                        </tbody>
-                        <tfoot>
-                            <tr>
-                                <td colspan="4">
-                                    <button class="btn btn-default add-service" >Додати послугу</button>
-                                    <button class="btn btn-default set-by-default">Установити всі послуги згідно тарифу</button>
-                                    <button class="btn btn-default add-evidences-counters">Добавити показання лічильників</button>
-                                </td>
-                                <td>
-                                    <div class="h5">
-                                        Всього:
-                                        <b>
-                                            <span id="overall-summ">0.00 </span>
-                                        </b>
-                                        грн
+                    <div class="col-sm-12 col-lg-6">
+                        <div class="form-group">
+                            <label class="form-label" for="id_house">Будинок</label>
+                            <select class="form-select" id="id_house" onchange="changedHouse(this)">
+                                <option value="none">Вибрати...</option>
+                                {% for house in houses %}
+                                    <option value="{{ house.pk }}">{{ house.name }}</option>
+                                {% endfor %}
+                            </select>
+                            <p id="id_house-errors" style="color: red;">{{ form.created_at.errors }}</p>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="id_section">Секція</label>
+                            <select class="form-select" id="id_section" onchange="changedSection(this)">
+                                <option value="none">Вибрати...</option>
+                            </select>
+                            <p id="id_section-errors" style="color: red;">{{ form.created_at.errors }}</p>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="id_flat">Квартира</label>
+                            <select class="form-select" id="id_flat" onchange="changedFlat(this)">
+                                <option value="none">Вибрати...</option>
+                                {% for flat in flats %}
+                                    <option value="{{ flat.pk }}">{{ flat.number }}</option>
+                                {% endfor %}
+                            </select>
+                            <p id="id_flat-errors" style="color: red;">{{ form.created_at.errors }}</p>
+                        </div>
+                    </div>
+                    <div class="col-sm-12 col-lg-6">
+                        <div class="form-group">
+                            <input class="form-check-inline" type="checkbox" id="{{ form.is_completed.auto_id }}" name="{{ form.is_completed.html_name }}" {% if not form.instance.pk %}checked{% endif %}>
+                            <label class="form-label" for="{{ form.is_completed.auto_id }}">Проведена</label>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="{{ form.status.auto_id }}">Статус</label>
+                            <select class="form-select" id="{{ form.status.auto_id }}" name="{{ form.status.html_name }}" onchange="fieldIsValid(this)">
+                                <option>Вибрати...</option>
+                                {% for value, text in form.status.field.choices %}
+                                    <option value="{{ value }}">{{ text }}</option>
+                                {% endfor %}
+                            </select>
+                            <p id="{{ form.status.auto_id }}-errors" style="color: red;">{{ form.created_at.errors }}</p>
+                        </div>
+                        <div class="form-group">
+                            <label for="{{ form.tariff.auto_id }}" class="form-label">Тариф</label>
+                            <select class="form-select" id="{{ form.tariff.auto_id }}" name="{{ form.tariff.html_name }}" onchange="alwaysIsValid(this)">
+                                <option value="none">Вибрати...</option>
+                                {% for tariff in tariffs %}
+                                    <option value="{{ tariff.pk }}">{{ tariff.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="row">
+                            <div class="col-sm-6">
+                                <div class="form-group">
+                                    <label for="{{ form.date_from.auto_id }}" class="form-label">Період з</label>
+                                    <div class="input-group date" id="datepicker-second">
+                                        <span class="input-group-append">
+                                            <button type="button" class="btn btn-default" >
+                                                <i class="fa fa-calendar"></i>
+                                            </button>
+                                        </span>
+                                        <input type="text" class="form-control" id="{{ form.date_from.auto_id }}" name="{{ form.date_from.html_name }}" {% if not base_evidence and not form.instance.pk %}value="{{ form.date_from.value|date:'d.m.Y' }}"{% elif base_evidence %}value="{{ base_evidence.date_from|date:'d.m.Y' }}"{% else %}value="{{ form.instance.date_from|date:'d.m.Y' }}"{% endif %} onchange="fieldIsValid(this)" {% if form.date_from.errors %}style="border: 1px solid red;" {% endif %}>
                                     </div>
-                                </td>
-                            </tr>
-                        </tfoot>
-                    </table>
+                                    <p id="{{ form.date_from.auto_id }}-errors" style="color: red;">{{ form.created_at.errors }}</p>
+                                </div>
+                            </div>
+                            <div class="col-sm-6">
+                                <div class="form-group">
+                                    <label for="{{ form.date_to.auto_id }}" class="form-label">Період по</label>
+                                    <div class="input-group date" id="datepicker-third">
+                                        <span class="input-group-append">
+                                            <button type="button" class="btn btn-default" >
+                                                <i class="fa fa-calendar"></i>
+                                            </button>
+                                        </span>
+                                        <input type="text" class="form-control" id="{{ form.date_to.auto_id }}" name="{{ form.date_to.html_name }}" {% if not base_evidence and not form.instance.pk %}value="{{ form.date_to.value|date:'d.m.Y' }}"{% elif base_evidence %}value="{{ base_evidence.date_to|date:'d.m.Y' }}"{% else %}value="{{ form.instance.date_to|date:'d.m.Y' }}"{% endif %} onchange="fieldIsValid(this)" {% if form.date_to.errors %}style="border: 1px solid red;" {% endif %}>
+                                    </div>
+                                    <p id="{{ form.date_to.auto_id }}-errors" style="color: red;">{{ form.created_at.errors }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-sm-12 col-lg-6">
+                        <div class="form-group">
+                            <label class="form-label" for="{{ form.account.auto_id }}">Особовий рахунок</label>
+                            <input type="text" class="form-control" id="{{ form.account.auto_id }}" name="{{ form.account.html_name }}" {% if not form.instance.pk and form.account.value %}value="{{ form.account.value }}" {% endif %} onchange="searchFlatByPersonal(this)">
+                            <p id="{{ form.account.auto_id }}-errors" style="color: red;">{{ form.created_at.errors }}</p>
+                        </div>
+                        <p><b>Власник: </b><span id="owner">не указано</span></p>
+                        <p><b>Телефон: </b><span id="owner-phone">не указано</span></p>
+                    </div>
+                </div>
+                <div class="col-sm-12">
+                    {{ receipt_service_formset.management_form }}
+                    <div class="row">
+                        <table class="table table-responsive table-borderless">
+                            <thead>
+                                <tr>
+                                    <th>Послуга</th>
+                                    <th>Розхід</th>
+                                    <th>Од. вим.</th>
+                                    <th>Ціна за од., грн</th>
+                                    <th>Вартість, грн</th>
+                                </tr>
+                                <tr id="empty-form" style="display: none;">
+                                    <td>
+                                        <select class="form-select" id="{{ receipt_service_formset.empty_form.service.auto_id }}" name="{{ receipt_service_formset.empty_form.service.html_name }}" onchange="changedService(this)">
+                                            <option value="none">Вибрати...</option>
+                                            {% for service in services %}
+                                                <option value="{{ service.pk }}">{{ service.name }}</option>
+                                            {% endfor %}
+                                        </select>
+                                        <p id="{{ receipt_service_formset.empty_form.service.auto_id }}-errors" style="color: red;"></p>
+                                    </td>
+                                    <td>
+                                        <input class="form-control" type="number" step="0.01" id="{{ receipt_service_formset.empty_form.amount.auto_id }}" name="{{ receipt_service_formset.empty_form.amount.html_name }}" onchange="changedAmount(this)">
+                                        <p id="{{ receipt_service_formset.empty_form.amount.auto_id }}-errors" style="color: red;"></p>
+                                    </td>
+                                    <td>
+                                        <select disabled class="form-select" id="{{ receipt_service_formset.empty_form.service.auto_id }}-measurement-unit">
+                                            <option>Вибрати...</option>
+                                            {% for service in services %}
+                                                <option value="{{ service.pk }}">{{ service.measurement_unit.name }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <input class="form-control" type="number" step="0.01" id="{{ receipt_service_formset.empty_form.price.auto_id }}" name="{{ receipt_service_formset.empty.form.price.html_name }}" onchange="changedPrice(this)">
+                                        <p id="{{ receipt_service_formset.empty_form.price.auto_id }}-errors" style="color: red;"></p>
+                                    </td>
+                                    <td>
+                                        <input class="form-control" type="number" step="0.01" id="{{ receipt_service_formset.empty_form.total_price.auto_id }}" name="{{ receipt_service_formset.empty_form.total_price.html_name }}">
+                                        <p id="{{ receipt_service_formset.empty_form.total_price.auto_id }}-errors" style="color: red;"></p>
+                                    </td>
+                                    <td>
+                                        <button type="button" class="btn btn-default delete-service">
+                                            <i class="fa fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            </thead>
+                            <tbody id="services-list">
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <td colspan="4">
+                                        <button type="button" class="btn btn-default add-service" >Додати послугу</button>
+                                        <button type="button" class="btn btn-default set-by-default">Установити всі послуги згідно тарифу</button>
+                                        <button type="button" class="btn btn-default add-evidences-counters">Добавити показання лічильників</button>
+                                    </td>
+                                    <td>
+                                        <div class="h5">
+                                            Всього:
+                                            <b>
+                                                <span id="overall-summ">0.00 </span>
+                                            </b>
+                                            грн
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-sm-12 text-right">
+                        <button type="reset" class="btn btn-default">Скасувати</button>
+                        <button type="submit" class="btn btn-success" onclick="formIsValid()">Створити</button>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
+    </form>
 {% endblock %}
 
 {% block scripts %}
@@ -257,6 +266,8 @@
         empty_form.find('#id_form-__prefix__-total_price').attr('name', `form-${total_forms}-total_price`);
         empty_form.find('#id_form-__prefix__-total_price').attr('id', `id_form-${total_forms}-total_price`);
 
+        empty_form.find('#id_form-__prefix__-total_price-errors').attr('id', `id_form-${total_forms}-total_price-errors`);
+
         empty_form.attr('class', 'service');
 
         empty_form.css('display', '');
@@ -270,7 +281,6 @@
         $(`#${element.id}-measurement-unit > option`).each(function() {
             $(this).removeAttr('selected');
         });
-        console.log(element.id);
         $(`#${element.id}-measurement-unit option[value=${selectedService}]`).attr('selected', 'selected');
         fieldIsValid(element);
     }
@@ -304,7 +314,7 @@
             return;
         }
 
-        $(`#${total_price_id}`).val((parseFloat($(`#${amount_id}`).val()) * parseFloat($(`#${element.id}`).val())).toString());
+        $(`#${total_price_id}`).val(((parseFloat($(`#${amount_id}`).val()) * parseFloat($(`#${element.id}`).val())).toFixed(2)).toString());
         countOverallSum();
         fieldIsValid(element);
     }
@@ -321,7 +331,7 @@
             return;
         }
 
-        $(`#${total_price_id}`).val((parseFloat($(`#${price_id}`).val()) * parseFloat($(`#${element.id}`).val())).toString());
+        $(`#${total_price_id}`).val(((parseFloat($(`#${price_id}`).val()) * parseFloat($(`#${element.id}`).val())).toFixed(2)).toString());
         countOverallSum();
         fieldIsValid(element);
     }
@@ -551,7 +561,38 @@
                 {% endfor %}
             }
         {% endfor %}
-
     })
+
+    function formIsValid() {
+        event.preventDefault();
+        let isValid = true;
+
+        $('#receipt-form').find(`input[type!='hidden']`).each(function () {
+            console.log(`first scope ${$(this).attr('id')}`);
+            console.log(!($(this).attr('id')).includes('__prefix__'));
+            console.log($(this).attr('id') !== 'id_is_completed');
+            console.log(($(this).attr('id') !== 'id_is_completed') && !($(this).attr('id')).includes('__prefix__'));
+
+            if (($(this).attr('id') !== 'id_is_completed') && !($(this).attr('id')).includes('__prefix__')) {
+                if (!fieldIsValid(this)) isValid = false;
+            }
+        })
+
+        $(`#receipt-form`).find(`select`).each(function () {
+            console.log(`outer scope: ${$(this).attr('id')}`);
+            if (!(($(this).attr('id')).includes('__prefix__')) && ($(this).attr('id') !== 'id_tariff')) {
+                console.log(`inner scope: ${$(this).attr('id')}`);
+                if (!fieldIsValid(this)) isValid = false;
+            }
+        })
+
+        if (isValid) {
+            $('#receipt-form').submit();
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
 </script>
 {% endblock %}

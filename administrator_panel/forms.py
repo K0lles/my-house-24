@@ -215,6 +215,9 @@ class EvidenceForm(ModelForm):
 
 
 class ReceiptForm(ModelForm):
+    date_to = DateField(input_formats=['%d.%m.%Y'], initial=timezone.now())
+    date_from = DateField(input_formats=['%d.%m.%Y'], initial=timezone.now())
+    created_at = DateField(input_formats=['%d.%m.%Y'], initial=timezone.now())
 
     class Meta:
         model = Receipt

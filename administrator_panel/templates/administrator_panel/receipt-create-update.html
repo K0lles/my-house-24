@@ -40,8 +40,12 @@
                         Виберіть дію
                     </button>
                     <div class="dropdown-menu dropdown-menu-right">
-                        <a class="dropdown-item" href="#">Додати нову квитанцію</a>
-                        <a class="dropdown-item" href="#">Вивантажити в Excel</a>
+                        {% if form.instance.pk %}
+                            <a class="dropdown-item" href="{% url 'receipt-create' %}?base_receipt={{ form.instance.pk }}">Копіювати</a>
+                            <a href="#" class="dropdown-item">Видалити</a>
+                            <button class="dropdown-item set-by-default" type="button">Установити всі послуги згідно тарифу</button>
+                            <button class="dropdown-item add-evidences-counters" type="button">Добавити показання лічильників</button>
+                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -65,9 +69,9 @@
                             <select class="form-select" id="id_section" onchange="changedSection(this)">
                                 <option value="none">Вибрати...</option>
                                 {% if form.instance.pk %}
-                                    {% for section in sections_houses %}
+                                    {% for section in sections_in_houses %}
                                         {% if section.house.pk == form.instance.account.flat.house.pk %}
-                                            <option value="{{ section.pk }}">{{ section.name }}</option>
+                                            <option value="{{ section.pk }}" {% if section.pk == form.instance.account.flat.section.pk %}selected{% endif %}>{{ section.name }}</option>
                                         {% endif %}
                                     {% endfor %}
                                 {% endif %}
@@ -81,7 +85,7 @@
                                 {% if form.instance.pk %}
                                     {% for flat in flats %}
                                         {% if flat.section.pk == form.instance.account.flat.section.pk %}
-                                            <option value="{{ flat.pk }}" {% if flat.pk == form.instance.account.flat.pk %}selected{% endif %}></option>
+                                            <option value="{{ flat.pk }}" {% if flat.pk == form.instance.account.flat.pk %}selected{% endif %}>{{ flat.number }}</option>
                                         {% endif %}
                                     {% endfor %}
                                 {% else %}
@@ -109,10 +113,10 @@
                             <p id="{{ form.status.auto_id }}-errors" style="color: red;"></p>
                         </div>
                         <div class="form-group">
-                            <label for="{{ form.tariff.auto_id }}" class="form-label">Тариф</label>
+                            <label for="{{ form.tariff.auto_id }}" class="form-label">Тариф{% if form.instance.pk %}:{% endif %}</label>
                             {% if form.instance.pk %}
                                 <input type="hidden" id="{{ form.tariff.auto_id }}" name="{{ form.tariff.html_name }}" value="{{ form.instance.tariff.pk }}">
-                                <span><b>{{ form.instance.tariff.name }}</b></span>
+                                <span>{% if form.instance.tariff %}<a href="{% url 'tariff-detail' pk=form.instance.tariff.pk %}">{{ form.instance.tariff.name }}</a>{% else %}не указано{% endif %}</span>
                             {% else %}
                             <select class="form-select" id="{{ form.tariff.auto_id }}" name="{{ form.tariff.html_name }}" onchange="alwaysIsValid(this)">
                                 <option value="none">Вибрати...</option>
@@ -148,7 +152,7 @@
                                         </span>
                                         <input type="text" class="form-control" id="{{ form.date_to.auto_id }}" name="{{ form.date_to.html_name }}" {% if not base_receipt and not form.instance.pk %}value="{{ form.date_to.value|date:'d.m.Y' }}"{% elif base_receipt %}value="{{ base_receipt.date_to|date:'d.m.Y' }}"{% else %}value="{{ form.instance.date_to|date:'d.m.Y' }}"{% endif %} onchange="fieldIsValid(this)" {% if form.date_to.errors %}style="border: 1px solid red;" {% endif %}>
                                     </div>
-                                    <p id="{{ form.date_to.auto_id }}-errors" style="color: red;">{{ form.created_at.errors }}</p>
+                                    <p id="{{ form.date_to.auto_id }}-errors" style="color: red;"></p>
                                 </div>
                             </div>
                         </div>
@@ -161,8 +165,8 @@
                             <input type="text" class="form-control" id="{{ form.account.auto_id }}" name="{{ form.account.html_name }}" {% if not form.instance.pk and form.account.value %}value="{{ form.account.value }}"{% elif base_receipt %}value="{{ base_receipt.account.number }}"{% else %}value="{{ form.instance.account.number }}"{% endif %} onchange="searchFlatByPersonal(this)">
                             <p id="{{ form.account.auto_id }}-errors" style="color: red;"></p>
                         </div>
-                        <p><b>Власник: </b><span id="owner">не указано</span></p>
-                        <p><b>Телефон: </b><span id="owner-phone">не указано</span></p>
+                        <p><b>Власник: </b><span id="owner">{% if form.instance.pk and form.instance.account.flat.owner %}<a href="{% url 'owner-detail' owner_pk=form.instance.account.flat.owner.pk %}">{{ form.instance.account.flat.owner.name }} {{ form.instance.account.flat.owner.surname }}</a>{% else %}не указано{% endif %}</span></p>
+                        <p><b>Телефон: </b><span id="owner-phone">{% if form.instance.pk and form.instance.account.flat.owner %}<a href="tel:{{ form.instance.account.flat.owner.phone }}">{{ form.instance.account.flat.owner.phone }}</a>{% else %}не указано{% endif %}</span></p>
                     </div>
                 </div>
                 <div class="col-sm-12">

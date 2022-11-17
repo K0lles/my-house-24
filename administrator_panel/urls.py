@@ -34,5 +34,6 @@ urlpatterns = [
     path('evidence/update/<int:evidence_pk>/', EvidenceUpdateView.as_view(), name='evidence-update'),
     path('evidence/counter/delete/<int:evidence_pk>/', delete_evidence, name='evidence_delete'),
     path('receipt/create/', ReceiptCreateView.as_view(), name='receipt-create'),
+    path('receipt/update/<int:receipt_pk>/', ReceiptUpdateView.as_view(), name='receipt-update'),
     path('receipt-service/delete/<int:receipt_service_pk>/', receipt_service_delete, name='receipt-service-delete'),
 ]

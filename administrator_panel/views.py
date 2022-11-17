@@ -810,8 +810,19 @@ class ReceiptUpdateView(UpdateView):
     pk_url_kwarg = 'receipt_id'
     form_class = ReceiptForm
 
+    def get_object(self, queryset=None):
+        try:
+            return Receipt.objects.select_related('account',
+                                                  'account__flat',
+                                                  'account__flat__house',
+                                                  'account__flat__section').prefetch_related('receipt__service',
+                                                                                             'account__flat__house').get(pk=self.kwargs.get('receipt_pk'))
+        except Receipt.DoesNotExist:
+            raise Http404()
+
     def get_context_data(self, **kwargs):
-        context = super(ReceiptCreateView, self).get_context_data(**kwargs)
+        self.object = self.get_object()
+        context = super(ReceiptUpdateView, self).get_context_data(**kwargs)
         context = personal_account_context(context,
                                            flats=Flat.objects.select_related('house', 'section', 'personalaccount',
                                                                              'tariff', 'owner',
@@ -819,14 +830,13 @@ class ReceiptUpdateView(UpdateView):
                                                personalaccount__isnull=False, personalaccount__status='active'))
 
         # adding sections of each house, whose flats are with personal account in order to display it on firstly loaded page
-        if self.request.GET.get('base_receipt'):
-            context['sections_in_houses'] = set()
-            for flat in context['flats']:
-                context['sections_in_houses'].add(flat.section)
+        context['sections_in_houses'] = set()
+        for flat in context['flats']:
+            context['sections_in_houses'].add(flat.section)
 
         context['personal_accounts'] = PersonalAccount.objects.select_related('flat', 'flat__owner').filter(
             flat__isnull=False)
-        context['receipt_service_formset'] = receipt_service_formset(queryset=ReceiptService.objects.filter(receipt=))
+        context['receipt_service_formset'] = receipt_service_formset(queryset=ReceiptService.objects.filter(receipt=self.object))
         context['tariffs'] = Tariff.objects.prefetch_related('tariffservice_set',
                                                              'tariffservice_set__service',
                                                              'tariffservice_set__service__measurement_unit').all()

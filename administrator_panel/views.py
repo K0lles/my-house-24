@@ -380,7 +380,7 @@ def personal_account_context(context, flats=Flat.objects.none()):
     house_section: dict[
         int, list[list[int, str]]] = {}  # used in frontend for dynamical changing of sections while house was changed
     section_flat: dict[
-        int, list[list[int, str]]] = {}  # used in frontend for dynamical changing of flats while sectin was changed
+        int, list[list[int, str]]] = {}  # used in frontend for dynamical changing of flats while section was changed
     houses = []  # used for displaying houses in select tag in frontend
 
     for flat in flats:
@@ -744,15 +744,22 @@ def delete_evidence(request, evidence_pk):
 
 class ReceiptCreateView(CreateView):
     model = Receipt
-    template_name = 'administrator_panel/receipt-create.html'
+    template_name = 'administrator_panel/receipt-create-update.html'
     form_class = ReceiptForm
 
     def get_context_data(self, **kwargs):
         context = super(ReceiptCreateView, self).get_context_data(**kwargs)
         context = personal_account_context(context,
                                            flats=Flat.objects.select_related('house', 'section', 'personalaccount',
-                                                                             'tariff', 'owner').filter(
+                                                                             'tariff', 'owner', 'section__house').filter(
                                                personalaccount__isnull=False, personalaccount__status='active'))
+
+        # adding sections of each house, whose flats are with personal account in order to display it on firstly loaded page
+        if self.request.GET.get('base_receipt'):
+            context['sections_in_houses'] = set()
+            for flat in context['flats']:
+                context['sections_in_houses'].add(flat.section)
+
         context['personal_accounts'] = PersonalAccount.objects.select_related('flat', 'flat__owner').filter(
             flat__isnull=False)
         context['receipt_service_formset'] = receipt_service_formset(queryset=ReceiptService.objects.none())
@@ -761,6 +768,7 @@ class ReceiptCreateView(CreateView):
                                                              'tariffservice_set__service__measurement_unit').all()
         context['services'] = Service.objects.select_related('measurement_unit').all()
         context['flat_personal_account'] = {}
+        context['create_new_number'] = {'create': 'true'}
         context['flat_tariff'] = {}
 
         # dictionary where flat.pk is key and flat's personal account is value. If no account - 'none'
@@ -776,12 +784,13 @@ class ReceiptCreateView(CreateView):
     def post(self, request, *args, **kwargs):
         form = self.get_form_class()(self.request.POST)
         receipt_formset = receipt_service_formset(request.POST, queryset=ReceiptService.objects.none())
-        if form.is_valid and receipt_formset.is_valid():
+        if form.is_valid() and receipt_formset.is_valid():
             return self.form_valid(form, receipt_formset=receipt_formset)
         self.object = None
         context = self.get_context_data()
         context['form'] = form
         context['receipt_service_formset'] = receipt_formset
+        context['create_new_number'] = {'create': 'false'}
         return self.render_to_response(context)
 
     def form_valid(self, form, receipt_formset):
@@ -793,3 +802,49 @@ class ReceiptCreateView(CreateView):
                 form_saved.receipt = receipt_saved
                 form_saved.save()
         return redirect('receipt-create')
+
+
+class ReceiptUpdateView(UpdateView):
+    model = Receipt
+    template_name = 'administrator_panel/receipt-create-update.html'
+    pk_url_kwarg = 'receipt_id'
+    form_class = ReceiptForm
+
+    def get_context_data(self, **kwargs):
+        context = super(ReceiptCreateView, self).get_context_data(**kwargs)
+        context = personal_account_context(context,
+                                           flats=Flat.objects.select_related('house', 'section', 'personalaccount',
+                                                                             'tariff', 'owner',
+                                                                             'section__house').filter(
+                                               personalaccount__isnull=False, personalaccount__status='active'))
+
+        # adding sections of each house, whose flats are with personal account in order to display it on firstly loaded page
+        if self.request.GET.get('base_receipt'):
+            context['sections_in_houses'] = set()
+            for flat in context['flats']:
+                context['sections_in_houses'].add(flat.section)
+
+        context['personal_accounts'] = PersonalAccount.objects.select_related('flat', 'flat__owner').filter(
+            flat__isnull=False)
+        context['receipt_service_formset'] = receipt_service_formset(queryset=ReceiptService.objects.filter(receipt=))
+        context['tariffs'] = Tariff.objects.prefetch_related('tariffservice_set',
+                                                             'tariffservice_set__service',
+                                                             'tariffservice_set__service__measurement_unit').all()
+        context['services'] = Service.objects.select_related('measurement_unit').all()
+        context['flat_personal_account'] = {}
+        context['create_new_number'] = {'create': 'false'}
+        context['flat_tariff'] = {}
+
+        # dictionary where flat.pk is key and flat's personal account is value. If no account - 'none'
+        for flat in context['flats']:
+            context['flat_personal_account'][flat.id] = flat.personalaccount.number
+            if flat.tariff:
+                context['flat_tariff'][flat.id] = flat.tariff.id
+            else:
+                context['flat_tariff'][flat.id] = 'none'
+
+        return context
+
+
+def receipt_service_delete(request, receipt_service_delete_pk):
+    pass

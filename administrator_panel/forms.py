@@ -226,10 +226,24 @@ class ReceiptForm(ModelForm):
 
     def clean(self):
         cleaned_data = super(ReceiptForm, self).clean()
+        self._errors = {}
+
+        if self.instance.pk:
+            got_receipt = Receipt.objects.filter(number=cleaned_data.get('number'))
+            if got_receipt.count() != 0 and (got_receipt[0].pk != self.instance.pk and got_receipt.count() == 1):
+                self._errors['number'] = 'Квитанція з вказаним номером вже існує'
+
+        elif not self.instance.pk:
+            try:
+                Receipt.objects.get(number=cleaned_data.get('number'))
+                self._errors['number'] = 'Квитанція з вказаним номером вже існує'
+            except Receipt.DoesNotExist:
+                pass
+
         try:
             cleaned_data['account'] = PersonalAccount.objects.get(number=cleaned_data.get('account'))
         except PersonalAccount.DoesNotExist:
-            self._errors['account'] = 'Перевірте правильність '
+            self._errors['account'] = 'Перевірте правильність'
 
         return cleaned_data
 

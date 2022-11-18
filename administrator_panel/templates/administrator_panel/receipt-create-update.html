@@ -2,11 +2,11 @@
 {% load static %}
 
 {% block content_header %}
-    <h1>Нова квитанція</h1>
+    <h1>{% if not form.instance.pk %}Нова квитанція{% else %}Редагування квитанції{% endif %}</h1>
 {% endblock %}
 
 {% block main_content %}
-    <form id="receipt-form" action="{% url 'receipt-create' %}" method="post">
+    <form id="receipt-form" {% if not form.instance.pk %}action="{% url 'receipt-create' %}"{% else %}action="{% url 'receipt-update' receipt_pk=form.instance.pk %}"{% endif %} method="post">
     {% csrf_token %}
         <div class="row">
             <div class="col-sm-12 col-md-7 col-lg-6" style="display: flex; justify-content: flex-start;">
@@ -43,9 +43,9 @@
                         {% if form.instance.pk %}
                             <a class="dropdown-item" href="{% url 'receipt-create' %}?base_receipt={{ form.instance.pk }}">Копіювати</a>
                             <a href="#" class="dropdown-item">Видалити</a>
-                            <button class="dropdown-item set-by-default" type="button">Установити всі послуги згідно тарифу</button>
-                            <button class="dropdown-item add-evidences-counters" type="button">Добавити показання лічильників</button>
                         {% endif %}
+                        <button class="dropdown-item set-by-default" type="button">Установити всі послуги згідно тарифу</button>
+                        <button class="dropdown-item add-evidences-counters" type="button">Добавити показання лічильників</button>
                     </div>
                 </div>
             </div>
@@ -75,6 +75,13 @@
                                         {% endif %}
                                     {% endfor %}
                                 {% endif %}
+                                {% if base_receipt %}
+                                    {% for section in sections_in_houses %}
+                                        {% if section.house.pk == base_receipt.account.flat.house.pk %}
+                                            <option value="{{ section.pk }}" {% if base_receipt and base_receipt.account.flat.section.pk == section.pk %}selected{% endif %} {% if section.pk == form.instance.account.flat.section.pk %}selected{% endif %}>{{ section.name }}</option>
+                                        {% endif %}
+                                    {% endfor %}
+                                {% endif %}
                             </select>
                             <p id="id_section-errors" style="color: red;"></p>
                         </div>
@@ -88,6 +95,12 @@
                                             <option value="{{ flat.pk }}" {% if flat.pk == form.instance.account.flat.pk %}selected{% endif %}>{{ flat.number }}</option>
                                         {% endif %}
                                     {% endfor %}
+                                {% elif base_receipt %}
+                                    {% for flat in flats %}
+                                        {% if flat.section.pk == base_receipt.account.flat.section.pk %}
+                                            <option value="{{ flat.pk }}" {% if flat.pk == base_receipt.account.flat.pk %}selected{% endif %}>{{ flat.number }}</option>
+                                        {% endif %}
+                                    {% endfor %}
                                 {% else %}
                                     {% for flat in flats %}
                                         <option value="{{ flat.pk }}">{{ flat.number }}</option>
@@ -99,7 +112,7 @@
                     </div>
                     <div class="col-sm-12 col-lg-6">
                         <div class="form-group">
-                            <input class="form-check-inline" type="checkbox" id="{{ form.is_completed.auto_id }}" name="{{ form.is_completed.html_name }}" {% if not form.instance.pk %}checked{% endif %}{% if form.instance.pk and form.instance.is_completed %}checked{% endif %}>
+                            <input class="form-check-inline" type="checkbox" id="{{ form.is_completed.auto_id }}" name="{{ form.is_completed.html_name }}" {% if not form.instance.pk and not base_receipt %}checked{% endif %}{% if form.instance.pk and form.instance.is_completed %}checked{% endif %}{% if base_receipt and base_receipt.is_completed %}checked{% endif %}>
                             <label class="form-label" for="{{ form.is_completed.auto_id }}">Проведена</label>
                         </div>
                         <div class="form-group">
@@ -107,7 +120,7 @@
                             <select class="form-select" id="{{ form.status.auto_id }}" name="{{ form.status.html_name }}" onchange="fieldIsValid(this)">
                                 <option>Вибрати...</option>
                                 {% for value, text in form.status.field.choices %}
-                                    <option value="{{ value }}" {% if form.instance.pk and form.instance.status == value %}selected{% endif %}>{{ text }}</option>
+                                    <option value="{{ value }}" {% if form.instance.pk and form.instance.status == value %}selected{% endif %}{% if base_receipt and base_receipt.status == value %}selected{% endif %}>{{ text }}</option>
                                 {% endfor %}
                             </select>
                             <p id="{{ form.status.auto_id }}-errors" style="color: red;"></p>
@@ -121,7 +134,7 @@
                             <select class="form-select" id="{{ form.tariff.auto_id }}" name="{{ form.tariff.html_name }}" onchange="alwaysIsValid(this)">
                                 <option value="none">Вибрати...</option>
                                 {% for tariff in tariffs %}
-                                    <option value="{{ tariff.pk }}" {% if base_receipt and base_receipt.account.tariff.pk == tariff.pk %}selected{% endif %}>{{ tariff.name }}</option>
+                                    <option value="{{ tariff.pk }}" {% if base_receipt and base_receipt.tariff.pk == tariff.pk %}selected{% endif %}>{{ tariff.name }}</option>
                                 {% endfor %}
                             </select>
                             {% endif %}
@@ -165,12 +178,19 @@
                             <input type="text" class="form-control" id="{{ form.account.auto_id }}" name="{{ form.account.html_name }}" {% if not form.instance.pk and form.account.value %}value="{{ form.account.value }}"{% elif base_receipt %}value="{{ base_receipt.account.number }}"{% else %}value="{{ form.instance.account.number }}"{% endif %} onchange="searchFlatByPersonal(this)">
                             <p id="{{ form.account.auto_id }}-errors" style="color: red;"></p>
                         </div>
-                        <p><b>Власник: </b><span id="owner">{% if form.instance.pk and form.instance.account.flat.owner %}<a href="{% url 'owner-detail' owner_pk=form.instance.account.flat.owner.pk %}">{{ form.instance.account.flat.owner.name }} {{ form.instance.account.flat.owner.surname }}</a>{% else %}не указано{% endif %}</span></p>
-                        <p><b>Телефон: </b><span id="owner-phone">{% if form.instance.pk and form.instance.account.flat.owner %}<a href="tel:{{ form.instance.account.flat.owner.phone }}">{{ form.instance.account.flat.owner.phone }}</a>{% else %}не указано{% endif %}</span></p>
+                        <p><b>Власник: </b><span id="owner">{% if form.instance.pk and form.instance.account.flat.owner %}<a href="{% url 'owner-detail' owner_pk=form.instance.account.flat.owner.pk %}">{{ form.instance.account.flat.owner.name }} {{ form.instance.account.flat.owner.surname }}</a>{% elif base_receipt %}<a href="{% url 'owner-detail' owner_pk=base_receipt.account.flat.owner.pk %}">{{ base_receipt.account.flat.owner.name }} {{ base_receipt.account.flat.owner.surname }}</a>{% else %}не указано{% endif %}</span></p>
+                        <p><b>Телефон: </b><span id="owner-phone">{% if form.instance.pk and form.instance.account.flat.owner %}<a href="tel:{{ form.instance.account.flat.owner.phone }}">{{ form.instance.account.flat.owner.phone }}</a>{% elif base_receipt %}<a href="tel:{{ base_receipt.account.flat.owner.phone }}">{{ base_receipt.account.flat.owner.phone }}</a>{% else %}не указано{% endif %}</span></p>
                     </div>
                 </div>
                 <div class="col-sm-12">
+                    {% if not base_receipt %}
                     {{ receipt_service_formset.management_form }}
+                    {% else %}
+                    <input type="hidden" name="form-TOTAL_FORMS" value="{{ base_receipt_services.count }}" id="id_form-TOTAL_FORMS">
+                    <input type="hidden" name="form-INITIAL_FORMS" value="0" id="id_form-INITIAL_FORMS">
+                    <input type="hidden" name="form-MIN_NUM_FORMS" value="0" id="id_form-MIN_NUM_FORMS">
+                    <input type="hidden" name="form-MAX_NUM_FORMS" value="1000" id="id_form-MAX_NUM_FORMS">
+                    {% endif %}
                     <div class="row">
                         <table class="table table-responsive table-borderless">
                             <thead>
@@ -221,7 +241,8 @@
                             </thead>
                             <tbody id="services-list">
                                 {% for form in receipt_service_formset.forms %}
-                                    <tr>
+                                {{ form.id }}
+                                <tr>
                                     <td>
                                         <select class="form-select" id="{{ form.service.auto_id }}" name="{{ form.service.html_name }}" onchange="changedService(this)">
                                             <option value="none">Вибрати...</option>
@@ -258,6 +279,46 @@
                                     </td>
                                 </tr>
                                 {% endfor %}
+                                {% if base_receipt %}
+                                    {% for receipt_service in base_receipt_services %}
+                                        <tr>
+                                            <td>
+                                                <select class="form-select" id="id_form-{{ forloop.counter0 }}-service" name="form-{{ forloop.counter0 }}-service" onchange="changedService(this)">
+                                                    <option value="none">Вибрати...</option>
+                                                    {% for service in services %}
+                                                        <option value="{{ service.pk }}" {% if receipt_service.service.pk == service.pk %}selected{% endif %}>{{ service.name }}</option>
+                                                    {% endfor %}
+                                                </select>
+                                                <p id="id_form-{{ forloop.counter0 }}-service-errors" style="color: red;"></p>
+                                            </td>
+                                            <td>
+                                                <input class="form-control" type="number" step="0.01" id="id_form-{{ forloop.counter0 }}-amount" name="form-{{ forloop.counter0 }}-amount" onchange="changedAmount(this)">
+                                                <p id="id_form-{{ forloop.counter0 }}-amount-errors" style="color: red;"></p>
+                                            </td>
+                                            <td>
+                                                <select disabled class="form-select" id="id_form-{{ forloop.counter0 }}-service-measurement-unit">
+                                                    <option>Вибрати...</option>
+                                                    {% for service in services %}
+                                                        <option value="{{ service.pk }}" {% if receipt_service.service.pk == service.pk %}selected{% endif %}>{{ service.measurement_unit.name }}</option>
+                                                    {% endfor %}
+                                                </select>
+                                            </td>
+                                            <td>
+                                                <input class="form-control" type="number" step="0.01" id="id_form-{{ forloop.counter0 }}-price" value="{{ receipt_service.price }}" name="form-{{ forloop.counter0 }}-price" onchange="changedPrice(this)">
+                                                <p id="id_form-{{ forloop.counter0 }}-price-errors" style="color: red;"></p>
+                                            </td>
+                                            <td>
+                                                <input class="form-control" type="number" step="0.01" id="id_form-{{ forloop.counter0 }}-total_price" name="form-{{ forloop.counter0 }}-total_price">
+                                                <p id="id_form-{{ forloop.counter0 }}-total_price-errors" style="color: red;"></p>
+                                            </td>
+                                            <td>
+                                                <button type="button" class="btn btn-default delete-service">
+                                                    <i class="fa fa-trash"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                {% endif %}
                             </tbody>
                             <tfoot>
                                 <tr>
@@ -283,7 +344,7 @@
                 <div class="row">
                     <div class="col-sm-12 text-right">
                         <button type="reset" class="btn btn-default">Скасувати</button>
-                        <button type="submit" class="btn btn-success" onclick="formIsValid()">Створити</button>
+                        <button type="submit" class="btn btn-success" onclick="formIsValid()">{% if not form.instance.pk %}Створити{% else %}Зберегти{% endif %}</button>
                     </div>
                 </div>
             </div>
@@ -460,7 +521,6 @@
     countOverallSum();
 
     let create_new = {{ create_new_number|safe }};
-    console.log(create_new['create'])
     if (create_new['create'] === 'true') $('#id_number').val(generateNumber());
 
     let house_section = {{ house_section|safe }};
@@ -565,8 +625,8 @@
                     $('#owner-phone').text('не указано');
                 }
                 else {
-                    $(`#owner`).text('{{ flat.owner.name }} {{ flat.owner.surname }}');
-                    $(`#owner-phone`).text('{{ flat.owner.phone }}');
+                    $(`#owner`).html('<a href="/administrator-panel/owner/{{ flat.owner.id }}/">{{ flat.owner.name }} {{ flat.owner.surname }}</a>');
+                    $(`#owner-phone`).html('<a href="tel:{{ flat.owner.phone }}">{{ flat.owner.phone }}</a>');
                 }
             }
         {% endfor %}
@@ -631,7 +691,7 @@
         let counter = 0;
         $('#overall-summ').text("0.00");
         TOTAL_FORMS.val('0');
-        let row = ""
+        let row = "";
         {% for tariff in tariffs %}
             if ({{ tariff.pk }} == tariff_id) {
                 {% for tariff_service in tariff.tariffservice_set.all %}

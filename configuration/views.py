@@ -1,3 +1,4 @@
+from django.db.models import ProtectedError
 from django.http import JsonResponse, Http404
 from django.shortcuts import render, redirect
 from django.views.generic import CreateView, DeleteView, ListView, DetailView, UpdateView
@@ -95,7 +96,7 @@ class ServiceDeleteView(DeleteView):
             if not related_measurement_unit.service_set.all().exists():
                 related_measurement_unit.is_used = False
                 related_measurement_unit.save()
-        except Service.DoesNotExist:
+        except (Service.DoesNotExist, ProtectedError):
             return JsonResponse({'answer': 'failed'})
         return JsonResponse({'answer': 'success'})
 

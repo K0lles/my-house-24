@@ -760,6 +760,19 @@ class ReceiptCreateView(CreateView):
             for flat in context['flats']:
                 context['sections_in_houses'].add(flat.section)
 
+            # getting receipt basing on which new receipt will be built
+            try:
+                context['base_receipt'] = Receipt.objects.select_related('account',
+                                                                         'account__flat',
+                                                                         'account__flat__house',
+                                                                         'account__flat__section',
+                                                                         'account__flat__owner').get(pk=self.request.GET.get('base_receipt'))
+                context['base_receipt_services'] = ReceiptService.objects.select_related('service',
+                                                                                         'receipt',
+                                                                                         'service__measurement_unit').filter(receipt=context['base_receipt'])
+            except Receipt.DoesNotExist:
+                raise Http404()
+
         context['personal_accounts'] = PersonalAccount.objects.select_related('flat', 'flat__owner').filter(
             flat__isnull=False)
         context['receipt_service_formset'] = receipt_service_formset(queryset=ReceiptService.objects.none())
@@ -855,6 +868,34 @@ class ReceiptUpdateView(UpdateView):
 
         return context
 
+    def post(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        form = self.get_form_class()(request.POST, instance=self.object)
+        receipt_formset = receipt_service_formset(request.POST, queryset=ReceiptService.objects.filter(receipt=self.object))
+        print(form.errors)
+        print(receipt_formset.errors)
+        if form.is_valid() and receipt_formset.is_valid():
+            return self.form_valid(form, receipt_formset=receipt_formset)
+        context = self.get_context_data()
+        context['form'] = form
+        context['receipt_service_formset'] = receipt_formset
+        return self.render_to_response(context)
+
+    def form_valid(self, form, receipt_formset):
+        receipt_saved = form.save()
+        for receipt_service_form in receipt_formset.forms:
+            if receipt_service_form.cleaned_data.get('service') and receipt_service_form.cleaned_data.get('amount') \
+                    and receipt_service_form.cleaned_data.get('price') and receipt_service_form.cleaned_data.get('total_price'):
+                form_saved = receipt_service_form.save(commit=False)
+                form_saved.receipt = receipt_saved
+                form_saved.save()
+        return redirect('receipt-create')
+
 
 def receipt_service_delete(request, receipt_service_delete_pk):
-    pass
+    try:
+        receipt_service_to_delete = ReceiptService.objects.get(pk=receipt_service_delete_pk)
+        receipt_service_to_delete.delete()
+        return JsonResponse({'answer': 'success'})
+    except (ReceiptService.DoesNotExist, KeyError, AttributeError):
+        return JsonResponse({'answer': 'failed'})

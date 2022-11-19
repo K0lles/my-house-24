@@ -37,6 +37,6 @@ urlpatterns = [
     path('receipt/create/', ReceiptCreateView.as_view(), name='receipt-create'),
     path('receipt/<int:receipt_pk>/', ReceiptDetailView.as_view(), name='receipt-detail'),
     path('receipt/update/<int:receipt_pk>/', ReceiptUpdateView.as_view(), name='receipt-update'),
-    path('receipt/delete/', delete_receipt, name='delete-receipt'),
+    path('receipt/delete/', delete_receipt, name='receipt-delete'),
     path('receipt-service/delete/<int:receipt_service_delete_pk>/', receipt_service_delete, name='receipt-service-delete'),
 ]

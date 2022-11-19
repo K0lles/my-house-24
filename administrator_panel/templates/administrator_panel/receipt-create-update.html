@@ -6,6 +6,12 @@
 {% endblock %}
 
 {% block main_content %}
+    {% if form.instance.pk %}
+        <form id="delete-receipt-form" method="post" action="{% url 'receipt-delete' %}">
+        {% csrf_token %}
+        <input type="hidden" id="id_receipt_id" name="receipt_id" value="{{ form.instance.pk }}">
+        </form>
+    {% endif %}
     <form id="receipt-form" {% if not form.instance.pk %}action="{% url 'receipt-create' %}"{% else %}action="{% url 'receipt-update' receipt_pk=form.instance.pk %}"{% endif %} method="post">
     {% csrf_token %}
         <div class="row">
@@ -42,7 +48,7 @@
                     <div class="dropdown-menu dropdown-menu-right">
                         {% if form.instance.pk %}
                             <a class="dropdown-item" href="{% url 'receipt-create' %}?base_receipt={{ form.instance.pk }}">Копіювати</a>
-                            <a href="#" class="dropdown-item">Видалити</a>
+                            <button type="button" id="delete-receipt-button" class="dropdown-item">Видалити</button>
                         {% endif %}
                         <button class="dropdown-item set-by-default" type="button">Установити всі послуги згідно тарифу</button>
                         <button class="dropdown-item add-evidences-counters" type="button">Добавити показання лічильників</button>
@@ -398,6 +404,24 @@
 
         $('#id_form-TOTAL_FORMS').attr('value', total_forms + 1);
         $('#services-list').append(empty_form);
+    })
+
+    $('#delete-receipt-button').on('click', function () {
+        event.preventDefault();
+        Swal.fire({
+            title: 'Ви впевнені?',
+            text: "Після видалення квитанцію неможливо буде повернути!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#A9A9A9',
+            cancelButtonText: 'Скасувати',
+            confirmButtonText: 'Видалити'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $('form#delete-receipt-form').submit();
+                }
+            })
     })
 
     function changedService(element) {

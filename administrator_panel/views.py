@@ -931,8 +931,26 @@ def receipt_service_delete(request, receipt_service_delete_pk):
 
 
 def delete_receipt(request):
-    print(request.is_ajax())
-    print(request.GET)
-    return JsonResponse({'answer': 'pk'})
-    # return redirect('receipts')
+    if request.is_ajax():
+        try:
+            receipt_to_delete = Receipt.objects.get(pk=request.GET.get('receipt_id'))
+            receipt_to_delete.delete()
+            return JsonResponse({'answer': 'success'})
+        except (Receipt.DoesNotExist, AttributeError, KeyError):
+            return JsonResponse({'answer': 'failed'})
 
+    if request.POST.get('receipt_id'):
+        try:
+            receipt_to_delete = Receipt.objects.get(pk=request.POST.get('receipt_id'))
+            receipt_to_delete.delete()
+        finally:
+            return redirect('receipts')
+
+    if request.POST.get('receipts_to_delete'):
+        receipts_pk = request.POST.get('receipts_to_delete').split(',')[:-1]
+        try:
+            receipts = Receipt.objects.filter(pk__in=receipts_pk)
+            receipts.delete()
+        finally:
+            return redirect('receipts')
+    return redirect('receipts')

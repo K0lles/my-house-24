@@ -1,4 +1,4 @@
-from django.db.models import Q, Count
+from django.db.models import Q, Count, Sum
 from django.db.models.functions import Concat
 from django.http import Http404, JsonResponse, HttpResponseRedirect
 from django.shortcuts import render, redirect
@@ -814,7 +814,7 @@ class ReceiptCreateView(CreateView):
                 form_saved = receipt_service_form.save(commit=False)
                 form_saved.receipt = receipt_saved
                 form_saved.save()
-        return redirect('receipt-create')
+        return redirect('receipt-detail', receipt_pk=receipt_saved.pk)
 
 
 class ReceiptUpdateView(UpdateView):
@@ -828,8 +828,7 @@ class ReceiptUpdateView(UpdateView):
             return Receipt.objects.select_related('account',
                                                   'account__flat',
                                                   'account__flat__house',
-                                                  'account__flat__section').prefetch_related('receipt__service',
-                                                                                             'account__flat__house').get(pk=self.kwargs.get('receipt_pk'))
+                                                  'account__flat__section').prefetch_related('receiptservices').get(pk=self.kwargs.get('receipt_pk'))
         except Receipt.DoesNotExist:
             raise Http404()
 
@@ -849,7 +848,7 @@ class ReceiptUpdateView(UpdateView):
 
         context['personal_accounts'] = PersonalAccount.objects.select_related('flat', 'flat__owner').filter(
             flat__isnull=False)
-        context['receipt_service_formset'] = receipt_service_formset(queryset=ReceiptService.objects.filter(receipt=self.object))
+        context['receipt_service_formset'] = receipt_service_formset(queryset=ReceiptService.objects.select_related('service', 'service__measurement_unit').filter(receipt=self.object))
         context['tariffs'] = Tariff.objects.prefetch_related('tariffservice_set',
                                                              'tariffservice_set__service',
                                                              'tariffservice_set__service__measurement_unit').all()
@@ -872,8 +871,6 @@ class ReceiptUpdateView(UpdateView):
         self.object = self.get_object()
         form = self.get_form_class()(request.POST, instance=self.object)
         receipt_formset = receipt_service_formset(request.POST, queryset=ReceiptService.objects.filter(receipt=self.object))
-        print(form.errors)
-        print(receipt_formset.errors)
         if form.is_valid() and receipt_formset.is_valid():
             return self.form_valid(form, receipt_formset=receipt_formset)
         context = self.get_context_data()
@@ -889,7 +886,39 @@ class ReceiptUpdateView(UpdateView):
                 form_saved = receipt_service_form.save(commit=False)
                 form_saved.receipt = receipt_saved
                 form_saved.save()
-        return redirect('receipt-create')
+        return redirect('receipt-detail', receipt_pk=receipt_saved.pk)
+
+
+class ReceiptDetailView(DetailView):
+    model = Receipt
+    template_name = 'administrator_panel/receipt-detail.html'
+    pk_url_kwarg = 'receipt_pk'
+
+    def get_object(self, queryset=None):
+        try:
+            return Receipt.objects.select_related('account',
+                                                  'account__flat',
+                                                  'account__flat__owner',
+                                                  'account__flat__house',
+                                                  'account__flat__section')\
+                .prefetch_related('receiptservices',
+                                  'receiptservices__service',
+                                  'receiptservices__service__measurement_unit')\
+                .annotate(summ=Sum('receiptservices__total_price'))\
+                .get(pk=self.kwargs.get('receipt_pk'))
+        except (Receipt.DoesNotExist, KeyError, AttributeError):
+            raise Http404()
+
+
+class ReceiptListView(ListView):
+    model = Receipt
+    queryset = Receipt.objects.select_related('account',
+                                              'account__flat',
+                                              'account__flat__house',
+                                              'account__flat__section',
+                                              'account__flat__owner').prefetch_related('receiptservices').all().order_by('-id')\
+        .annotate(summ=Sum('receiptservices__total_price'))
+    template_name = 'administrator_panel/receipt-list.html'
 
 
 def receipt_service_delete(request, receipt_service_delete_pk):
@@ -899,3 +928,11 @@ def receipt_service_delete(request, receipt_service_delete_pk):
         return JsonResponse({'answer': 'success'})
     except (ReceiptService.DoesNotExist, KeyError, AttributeError):
         return JsonResponse({'answer': 'failed'})
+
+
+def delete_receipt(request):
+    print(request.is_ajax())
+    print(request.GET)
+    return JsonResponse({'answer': 'pk'})
+    # return redirect('receipts')
+

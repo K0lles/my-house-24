@@ -142,7 +142,7 @@ class Evidence(models.Model):
 
 
 class ReceiptService(models.Model):
-    receipt = models.ForeignKey(Receipt, on_delete=models.CASCADE, related_name='receipt')
+    receipt = models.ForeignKey(Receipt, on_delete=models.CASCADE, related_name='receiptservices')
     service = models.ForeignKey(Service, on_delete=models.PROTECT, related_name='service')
     amount = models.FloatField(default=0.00)
     price = models.FloatField(default=0.00)

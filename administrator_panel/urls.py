@@ -33,7 +33,10 @@ urlpatterns = [
     path('evidence/create/', EvidenceCreateView.as_view(), name='evidence-create'),
     path('evidence/update/<int:evidence_pk>/', EvidenceUpdateView.as_view(), name='evidence-update'),
     path('evidence/counter/delete/<int:evidence_pk>/', delete_evidence, name='evidence_delete'),
+    path('receipt/', ReceiptListView.as_view(), name='receipts'),
     path('receipt/create/', ReceiptCreateView.as_view(), name='receipt-create'),
+    path('receipt/<int:receipt_pk>/', ReceiptDetailView.as_view(), name='receipt-detail'),
     path('receipt/update/<int:receipt_pk>/', ReceiptUpdateView.as_view(), name='receipt-update'),
+    path('receipt/delete/', delete_receipt, name='delete-receipt'),
     path('receipt-service/delete/<int:receipt_service_delete_pk>/', receipt_service_delete, name='receipt-service-delete'),
 ]

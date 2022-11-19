@@ -1,0 +1,137 @@
+{% extends 'main_page.html' %}
+{% load static %}
+
+{% block content_header %}
+    <h1>Квитанція</h1>
+{% endblock %}
+
+{% block main_content %}
+    <div class="row">
+        <div class="col-sm-12 col-md-7 col-lg-6" style="display: flex; justify-content: flex-start;">
+            <div class="form-group">
+                <div class="input-group">
+                    <div class="input-group-append" style="background-color: #fff; border: 1px solid #ccc; padding: 6px 12px;">
+                        №
+                    </div>
+                    <div class="form-control">{{ object.number }}</div>
+                </div>
+            </div>
+            <span style="margin: 8px 15px 0 15px;">
+                від
+            </span>
+            <div class="form-group">
+                <div class="input-group date" id="datepicker-first">
+                    <span class="input-group-append">
+                        <button type="button" class="btn btn-default" >
+                            <i class="fa fa-calendar"></i>
+                        </button>
+                    </span>
+                    <div class="form-control">{{ object.created_at|date:'d.m.Y' }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-sm-12 col-lg-6">
+                    <h5 style="font-size: 18px; color: grey">Перегляд квитанції</h5>
+                </div>
+                <div class="col-sm-12 col-lg-6 text-right">
+                    <div class="btn-group">
+                        <button class="btn btn-default" type="button" style="margin-right: 10px;">Друк</button>
+                        <button class="btn btn-default" type="button"  style="margin-right: 10px;">Відправити на email</button>
+                        <a class="btn btn-info" href="{% url 'receipt-update' receipt_pk=object.pk %}">Редагувати особовий рахунок</a>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <table class="table table-borderless">
+                    <tbody>
+                        <tr>
+                            <th>Проведена</th>
+                            <td>
+                                {% if object.is_completed %}<span class="badge badge-success">Проведена</span>
+                                {% else %}<span class="badge badge-danger">Не проведена</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Статус</th>
+                            <td>
+                                {% if object.status == 'paid' %}<span class="badge badge-success">{{ object.get_status_display }}</span>
+                                {% elif object.status == 'not paid' %}<span class="badge badge-danger">{{ object.get_status_display }}</span>
+                                {% elif object.status == 'partly paid' %}<span class="badge badge-warning">{{ object.get_status_display }}</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Період</th>
+                            <td>{{ object.date_from|date:'d.m.Y' }} - {{ object.date_to|date:'d.m.Y' }}</td>
+                        </tr>
+                        <tr>
+                            <th>Власник</th>
+                            <td><a href="{% url 'owner-detail' owner_pk=object.account.flat.owner.pk %}">{{ object.account.flat.owner.surname }} {{ object.account.flat.owner.name }} {{ object.account.flat.owner.father }}</a></td>
+                        </tr>
+                        <tr>
+                            <th>Особовий рахунок</th>
+                            <td><a href="{% url 'personal-account-detail' account_pk=object.account.pk %}">{{ object.account.number }}</a></td>
+                        </tr>
+                        <tr>
+                            <th>Телефон</th>
+                            <td>{{ object.account.flat.owner.phone }}</td>
+                        </tr>
+                        <tr>
+                            <th>Будинок</th>
+                            <td><a href="{% url 'house-detail' house_pk=object.account.flat.house.pk %}">{{ object.account.flat.house.name }}</a></td>
+                        </tr>
+                        <tr>
+                            <th>Квартира</th>
+                            <td><a href="{% url 'flat-detail' flat_pk=object.account.flat.pk %}">{{ object.account.flat.number }}</a></td>
+                        </tr>
+                        <tr>
+                            <th>Секція</th>
+                            <td>{{ object.account.flat.section.name }}</td>
+                        </tr>
+                        <tr>
+                            <th>Тариф</th>
+                            <td>{% if object.tariff %}<a href="{% url 'tariff-detail' pk=object.tariff.pk %}">{{ object.tariff.name }}</a>{% else %}не указано{% endif %}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="row">
+                <table class="table table-borderless">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Послуга</th>
+                            <th>Кількість споживання (розхід)</th>
+                            <th>Од. вим.</th>
+                            <th>Ціна за од., грн</th>
+                            <th>Вартість, грн</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for receipt_service in object.receiptservices.all %}
+                        <tr>
+                            <td>{{ forloop.counter }}</td>
+                            <td>{{ receipt_service.service.name }}</td>
+                            <td>{{ receipt_service.service.measurement_unit.name }}</td>
+                            <td>{{ receipt_service.amount }}</td>
+                            <td>{{ receipt_service.price }}</td>
+                            <td>{{ receipt_service.total_price|floatformat:2 }}</td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="5"></td>
+                            <td><b>Разом: {{ object.summ|floatformat:2 }}</b></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+{% endblock %}

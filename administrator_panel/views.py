@@ -1,10 +1,14 @@
-from django.db.models import Q, Count, Sum
+import json
+
+from django.db.models import Q, Count, Sum, Func, F, Value
 from django.db.models.functions import Concat
 from django.http import Http404, JsonResponse, HttpResponseRedirect
 from django.shortcuts import render, redirect
 from django.urls import reverse
+from django.views import View
 from django.views.generic import ListView, DetailView, CreateView, UpdateView
 from django.db.models.deletion import ProtectedError
+from django.views.generic.list import MultipleObjectMixin
 
 from configuration.models import Role, Tariff, Service, MeasurementUnit
 from .forms import *
@@ -751,7 +755,8 @@ class ReceiptCreateView(CreateView):
         context = super(ReceiptCreateView, self).get_context_data(**kwargs)
         context = personal_account_context(context,
                                            flats=Flat.objects.select_related('house', 'section', 'personalaccount',
-                                                                             'tariff', 'owner', 'section__house').filter(
+                                                                             'tariff', 'owner',
+                                                                             'section__house').filter(
                                                personalaccount__isnull=False, personalaccount__status='active'))
 
         # adding sections of each house, whose flats are with personal account in order to display it on firstly loaded page
@@ -766,10 +771,12 @@ class ReceiptCreateView(CreateView):
                                                                          'account__flat',
                                                                          'account__flat__house',
                                                                          'account__flat__section',
-                                                                         'account__flat__owner').get(pk=self.request.GET.get('base_receipt'))
+                                                                         'account__flat__owner').get(
+                    pk=self.request.GET.get('base_receipt'))
                 context['base_receipt_services'] = ReceiptService.objects.select_related('service',
                                                                                          'receipt',
-                                                                                         'service__measurement_unit').filter(receipt=context['base_receipt'])
+                                                                                         'service__measurement_unit').filter(
+                    receipt=context['base_receipt'])
             except Receipt.DoesNotExist:
                 raise Http404()
 
@@ -810,7 +817,8 @@ class ReceiptCreateView(CreateView):
         receipt_saved = form.save()
         for receipt_service_form in receipt_formset.forms:
             if receipt_service_form.cleaned_data.get('service') and receipt_service_form.cleaned_data.get('amount') \
-                    and receipt_service_form.cleaned_data.get('price') and receipt_service_form.cleaned_data.get('total_price'):
+                    and receipt_service_form.cleaned_data.get('price') and receipt_service_form.cleaned_data.get(
+                'total_price'):
                 form_saved = receipt_service_form.save(commit=False)
                 form_saved.receipt = receipt_saved
                 form_saved.save()
@@ -828,7 +836,8 @@ class ReceiptUpdateView(UpdateView):
             return Receipt.objects.select_related('account',
                                                   'account__flat',
                                                   'account__flat__house',
-                                                  'account__flat__section').prefetch_related('receiptservices').get(pk=self.kwargs.get('receipt_pk'))
+                                                  'account__flat__section').prefetch_related('receiptservices').get(
+                pk=self.kwargs.get('receipt_pk'))
         except Receipt.DoesNotExist:
             raise Http404()
 
@@ -848,7 +857,9 @@ class ReceiptUpdateView(UpdateView):
 
         context['personal_accounts'] = PersonalAccount.objects.select_related('flat', 'flat__owner').filter(
             flat__isnull=False)
-        context['receipt_service_formset'] = receipt_service_formset(queryset=ReceiptService.objects.select_related('service', 'service__measurement_unit').filter(receipt=self.object))
+        context['receipt_service_formset'] = receipt_service_formset(
+            queryset=ReceiptService.objects.select_related('service', 'service__measurement_unit').filter(
+                receipt=self.object))
         context['tariffs'] = Tariff.objects.prefetch_related('tariffservice_set',
                                                              'tariffservice_set__service',
                                                              'tariffservice_set__service__measurement_unit').all()
@@ -870,7 +881,8 @@ class ReceiptUpdateView(UpdateView):
     def post(self, request, *args, **kwargs):
         self.object = self.get_object()
         form = self.get_form_class()(request.POST, instance=self.object)
-        receipt_formset = receipt_service_formset(request.POST, queryset=ReceiptService.objects.filter(receipt=self.object))
+        receipt_formset = receipt_service_formset(request.POST,
+                                                  queryset=ReceiptService.objects.filter(receipt=self.object))
         if form.is_valid() and receipt_formset.is_valid():
             return self.form_valid(form, receipt_formset=receipt_formset)
         context = self.get_context_data()
@@ -882,7 +894,8 @@ class ReceiptUpdateView(UpdateView):
         receipt_saved = form.save()
         for receipt_service_form in receipt_formset.forms:
             if receipt_service_form.cleaned_data.get('service') and receipt_service_form.cleaned_data.get('amount') \
-                    and receipt_service_form.cleaned_data.get('price') and receipt_service_form.cleaned_data.get('total_price'):
+                    and receipt_service_form.cleaned_data.get('price') and receipt_service_form.cleaned_data.get(
+                'total_price'):
                 form_saved = receipt_service_form.save(commit=False)
                 form_saved.receipt = receipt_saved
                 form_saved.save()
@@ -900,11 +913,11 @@ class ReceiptDetailView(DetailView):
                                                   'account__flat',
                                                   'account__flat__owner',
                                                   'account__flat__house',
-                                                  'account__flat__section')\
+                                                  'account__flat__section') \
                 .prefetch_related('receiptservices',
                                   'receiptservices__service',
-                                  'receiptservices__service__measurement_unit')\
-                .annotate(summ=Sum('receiptservices__total_price'))\
+                                  'receiptservices__service__measurement_unit') \
+                .annotate(summ=Sum('receiptservices__total_price')) \
                 .get(pk=self.kwargs.get('receipt_pk'))
         except (Receipt.DoesNotExist, KeyError, AttributeError):
             raise Http404()
@@ -916,9 +929,49 @@ class ReceiptListView(ListView):
                                               'account__flat',
                                               'account__flat__house',
                                               'account__flat__section',
-                                              'account__flat__owner').prefetch_related('receiptservices').all().order_by('-id')\
+                                              'account__flat__owner').prefetch_related(
+        'receiptservices').all().order_by('-id') \
         .annotate(summ=Sum('receiptservices__total_price'))
     template_name = 'administrator_panel/receipt-list.html'
+
+
+class EvidenceResponse(MultipleObjectMixin, View):
+    model = Evidence
+
+    def get_queryset(self):
+        try:
+            evidences = Evidence.objects.select_related('flat__personalaccount',
+                                                        'flat',
+                                                        'flat__house',
+                                                        'flat__section',
+                                                        'service',
+                                                        'service__measurement_unit') \
+                .filter(flat__personalaccount__number=self.request.GET.get('account_number')) \
+                .values('number',
+                        'status',
+                        'date_from',
+                        'flat__house__name',
+                        'flat__section__name',
+                        'flat__number',
+                        'service__name',
+                        'counter_evidence',
+                        'service__measurement_unit__name')
+            return list(evidences)
+        except (KeyError, AttributeError):
+            return None
+
+    def get_context_data(self, **kwargs):
+        evidences = self.get_queryset()
+        for evidence in evidences:
+            evidence['date_from_formatted'] = evidence['date_from'].strftime('%d.%m.%Y')
+            import locale
+            locale.setlocale(locale.LC_ALL, 'uk_UA.utf8')
+            evidence['date_from_month'] = evidence['date_from'].strftime('%B').title()
+        return JsonResponse({'evidences': evidences})
+
+    def get(self, request):
+        context = self.get_context_data()
+        return context
 
 
 def receipt_service_delete(request, receipt_service_delete_pk):

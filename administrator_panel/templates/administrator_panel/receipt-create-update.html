@@ -56,7 +56,7 @@
                 </div>
             </div>
         </div>
-        <div class="card">
+        <div class="card" style="margin-bottom: 40px;">
             <div class="card-body">
                 <div class="row">
                     <div class="col-sm-12 col-lg-6">
@@ -355,6 +355,36 @@
                 </div>
             </div>
         </div>
+        <div class="card">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-sm-12">
+                        <h5 style="font-size: 18px; color: grey">Показання лічильників</h5>
+                    </div>
+                </div>
+                <table id="evidences-table" class="table table-borderless">
+                    <thead>
+                        <tr>
+                            <th>№</th>
+                            <th>Статус</th>
+                            <th>Дата</th>
+                            <th>Місяць</th>
+                            <th>Будинок</th>
+                            <th>Секція</th>
+                            <th>№ Квартири</th>
+                            <th>Лічильник</th>
+                            <th>Показання</th>
+                            <th>Од. вим.</th>
+                        </tr>
+                    </thead>
+                    <tbody id="body-evidences">
+                        <tr>
+                            <td colspan="10" style="text-align: center;">Не знайдено</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </form>
 {% endblock %}
 
@@ -405,6 +435,10 @@
         $('#id_form-TOTAL_FORMS').attr('value', total_forms + 1);
         $('#services-list').append(empty_form);
     })
+
+    function addEvidenceToServices() {
+
+    }
 
     $('#delete-receipt-button').on('click', function () {
         event.preventDefault();
@@ -656,6 +690,7 @@
         {% endfor %}
 
         $('#id_account').val(flat_personal_account[(parseInt(selectedId))]);
+        evidencesByAccount();
 
         let selected_flat_tariff = flat_tariff[parseInt(selectedId)]
         $('select#id_tariff').val(selected_flat_tariff.toString()).change();
@@ -707,6 +742,45 @@
             $(`#${element.id}-errors`).text('Введіть корректний особовий рахунок');
             element.style = 'border: 1px solid red';
         }
+    }
+
+    function evidencesByAccount() {
+        let table_body = $('#body-evidences');
+        table_body.empty();
+        let account_number = $('#id_account').val();
+        let status_codes = {
+            'new': '<span class="badge badge-warning">Нове</span>',
+            'null': '<span class="badge badge-primary">Нульове</span>',
+            'taken': '<span class="badge badge-success">Враховане</span>',
+            'taken and paid': '<span class="badge badge-success">Враховане і оплачене</span>'
+        }
+        $.ajax({
+            url: `/administrator-panel/receipt/evidence/?account_number=${account_number}`,
+            type: 'get',
+            success: function (data) {
+                if (data['evidences'].length === 0) {
+                    table_body.append(`<tr>
+                                            <td colspan="10" style="text-align: center;">Не знайдено</td>
+                                       </tr>`)
+                }
+                else {
+                    for (let key in data['evidences']) {
+                        table_body.append(`<tr id="${key}-row">
+                                                <td>${data['evidences'][key]['number']}</td>
+                                                <td class="status">${status_codes[data['evidences'][key]['status']]}</td>
+                                                <td>${data['evidences'][key]['date_from_formatted']}</td>
+                                                <td>${data['evidences'][key]['date_from_month']}</td>
+                                                <td>${data['evidences'][key]['flat__house__name']}</td>
+                                                <td>${data['evidences'][key]['flat__section__name']}</td>
+                                                <td>${data['evidences'][key]['flat__number']}</td>
+                                                <td class="service">${data['evidences'][key]['service__name']}</td>
+                                                <td class="counter-evidence">${data['evidences'][key]['counter_evidence']}</td>
+                                                <td>${data['evidences'][key]['service__measurement_unit__name']}</td>
+                                           </tr>`)
+                    }
+                }
+            }
+        })
     }
 
     $(`.set-by-default`).on('click', function () {

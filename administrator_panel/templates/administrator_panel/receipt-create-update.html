@@ -65,7 +65,7 @@
                             <select class="form-select" id="id_house" onchange="changedHouse(this)">
                                 <option value="none">Вибрати...</option>
                                 {% for house in houses %}
-                                    <option value="{{ house.pk }}" {% if base_receipt and base_receipt.account.flat.house.pk == house.pk %}selected{% endif %} {% if form.instance.pk and form.instance.account.flat.house.pk == house.pk %}selected{% endif %}>{{ house.name }}</option>
+                                    <option value="{{ house.pk }}" {% if base_receipt and base_receipt.account.flat.house.pk == house.pk %}selected{% endif %} {% if form.instance.pk and form.instance.account.flat.house.pk == house.pk %}selected{% endif %}{% if base_flat and base_flat.house.pk == house.pk %}selected{% endif %}>{{ house.name }}</option>
                                 {% endfor %}
                             </select>
                             <p id="id_house-errors" style="color: red;"></p>
@@ -88,6 +88,13 @@
                                         {% endif %}
                                     {% endfor %}
                                 {% endif %}
+                                {% if base_flat %}
+                                    {% for section in sections_in_houses %}
+                                        {% if section.house.pk == base_flat.house.pk %}
+                                            <option value="{{ section.pk }}" {% if base_flat.section.pk == section.pk %}selected{% endif %}>{{ section.name }}</option>
+                                        {% endif %}
+                                    {% endfor %}
+                                {% endif %}
                             </select>
                             <p id="id_section-errors" style="color: red;"></p>
                         </div>
@@ -105,6 +112,12 @@
                                     {% for flat in flats %}
                                         {% if flat.section.pk == base_receipt.account.flat.section.pk %}
                                             <option value="{{ flat.pk }}" {% if flat.pk == base_receipt.account.flat.pk %}selected{% endif %}>{{ flat.number }}</option>
+                                        {% endif %}
+                                    {% endfor %}
+                                {% elif base_flat %}
+                                    {% for flat in flats %}
+                                        {% if flat.section.pk == base_flat.section.pk %}
+                                            <option value="{{ flat.pk }}" {% if flat.pk == base_flat.pk %}selected{% endif %}>{{ flat.number }}</option>
                                         {% endif %}
                                     {% endfor %}
                                 {% else %}
@@ -140,7 +153,7 @@
                             <select class="form-select" id="{{ form.tariff.auto_id }}" name="{{ form.tariff.html_name }}" onchange="alwaysIsValid(this)">
                                 <option value="none">Вибрати...</option>
                                 {% for tariff in tariffs %}
-                                    <option value="{{ tariff.pk }}" {% if base_receipt and base_receipt.tariff.pk == tariff.pk %}selected{% endif %}>{{ tariff.name }}</option>
+                                    <option value="{{ tariff.pk }}" {% if base_receipt and base_receipt.tariff.pk == tariff.pk %}selected{% elif base_flat and base_flat.tariff.pk == tariff.pk %}selected{% endif %}>{{ tariff.name }}</option>
                                 {% endfor %}
                             </select>
                             {% endif %}
@@ -181,11 +194,11 @@
                     <div class="col-sm-12 col-lg-6">
                         <div class="form-group">
                             <label class="form-label" for="{{ form.account.auto_id }}">Особовий рахунок</label>
-                            <input type="text" class="form-control" id="{{ form.account.auto_id }}" name="{{ form.account.html_name }}" {% if not form.instance.pk and form.account.value %}value="{{ form.account.value }}"{% elif base_receipt %}value="{{ base_receipt.account.number }}"{% else %}value="{{ form.instance.account.number }}"{% endif %} onchange="searchFlatByPersonal(this)">
+                            <input type="text" class="form-control" id="{{ form.account.auto_id }}" name="{{ form.account.html_name }}" {% if not form.instance.pk and form.account.value %}value="{{ form.account.value }}"{% elif base_receipt %}value="{{ base_receipt.account.number }}"{% elif base_flat %}value="{{ base_flat.personalaccount.number }}"{% else %}value="{{ form.instance.account.number }}"{% endif %} onchange="searchFlatByPersonal(this)">
                             <p id="{{ form.account.auto_id }}-errors" style="color: red;"></p>
                         </div>
-                        <p><b>Власник: </b><span id="owner">{% if form.instance.pk and form.instance.account.flat.owner %}<a href="{% url 'owner-detail' owner_pk=form.instance.account.flat.owner.pk %}">{{ form.instance.account.flat.owner.name }} {{ form.instance.account.flat.owner.surname }}</a>{% elif base_receipt %}<a href="{% url 'owner-detail' owner_pk=base_receipt.account.flat.owner.pk %}">{{ base_receipt.account.flat.owner.name }} {{ base_receipt.account.flat.owner.surname }}</a>{% else %}не указано{% endif %}</span></p>
-                        <p><b>Телефон: </b><span id="owner-phone">{% if form.instance.pk and form.instance.account.flat.owner %}<a href="tel:{{ form.instance.account.flat.owner.phone }}">{{ form.instance.account.flat.owner.phone }}</a>{% elif base_receipt %}<a href="tel:{{ base_receipt.account.flat.owner.phone }}">{{ base_receipt.account.flat.owner.phone }}</a>{% else %}не указано{% endif %}</span></p>
+                        <p><b>Власник: </b><span id="owner">{% if form.instance.pk and form.instance.account.flat.owner %}<a href="{% url 'owner-detail' owner_pk=form.instance.account.flat.owner.pk %}">{{ form.instance.account.flat.owner.name }} {{ form.instance.account.flat.owner.surname }}</a>{% elif base_receipt %}<a href="{% url 'owner-detail' owner_pk=base_receipt.account.flat.owner.pk %}">{{ base_receipt.account.flat.owner.name }} {{ base_receipt.account.flat.owner.surname }}</a>{% elif base_flat %}<a href="{% url 'owner-detail' owner_pk=base_flat.owner.pk %}">{{ base_flat.owner.name }} {{ base_flat.owner.surname }}</a>{% else %}не указано{% endif %}</span></p>
+                        <p><b>Телефон: </b><span id="owner-phone">{% if form.instance.pk and form.instance.account.flat.owner %}<a href="tel:{{ form.instance.account.flat.owner.phone }}">{{ form.instance.account.flat.owner.phone }}</a>{% elif base_receipt %}<a href="tel:{{ base_receipt.account.flat.owner.phone }}">{{ base_receipt.account.flat.owner.phone }}</a>{% elif base_flat %}<a href="tel:{{ base_flat.owner.phone }}">{{ base_flat.owner.phone }}</a>{% else %}не указано{% endif %}</span></p>
                     </div>
                 </div>
                 <div class="col-sm-12">
@@ -505,7 +518,6 @@
 
     $(document).on('click', 'button.delete-existing', function () {
         let id_to_delete = $(this).attr('id');
-        console.log(id_to_delete);
         Swal.fire({
             title: 'Ви впевнені?',
             text: "Після видалення послугу неможливо буде повернути!",
@@ -861,20 +873,13 @@
         let isValid = true;
 
         $('#receipt-form').find(`input[type!='hidden']`).each(function () {
-            console.log(`first scope ${$(this).attr('id')}`);
-            console.log(!($(this).attr('id')).includes('__prefix__'));
-            console.log($(this).attr('id') !== 'id_is_completed');
-            console.log(($(this).attr('id') !== 'id_is_completed') && !($(this).attr('id')).includes('__prefix__'));
-
             if (($(this).attr('id') !== 'id_is_completed') && !($(this).attr('id')).includes('__prefix__')) {
                 if (!fieldIsValid(this)) isValid = false;
             }
         })
 
         $(`#receipt-form`).find(`select`).each(function () {
-            console.log(`outer scope: ${$(this).attr('id')}`);
             if (!(($(this).attr('id')).includes('__prefix__')) && ($(this).attr('id') !== 'id_tariff')) {
-                console.log(`inner scope: ${$(this).attr('id')}`);
                 if (!fieldIsValid(this)) isValid = false;
             }
         })

@@ -24,8 +24,8 @@
                 </div>
                 <div class="col-sm-12 col-lg-6 text-right">
                     <div class="btn-group">
-                        <button class="btn btn-default" type="button" {% if not object.flat %}disabled{% endif %} style="margin-right: 10px;"><i class="fa fa-dollar"></i> Прийняти платіж</button>
-                        <button class="btn btn-default" type="button" {% if not object.flat %}disabled{% endif %} style="margin-right: 10px;"><i class="fa fa-clone"></i> Оформити квитанцію</button>
+                        <a class="btn btn-default {% if not object.flat or object.status == 'inactive' %}disabled{% endif %}" {% if object.flat %}href="#"{% endif %} style="margin-right: 10px;"><i class="fa fa-dollar"></i> Прийняти платіж</a>
+                        <a class="btn btn-default {% if not object.flat or object.status == 'inactive' %}disabled{% endif %}" {% if object.flat %}href="{% url 'receipt-create' %}?flat_id={{ object.flat.pk }}"{% endif %} style="margin-right: 10px;"><i class="fa fa-clone"></i> Оформити квитанцію</a>
                         <a class="btn btn-info" href="{% url 'personal-account-update' account_pk=object.pk %}">Редагувати особовий рахунок</a>
                     </div>
                 </div>

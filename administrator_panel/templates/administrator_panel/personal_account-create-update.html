@@ -80,6 +80,9 @@
 <script>
     let house_section = {{ house_section|safe }};
     let section_flat = {{ section_flat|safe }};
+    let create_new = {{ create_new|safe }};
+
+    if (create_new['create'] === 'true') $('#id_number').val(generateNumber());
 
     function changedHouse(element) {
         let selectedId = $(element).children("option:selected").val();

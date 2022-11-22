@@ -256,11 +256,12 @@ class FlatCreateView(CreateView):
                 account = PersonalAccount.objects.get(number=personal_account_number)
                 if not account.flat:
                     account.flat = created_flat
+                    account.status = 'active'
                     account.save()
             except PersonalAccount.DoesNotExist:
                 PersonalAccount.objects.create(number=personal_account_number,
-                                               flat=created_flat)
-        print(self.request.POST.get('create-again') == 'create-new')
+                                               flat=created_flat,
+                                               status='active')
         if self.request.POST.get('create-again') == 'create-new':
             return redirect(f'{reverse("flat-create")}?prev_flat={created_flat.pk}')
         return redirect('flat-detail', flat_pk=created_flat.pk)
@@ -417,6 +418,7 @@ class PersonalAccountCreateView(CreateView):
         context = personal_account_context(context, Flat.objects.select_related('personalaccount', 'house', 'section',
                                                                                 'owner').filter(
             personalaccount__isnull=True))
+        context['create_new'] = {'create': 'true'}
         return context
 
     def post(self, request, *args, **kwargs):
@@ -430,8 +432,8 @@ class PersonalAccountCreateView(CreateView):
 
     def form_valid(self, form):
         account = form.save()
-        if not account.flat:
-            account.status = 'inactive'
+        if account.flat:
+            account.status = 'active'
             account.save()
         return redirect('flats')
 
@@ -478,6 +480,8 @@ class PersonalAccountUpdateView(UpdateView):
         context = personal_account_context(context, Flat.objects.select_related('personalaccount', 'house', 'section',
                                                                                 'owner').filter(
             personalaccount__isnull=True))
+
+        context['create_new'] = {'create': 'false'}
 
         # if flat related to current personal account exists
         try:
@@ -760,25 +764,37 @@ class ReceiptCreateView(CreateView):
                                                personalaccount__isnull=False, personalaccount__status='active'))
 
         # adding sections of each house, whose flats are with personal account in order to display it on firstly loaded page
-        if self.request.GET.get('base_receipt'):
+        if self.request.GET.get('base_receipt') or self.request.GET.get('flat_id'):
             context['sections_in_houses'] = set()
             for flat in context['flats']:
                 context['sections_in_houses'].add(flat.section)
 
-            # getting receipt basing on which new receipt will be built
-            try:
-                context['base_receipt'] = Receipt.objects.select_related('account',
-                                                                         'account__flat',
-                                                                         'account__flat__house',
-                                                                         'account__flat__section',
-                                                                         'account__flat__owner').get(
-                    pk=self.request.GET.get('base_receipt'))
-                context['base_receipt_services'] = ReceiptService.objects.select_related('service',
-                                                                                         'receipt',
-                                                                                         'service__measurement_unit').filter(
-                    receipt=context['base_receipt'])
-            except Receipt.DoesNotExist:
-                raise Http404()
+            if self.request.GET.get('flat_id'):
+                # trying to get flat, on which new receipt will be based
+                try:
+                    context['base_flat'] = Flat.objects.select_related('personalaccount',
+                                                                       'house',
+                                                                       'section',
+                                                                       'tariff',
+                                                                       'owner').get(pk=self.request.GET.get('flat_id'))
+                except Flat.DoesNotExist:
+                    raise Http404()
+
+            if self.request.GET.get('base_receipt'):
+                # getting receipt basing on which new receipt will be built
+                try:
+                    context['base_receipt'] = Receipt.objects.select_related('account',
+                                                                             'account__flat',
+                                                                             'account__flat__house',
+                                                                             'account__flat__section',
+                                                                             'account__flat__owner').get(
+                        pk=self.request.GET.get('base_receipt'))
+                    context['base_receipt_services'] = ReceiptService.objects.select_related('service',
+                                                                                             'receipt',
+                                                                                             'service__measurement_unit').filter(
+                        receipt=context['base_receipt'])
+                except Receipt.DoesNotExist:
+                    raise Http404()
 
         context['personal_accounts'] = PersonalAccount.objects.select_related('flat', 'flat__owner').filter(
             flat__isnull=False)
@@ -817,8 +833,7 @@ class ReceiptCreateView(CreateView):
         receipt_saved = form.save()
         for receipt_service_form in receipt_formset.forms:
             if receipt_service_form.cleaned_data.get('service') and receipt_service_form.cleaned_data.get('amount') \
-                    and receipt_service_form.cleaned_data.get('price') and receipt_service_form.cleaned_data.get(
-                'total_price'):
+                    and receipt_service_form.cleaned_data.get('price') and receipt_service_form.cleaned_data.get('total_price'):
                 form_saved = receipt_service_form.save(commit=False)
                 form_saved.receipt = receipt_saved
                 form_saved.save()

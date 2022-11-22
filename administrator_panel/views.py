@@ -945,6 +945,7 @@ class EvidenceResponse(MultipleObjectMixin, View):
                                                         'flat__house',
                                                         'flat__section',
                                                         'service',
+                                                        'service_id',
                                                         'service__measurement_unit') \
                 .filter(flat__personalaccount__number=self.request.GET.get('account_number')) \
                 .values('number',
@@ -955,7 +956,8 @@ class EvidenceResponse(MultipleObjectMixin, View):
                         'flat__number',
                         'service__name',
                         'counter_evidence',
-                        'service__measurement_unit__name')
+                        'service__measurement_unit__name',
+                        'service_id')
             return list(evidences)
         except (KeyError, AttributeError):
             return None

@@ -51,7 +51,7 @@
                             <button type="button" id="delete-receipt-button" class="dropdown-item">Видалити</button>
                         {% endif %}
                         <button class="dropdown-item set-by-default" type="button">Установити всі послуги згідно тарифу</button>
-                        <button class="dropdown-item add-evidences-counters" type="button">Добавити показання лічильників</button>
+                        <button class="dropdown-item add-evidences-counters" type="button" onclick="addEvidenceToServices()">Добавити показання лічильників</button>
                     </div>
                 </div>
             </div>
@@ -331,7 +331,7 @@
                                     <td colspan="4">
                                         <button type="button" class="btn btn-default add-service" >Додати послугу</button>
                                         <button type="button" class="btn btn-default set-by-default">Установити всі послуги згідно тарифу</button>
-                                        <button type="button" class="btn btn-default add-evidences-counters">Добавити показання лічильників</button>
+                                        <button type="button" class="btn btn-default add-evidences-counters" onclick="addEvidenceToServices()">Добавити показання лічильників</button>
                                     </td>
                                     <td>
                                         <div class="h5">
@@ -390,6 +390,7 @@
 
 {% block scripts %}
 <script>
+    $(document).on('load', evidencesByAccount());
     $('#datepicker-first').datepicker({
         format: 'dd.mm.yyyy'
     });
@@ -437,7 +438,25 @@
     })
 
     function addEvidenceToServices() {
+        $('tbody#services-list > tr').each(function() {
+            $(this).find('td > select[id$="service"]').each(function() {
+                let id_number = (($(this).attr('id')).replace('id_form-', '')).replace('-service', '');
+                searchInTableEvidenceAndAddToServices($(this).find(':selected').val(), id_number);
+            })
+        })
+    }
 
+    function searchInTableEvidenceAndAddToServices(id_service, id_number) {
+        $("#body-evidences").find(`tr[data-service="${id_service}"]`).each(function() {
+            if ($(this).find('td[data-status="new"]').text() === 'Нове') {
+                let prev_val = $(`#id_form-${id_number}-amount`).val();
+                if (!prev_val) $(`#id_form-${id_number}-amount`).val($(this).find('td.counter-evidence').text());
+                else {
+                    $(`#id_form-${id_number}-amount`).val((parseFloat(prev_val) + parseFloat($(this).find('td.counter-evidence').text())).toFixed(2).toString());
+                }
+                $(`#id_form-${id_number}-amount`).change();
+            }
+        })
     }
 
     $('#delete-receipt-button').on('click', function () {
@@ -749,10 +768,10 @@
         table_body.empty();
         let account_number = $('#id_account').val();
         let status_codes = {
-            'new': '<span class="badge badge-warning">Нове</span>',
-            'null': '<span class="badge badge-primary">Нульове</span>',
-            'taken': '<span class="badge badge-success">Враховане</span>',
-            'taken and paid': '<span class="badge badge-success">Враховане і оплачене</span>'
+            'new': '<td data-status="new"><span class="badge badge-warning">Нове</span></td>',
+            'null': '<td><span class="badge badge-primary">Нульове</span></td>',
+            'taken': '<td><span class="badge badge-success">Враховане</span></td>',
+            'taken and paid': '<td><span class="badge badge-success">Враховане і оплачене</span></td>'
         }
         $.ajax({
             url: `/administrator-panel/receipt/evidence/?account_number=${account_number}`,
@@ -765,9 +784,9 @@
                 }
                 else {
                     for (let key in data['evidences']) {
-                        table_body.append(`<tr id="${key}-row">
+                        table_body.append(`<tr id="${key}-row" data-service="${data['evidences'][key]['service_id']}">
                                                 <td>${data['evidences'][key]['number']}</td>
-                                                <td class="status">${status_codes[data['evidences'][key]['status']]}</td>
+                                                ${status_codes[data['evidences'][key]['status']]}
                                                 <td>${data['evidences'][key]['date_from_formatted']}</td>
                                                 <td>${data['evidences'][key]['date_from_month']}</td>
                                                 <td>${data['evidences'][key]['flat__house__name']}</td>
@@ -808,7 +827,7 @@
                                     <p id="id_form-${counter}-amount-errors" style="color: red;"></p>
                                 </td>
                                 <td>
-                                    <select disabled class='form-select' id='id_form-${counter}-service' name="form-${counter}-service" onchange="changedService(this)">
+                                    <select disabled class='form-select' id='id_form-${counter}-service-measurement-unit' name="form-${counter}-service-measurement-unit" onchange="changedService(this)">
                                         <option value="none">Вибрати...</option>
                                         {% for service in services %}
                                             <option value="{{ service.pk }}"{% if service.pk == tariff_service.service.pk %}selected{% endif %}>{{ service.measurement_unit.name }}</option>

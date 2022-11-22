@@ -116,8 +116,8 @@
                                     </div>
                                 </td>
                             </tr>
-                        </tbody>
                         {% endfor %}
+                        </tbody>
                     </table>
                 </div>
             </div>
@@ -127,6 +127,33 @@
 
 {% block scripts %}
 <script>
+
+    $('.child-delete-checkbox').on('click', function (event) {
+        event.stopPropagation();
+        let prev_val = $('#id_receipts_to_delete').val();
+        if ($(this).is(':checked')) {
+            $('#id_receipts_to_delete').val(prev_val + $(this).attr('id') + ",");
+        }
+        else {
+            $('#id_receipts_to_delete').val(prev_val.replace(($(this).attr('id') + ",").toString(), ""));
+        }
+    })
+
+    $('#check-to-delete-all').on('click', function(event) {
+        if ($(this).is(':checked')) {
+            $('.child-delete-checkbox').each(function() {
+                if (!$(this).is(':checked'))
+                    $(this).click();
+            })
+        }
+        else {
+            $('.child-delete-checkbox').each(function() {
+                if (($(this).is(':checked')))
+                    $(this).click();
+            })
+        }
+    })
+
     $(document).ready(function () {
         $('#receipt-table').DataTable({
             ordering: true,
@@ -146,11 +173,10 @@
                 {'data': 'Квартира'},
                 {'data': 'Власник'},
                 {'data': 'Проведена'},
-                null,
+                {'data': 'Сума (грн)'},
                 null
             ],
             columnDefs: [
-                {orderable: false, targets: 0},
                 {orderable: false, targets: 1},
                 {orderable: false, targets: 2},
                 {orderable: true, targets: 3},
@@ -159,7 +185,6 @@
                 {orderable: false, targets: 6},
                 {orderable: false, targets: 7},
                 {orderable: false, targets: 8},
-                {orderable: false, targets: 9},
             ],
             initComplete: function () {
                 this.api()
@@ -187,32 +212,6 @@
                     });
             },
         });
-    })
-
-    $('input.child-delete-checkbox').on('click', function (event) {
-        event.stopPropagation();
-        let prev_val = $('#id_receipts_to_delete').val();
-        if ($(this).is(':checked')) {
-            $('#id_receipts_to_delete').val(prev_val + $(this).attr('id') + ",");
-        }
-        else {
-            $('#id_receipts_to_delete').val(prev_val.replace(($(this).attr('id') + ",").toString(), ""));
-        }
-    })
-
-    $('#check-to-delete-all').on('click', function() {
-        if ($(this).is(':checked')) {
-            $('.child-delete-checkbox').each(function() {
-                if (!$(this).is(':checked'))
-                    $(this).click();
-            })
-        }
-        else {
-            $('.child-delete-checkbox').each(function() {
-                if (($(this).is(':checked')))
-                    $(this).click();
-            })
-        }
     })
 
     $('#delete-receipts-button').on('click', function () {

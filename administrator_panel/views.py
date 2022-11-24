@@ -1024,3 +1024,20 @@ def delete_receipt(request):
         finally:
             return redirect('receipts')
     return redirect('receipts')
+
+
+class NotorietyCreateView(CreateView):
+    model = Notoriety
+    template_name = 'administrator_panel/notoriety-create-update.html'
+    form_class = NotorietyForm
+
+    def get_context_data(self, **kwargs):
+        context = super(NotorietyCreateView, self).get_context_data(**kwargs)
+        context['personal_accounts'] = PersonalAccount.objects.select_related('flat', 'flat__owner')\
+            .filter(flat__isnull=False, status='active', flat__owner__isnull=False)
+        context['owners'] = set([account.flat.owner for account in context['personal_accounts']])
+        context['articles'] = ArticlePayment.objects.filter(type__exact=self.request.GET.get('type'))
+        context['managers'] = User.objects.select_related('role').filter(role__role__in=['director', 'manager', 'accountant'])
+        context['type'] = self.request.GET.get('type')
+        context['create_new'] = {'create': 'true'}
+        return context

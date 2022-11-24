@@ -55,13 +55,12 @@ class PersonalAccount(models.Model):
 
 
 class Notoriety(models.Model):
-    owner = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name='Власник', related_name='owner', blank=True,
-                              null=True)
+    number = models.CharField(max_length=255, unique=True)
     account = models.ForeignKey(PersonalAccount, on_delete=models.CASCADE, verbose_name='Особовий рахунок', blank=True,
                                 null=True)
     article = models.ForeignKey(ArticlePayment, on_delete=models.CASCADE, verbose_name='Стаття')
-    sum = models.FloatField(validators=[MinValueValidator(0.0)], verbose_name='Сума')
-    comment = models.TextField(verbose_name='Коментар')
+    sum = models.FloatField(verbose_name='Сума')
+    comment = models.TextField(verbose_name='Коментар', blank=True, null=True)
     is_completed = models.BooleanField(default=True)
     manager = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name='Менеджер', related_name='manager')    # only user with role 'manager'
 
@@ -70,7 +69,7 @@ class Notoriety(models.Model):
         outcome = 'outcome'
 
     type = models.CharField(max_length=20, choices=TypeChoices.choices, default='income')    # is set in view while saving - income or outcome
-    created_at = models.DateTimeField(default=timezone.now)
+    created_at = models.DateField(default=timezone.now)
 
 
 class Receipt(models.Model):

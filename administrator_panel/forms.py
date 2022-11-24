@@ -4,7 +4,9 @@ from django.utils import timezone
 from phonenumber_field.formfields import PhoneNumberField
 
 from configuration.models import User
-from .models import House, HouseUser, Section, Floor, PersonalAccount, Flat, Evidence, Receipt, ReceiptService
+from .models import House, HouseUser, Section, Floor, PersonalAccount, Flat, Evidence, Receipt, ReceiptService, \
+    Notoriety
+from configuration.models import ArticlePayment
 
 
 class HouseForm(ModelForm):
@@ -265,3 +267,10 @@ class ReceiptServiceForm(ModelForm):
 receipt_service_formset = modelformset_factory(ReceiptService,
                                                form=ReceiptServiceForm,
                                                extra=0)
+
+
+class NotorietyForm(ModelForm):
+
+    class Meta:
+        model = Notoriety
+        fields = '__all__'

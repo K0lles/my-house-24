@@ -1033,11 +1033,29 @@ class NotorietyCreateView(CreateView):
 
     def get_context_data(self, **kwargs):
         context = super(NotorietyCreateView, self).get_context_data(**kwargs)
+        if kwargs.get('type'):
+            context['type'] = kwargs.get('type')
+        else:
+            context['type'] = self.request.GET.get('type') if self.request.GET.get(
+                'type') else 'outcome'          # if type is not defined it is set 'outcome'
         context['personal_accounts'] = PersonalAccount.objects.select_related('flat', 'flat__owner')\
             .filter(flat__isnull=False, status='active', flat__owner__isnull=False)
         context['owners'] = set([account.flat.owner for account in context['personal_accounts']])
-        context['articles'] = ArticlePayment.objects.filter(type__exact=self.request.GET.get('type'))
+        context['articles'] = ArticlePayment.objects.filter(type__exact=context['type'])
         context['managers'] = User.objects.select_related('role').filter(role__role__in=['director', 'manager', 'accountant'])
-        context['type'] = self.request.GET.get('type')
         context['create_new'] = {'create': 'true'}
         return context
+
+    def post(self, request, *args, **kwargs):
+        form = self.get_form_class()(request.POST)
+        if form.is_valid():
+            return self.form_valid(form)
+        self.object = None
+        context = self.get_context_data(type=self.request.POST.get('type'))
+        context['form'] = form
+        context['create_new'] = {'create': 'false'}
+        return self.render_to_response(context)
+
+    def form_valid(self, form):
+        form.save()
+        return redirect('notoriety-create')

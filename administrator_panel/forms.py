@@ -270,7 +270,34 @@ receipt_service_formset = modelformset_factory(ReceiptService,
 
 
 class NotorietyForm(ModelForm):
+    created_at = DateField(input_formats=['%d.%m.%Y'], initial=timezone.now())
 
     class Meta:
         model = Notoriety
         fields = '__all__'
+
+    def clean(self):
+        cleaned_data = super(NotorietyForm, self).clean()
+
+        if self.instance.pk:
+            got_notoriety = Notoriety.objects.filter(number=cleaned_data.get('number'))
+            if got_notoriety.count() != 0 and (got_notoriety[0].pk != self.instance.pk and got_notoriety.count() == 1):
+                self._errors['number'] = 'Відомість з вказаним номером вже існує'
+
+        elif not self.instance.pk:
+            try:
+                Notoriety.objects.get(number=cleaned_data.get('number'))
+                self._errors['number'] = 'Відомість з вказаним номером вже існує'
+            except Notoriety.DoesNotExist:
+                pass
+
+        if cleaned_data.get('sum') and cleaned_data.get('sum') >= 0:
+            if cleaned_data.get('type') == 'outcome':
+                cleaned_data['sum'] = cleaned_data['sum'] * -1
+        else:
+            self._errors['sum'] = 'Неправильно вказана ціна'
+
+        if not cleaned_data.get('type') or cleaned_data.get('type') not in ['income', 'outcome']:
+            self._errors['type'] = 'Сталася помилка'
+
+        return cleaned_data

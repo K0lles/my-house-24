@@ -58,7 +58,7 @@ class Notoriety(models.Model):
     number = models.CharField(max_length=255, unique=True)
     account = models.ForeignKey(PersonalAccount, on_delete=models.CASCADE, verbose_name='Особовий рахунок', blank=True,
                                 null=True)
-    article = models.ForeignKey(ArticlePayment, on_delete=models.CASCADE, verbose_name='Стаття')
+    article = models.ForeignKey(ArticlePayment, on_delete=models.PROTECT, verbose_name='Стаття')
     sum = models.FloatField(verbose_name='Сума')
     comment = models.TextField(verbose_name='Коментар', blank=True, null=True)
     is_completed = models.BooleanField(default=True)

@@ -21,7 +21,7 @@
                         <div class="input-group-append" style="background-color: #fff; border: 1px solid #ccc; padding: 6px 12px;">
                             №
                         </div>
-                        <input type="text" class="form-control" id="{{ form.number.auto_id }}" name="{{ form.number.html_name }}" {% if form.number.value and not form.instance.pk %}value="{{ form.instance.number.value }}"{% elif form.instance.pk %}value="{{ form.instance.number }}"{% endif %} onchange="fieldIsValid(this)" {% if form.number.errors %}style="border: 1px solid red;" {% endif %}>
+                        <input type="text" class="form-control" id="{{ form.number.auto_id }}" name="{{ form.number.html_name }}" {% if form.number.value and not form.instance.pk %}value="{{ form.number.value }}"{% elif form.instance.pk %}value="{{ form.instance.number }}"{% endif %} onchange="fieldIsValid(this)" {% if form.number.errors %}style="border: 1px solid red;" {% endif %}>
                     </div>
                     <p id="{{ form.number.auto_id }}-errors" style="color: red;">{{ form.number.errors }}</p>
                 </div>

@@ -426,6 +426,6 @@ def delete_article(request, pk):
     try:
         article_to_delete = ArticlePayment.objects.get(pk=pk)
         article_to_delete.delete()
-    except ArticlePayment.DoesNotExist:
+    except (ArticlePayment.DoesNotExist, ProtectedError):
         return JsonResponse({'answer': 'failed'})
     return JsonResponse({'answer': 'success'})

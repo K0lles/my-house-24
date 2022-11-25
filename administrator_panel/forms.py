@@ -291,10 +291,7 @@ class NotorietyForm(ModelForm):
             except Notoriety.DoesNotExist:
                 pass
 
-        if cleaned_data.get('sum') and cleaned_data.get('sum') >= 0:
-            if cleaned_data.get('type') == 'outcome':
-                cleaned_data['sum'] = cleaned_data['sum'] * -1
-        else:
+        if not cleaned_data.get('sum') or cleaned_data.get('sum') < 0:
             self._errors['sum'] = 'Неправильно вказана ціна'
 
         if not cleaned_data.get('type') or cleaned_data.get('type') not in ['income', 'outcome']:

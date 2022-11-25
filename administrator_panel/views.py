@@ -1059,3 +1059,72 @@ class NotorietyCreateView(CreateView):
     def form_valid(self, form):
         form.save()
         return redirect('notoriety-create')
+
+
+class NotorietyDetailView(DetailView):
+    model = Notoriety
+    template_name = 'administrator_panel/notoriety-detail.html'
+    pk_url_kwarg = 'notoriety_pk'
+
+    def get_object(self, queryset=None):
+        try:
+            return Notoriety.objects.select_related('account',
+                                                    'account__flat',
+                                                    'account__flat__owner',
+                                                    'manager',
+                                                    'manager__role',
+                                                    'article').get(pk=self.kwargs.get('notoriety_pk'))
+        except (Notoriety.DoesNotExist, KeyError, AttributeError):
+            return None
+
+
+class NotorietyUpdateView(UpdateView):
+    model = Notoriety
+    template_name = 'administrator_panel/notoriety-create-update.html'
+    pk_url_kwarg = 'notoriety_pk'
+    form_class = NotorietyForm
+
+    def get_object(self, queryset=None):
+        try:
+            return Notoriety.objects.select_related('account',
+                                                    'account__flat',
+                                                    'account__flat__owner',
+                                                    'manager',
+                                                    'manager__role',
+                                                    'article').get(pk=self.kwargs.get('notoriety_pk'))
+        except (Notoriety.DoesNotExist, KeyError, AttributeError):
+            return None
+
+    def get_context_data(self, **kwargs):
+        context = super(NotorietyUpdateView, self).get_context_data(**kwargs)
+        self.object = self.get_object()
+        context['type'] = self.object.type
+        context['create_new'] = {'create': 'false'}
+        context['personal_accounts'] = PersonalAccount.objects.select_related('flat', 'flat__owner') \
+            .filter(flat__isnull=False, status='active', flat__owner__isnull=False)
+        context['owners'] = set([account.flat.owner for account in context['personal_accounts']])
+        context['articles'] = ArticlePayment.objects.filter(type__exact=context['type'])
+        context['managers'] = User.objects.select_related('role').filter(
+            role__role__in=['director', 'manager', 'accountant'])
+        return context
+
+    def post(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        form = self.get_form_class()(request.POST, instance=self.object)
+        print(form.errors)
+        if form.is_valid():
+            return self.form_valid(form)
+        context = self.get_context_data()
+        context['form'] = form
+        return self.render_to_response(context)
+
+    def form_valid(self, form):
+        print(form.cleaned_data)
+        form.save()
+        return redirect('notorieties')
+
+
+class NotorietyListView(ListView):
+    model = Notoriety
+    template_name = 'administrator_panel/notoriety-list.html'
+    queryset = Notoriety.objects.select_related('article', 'account', 'account__flat__owner').all().order_by('-id')

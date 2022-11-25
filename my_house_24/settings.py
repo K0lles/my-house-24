@@ -35,7 +35,6 @@ INTERNAL_IPS = [
     '127.0.0.1',
 ]
 
-
 # Application definition
 
 INSTALLED_APPS = [
@@ -83,10 +82,10 @@ TEMPLATES = [
             ],
         },
     },
+
 ]
 
 WSGI_APPLICATION = 'my_house_24.wsgi.application'
-
 
 # Database
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
@@ -95,13 +94,12 @@ DATABASES = {
     'default': {
         'ENGINE': env.str('DB_ENGINE'),
         'NAME': env.str('DB_NAME'),
-        'USER':  env.str('DB_USER'),
+        'USER': env.str('DB_USER'),
         'PASSWORD': env.str('DB_PASSWORD'),
         'HOST': env.str('DB_HOST'),
         'PORT': env.str('DB_PORT'),
     }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/4.1/ref/settings/#auth-password-validators
@@ -123,7 +121,6 @@ AUTH_PASSWORD_VALIDATORS = [
 
 AUTH_USER_MODEL = 'configuration.User'
 
-
 # Internationalization
 # https://docs.djangoproject.com/en/4.1/topics/i18n/
 
@@ -134,7 +131,6 @@ TIME_ZONE = 'Europe/Kiev'
 USE_I18N = True
 
 USE_TZ = True
-
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.1/howto/static-files/

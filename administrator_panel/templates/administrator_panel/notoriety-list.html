@@ -1,0 +1,110 @@
+{% extends 'main_page.html' %}
+{% load static %}
+
+{% block content_header %}
+    <h1>Відомості</h1>
+{% endblock %}
+
+{% block main_content %}
+    <div class="row">
+        <div class="col-sm-12 col-lg-9">
+            <div class="row">
+                <div class="col-xs-12 col-md-4">
+                    <div class="small-box bg-green overflow-hidden">
+                        <div class="inner">
+                            <h3>0.00 грн</h3>
+                            <p>Стан каси</p>
+                        </div>
+                        <div class="icon">
+                            <i class="fa fa-dollar"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-xs-12 col-md-4">
+                    <div class="small-box bg-blue overflow-hidden">
+                        <div class="inner">
+                            <h3>0.00 грн</h3>
+                            <p>Баланс по рахунках</p>
+                        </div>
+                        <div class="icon">
+                            <i class="fa fa-dollar"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-xs-12 col-md-4">
+                    <div class="small-box bg-red overflow-hidden">
+                        <div class="inner">
+                            <h3>0.00 грн</h3>
+                            <p>Заборгованість по рахунках</p>
+                        </div>
+                        <div class="icon">
+                            <i class="fa fa-dollar"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xs-12 col-lg-3 text-right">
+            <div class="btn-group">
+                <button type="button" class="btn btn-success dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    Виберіть дію
+                </button>
+                <div class="dropdown-menu dropdown-menu-right">
+                    <a class="dropdown-item" href="{% url 'notoriety-create' %}?type=income">Створити прихід</a>
+                    <a class="dropdown-item" href="{% url 'notoriety-create' %}?type=outcome">Створити розхід</a>
+                    <a class="dropdown-item" href="#">Вивантажити в Excel</a>
+              </div>
+            </div>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-body">
+            <div class="row" style="margin-bottom: 25px;">
+                <div class="col-sm-12 text-right">
+                    <a href="{% url 'notorieties' %}" class="btn btn-default">Очистити</a>
+                </div>
+            </div>
+            <div class="row">
+                <table class="table table-hover table-borderless table-responsive">
+                    <thead>
+                        <tr>
+                            <th>№<input type="text" class="form-control"></th>
+                            <th>Дата<input type="text" class="form-control"></th>
+                            <th>Статус<input type="text" class="form-control"></th>
+                            <th>Тип платіжки<input type="text" class="form-control"></th>
+                            <th>Власник<input type="text" class="form-control"></th>
+                            <th>Особовий рахунок<input type="text" class="form-control"></th>
+                            <th>Прихід/розхід<input type="text" class="form-control"></th>
+                            <th style="vertical-align: top;">Сума (грн)</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for notoriety in object_list %}
+                            <tr>
+                                <td>{{ notoriety.number }}</td>
+                                <td>{{ notoriety.created_at|date:'d.m.Y' }}</td>
+                                <td>{% if notoriety.is_completed %}Проведена{% else %}Не проведена{% endif %}</td>
+                                <td>{{ notoriety.article.name }}</td>
+                                <td>{% if notoriety.account %}{{ notoriety.account.flat.owner.surname }} {{ notoriety.account.flat.owner.name }} {% if notoriety.account.flat.owner.father %}{{ notoriety.account.flat.owner.father }}{% endif %}{% else %}(не указано){% endif %}</td>
+                                <td>{% if notoriety.account %}{{ notoriety.account.number }}{% else %}(не указано){% endif %}</td>
+                                <td>{% if notoriety.type == 'income' %}<span style="color: #4eb727;">Прихід</span>{% else %}<span style="color: #bb1642;">Розхід</span>{% endif %}</td>
+                                <td>{% if notoriety.type == 'income' %}<span style="color: #4eb727;">{{ notoriety.sum }}</span>{% else %}<span style="color: #bb1642;">-{{ notoriety.sum }}</span>{% endif %}</td>
+                                <td class="text-right">
+                                    <div class="btn-group pull-right">
+                                        <a class="btn btn-default btn-sm" title="Редагувати" href="{% url 'notoriety-update' notoriety_pk=notoriety.pk %}">
+                                            <i class="fa fa-pencil"></i>
+                                        </a>
+                                        <button id="{{ receipt.pk }}" type="button" class="btn btn-default btn-sm delete-notoriety" title="Видалити">
+                                            <i class="fa fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+{% endblock %}

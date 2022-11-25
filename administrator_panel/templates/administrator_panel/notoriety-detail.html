@@ -1,0 +1,121 @@
+{% extends 'main_page.html' %}
+{% load static %}
+
+{% block content_header %}
+    <h1>{% if object.type == 'income' %}Прихідна{% else %}Розхідна{% endif %} відомість</h1>
+{% endblock %}
+
+{% block main_content %}
+    <div class="row">
+        <div class="col-sm-12 col-md-7 col-lg-6" style="display: flex; justify-content: flex-start;">
+            <div class="form-group">
+                <div class="input-group">
+                    <div class="input-group-append" style="background-color: #fff; border: 1px solid #ccc; padding: 6px 12px;">
+                        №
+                    </div>
+                    <div class="form-control">{{ object.number }}</div>
+                </div>
+            </div>
+            <span style="margin: 8px 15px 0 15px;">
+                від
+            </span>
+            <div class="form-group">
+                <div class="input-group date" id="datepicker-first">
+                    <span class="input-group-append">
+                        <button type="button" class="btn btn-default" >
+                            <i class="fa fa-calendar"></i>
+                        </button>
+                    </span>
+                    <div class="form-control">{{ object.created_at|date:'d.m.Y' }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-sm-12 col-lg-6">
+                    <h5 style="font-size: 18px; color: grey">{% if object.type == 'income' %}Прихідна{% else %}Розхідна{% endif %} відомість</h5>
+                </div>
+                <div class="col-sm-12 col-lg-6 text-right">
+                    <div class="btn-group">
+                        <button class="btn btn-default" type="button" style="margin-right: 10px;">Копіювати</button>
+                        <button class="btn btn-default" type="button"  style="margin-right: 10px;">Видалити</button>
+                        <a class="btn btn-info" href="{% url 'receipt-update' receipt_pk=object.pk %}">Редагувати особовий рахунок</a>
+                        <button class="btn btn-default" type="button"  style="margin-right: 10px;">Вивантажити в Excel</button>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <table class="table table-borderless">
+                    <tbody>
+                        <tr>
+                            <th>Власник</th>
+                            <td><a href="{% url 'owner-detail' owner_pk=object.account.flat.owner.pk %}">{{ object.account.flat.owner.surname }} {{ object.account.flat.owner.name }} {{ object.account.flat.owner.father }}</a></td>
+                        </tr>
+                        <tr>
+                            <th>Особовий рахунок</th>
+                            <td><a href="{% url 'personal-account-detail' account_pk=object.account.pk %}">{{ object.account.number }}</a></td>
+                        </tr>
+                        <tr>
+                            <th>Стаття</th>
+                            <td>{{ object.article.name }}</td>
+                        </tr>
+                        <tr>
+                            <th>Квитанція</th>
+                            <td>не указано</td>
+                        </tr>
+                        <tr>
+                            <th>Послуга</th>
+                            <td></td>
+                        </tr>
+                        <tr>
+                            <th>Менеджер</th>
+                            <td><a href="{% url 'user-detail' pk=object.manager.pk %}">{{ object.manager.pk.surname }} {{ object.manager.pk.name }} {% if object.manager.father %}{{ object.manager.pk.father }}{% endif %}</a></td>
+                        </tr>
+                        <tr>
+                            <th>Сума</th>
+                            <td>{% if object.type == 'income' %}<span style="color: #4eb727;">{{ object.sum }}</span>{% else %}<span style="color: #bb1642;">-{{ object.sum }}</span>{% endif %}</td>
+                        </tr>
+                        <tr>
+                            <th>Коментар</th>
+                            <td>{{ object.comment }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="row">
+                <table class="table table-borderless">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Послуга</th>
+                            <th>Кількість споживання (розхід)</th>
+                            <th>Од. вим.</th>
+                            <th>Ціна за од., грн</th>
+                            <th>Вартість, грн</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for receipt_service in object.receiptservices.all %}
+                        <tr>
+                            <td>{{ forloop.counter }}</td>
+                            <td>{{ receipt_service.service.name }}</td>
+                            <td>{{ receipt_service.service.measurement_unit.name }}</td>
+                            <td>{{ receipt_service.amount }}</td>
+                            <td>{{ receipt_service.price }}</td>
+                            <td>{{ receipt_service.total_price|floatformat:2 }}</td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="5"></td>
+                            <td><b>Разом: {{ object.summ|floatformat:2 }}</b></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+{% endblock %}

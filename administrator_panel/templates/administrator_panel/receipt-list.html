@@ -197,18 +197,6 @@
                                 that.search(this.value).draw();
                             }
                         });
-
-                        {% comment %}$(`select`).on('change', function () {
-                            console.log(this.id);
-                            let val = $.fn.dataTable.util.escapeRegex($(this).val());
-                            that.search(val ? '^' + val + '$' : '', true, false).draw();
-
-                            that.data().unique().sort().each(function (d, j) {
-                                this.append('<option value="' + d + '">' + d + '</option>');
-                            });
-
-                        }){% endcomment %}
-
                     });
             },
         });

@@ -56,6 +56,10 @@
                             <th>Власник</th>
                             <td>{% if object.flat.owner %}<a href="{% url 'user-detail' pk=object.flat.owner.pk %}">{{ object.flat.owner.name }} {{ object.flat.owner.surname }}</a>{% else %}не указано{% endif %}</td>
                         </tr>
+                        <tr>
+                            <th>Залишок</th>
+                            <td>{{ object.rest|floatformat:2 }} грн</td>
+                        </tr>
                     </tbody>
                 </table>
             </div>

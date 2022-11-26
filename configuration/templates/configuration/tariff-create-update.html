@@ -78,7 +78,7 @@
                         {% endfor %}
                         {% if tariff_to_copy %}
                             {% for tariff_service in tariff_to_copy.tariffservice_set.all %}
-                                <div id="id_form-{{ forloop.counter0 }}-service-tariff-parent" class="row" style="margin-top: 2%;">
+                                <div id="id_form-{{ forloop.counter0 }}-service_tariff-parent" class="row" style="margin-top: 2%;">
                                     <div class="col-xs-6 col-md-4">
                                         <div class="form-group">
                                             <label for="id_form-{{ forloop.counter0 }}-service">Назва послуги</label>
@@ -115,7 +115,7 @@
                                                     {% endfor %}
                                                 </select>
                                                 <span class="input-group-append">
-                                                    <button type="button" class="btn btn-default self-delete-button" id="id_form-0-delete_button">
+                                                    <button type="button" class="btn btn-default self-delete-button" id="id_form-{{ forloop.counter0 }}-delete_button">
                                                         <i class="fa fa-trash"></i>
                                                     </button>
                                                 </span>

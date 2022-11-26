@@ -41,6 +41,7 @@ urlpatterns = [
     path('receipt-service/delete/<int:receipt_service_delete_pk>/', receipt_service_delete, name='receipt-service-delete'),
     path('receipt/evidence/', EvidenceResponse.as_view(), name='evidence-by-number'),
     path('notoriety/', NotorietyListView.as_view(), name='notorieties'),
+    path('notoriety/<int:notoriety_pk>/', NotorietyDetailView.as_view(), name='notoriety-detail'),
     path('notoriety/create/', NotorietyCreateView.as_view(), name='notoriety-create'),
     path('notoriety/update/<int:notoriety_pk>/', NotorietyUpdateView.as_view(), name='notoriety-update'),
 ]

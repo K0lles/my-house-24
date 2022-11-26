@@ -460,6 +460,12 @@ class PersonalAccountListView(ListView):
                                                       'flat__house',
                                                       'flat__owner').all().order_by('-id')
 
+    # needed to be finished
+    def get_queryset(self):
+        return PersonalAccount.objects.prefetch_related('notoriety_set', 'receipt_set', 'receipt_set__receiptservices').all().annotate(
+                    rest=(Sum('notoriety__sum', filter=Q(notoriety__type='income')) - Sum('receipt__receiptservices__total_price', filter=Q(receipt__is_completed=True)))
+           )
+
 
 class PersonalAccountUpdateView(UpdateView):
     model = PersonalAccount
@@ -477,9 +483,10 @@ class PersonalAccountUpdateView(UpdateView):
     def get_context_data(self, **kwargs):
         self.object = self.get_object()
         context = super(PersonalAccountUpdateView, self).get_context_data(**kwargs)
-        context = personal_account_context(context, Flat.objects.select_related('personalaccount', 'house', 'section',
-                                                                                'owner').filter(
-            personalaccount__isnull=True))
+        context = personal_account_context(context, Flat.objects.select_related('personalaccount',
+                                                                                'house',
+                                                                                'section',
+                                                                                'owner').filter(personalaccount__isnull=True))
 
         context['create_new'] = {'create': 'false'}
 
@@ -492,8 +499,7 @@ class PersonalAccountUpdateView(UpdateView):
 
             # add current flat to section's list of flats for displaying in frontend
             if context['section_flat'].get(self.object.flat.section.id):
-                if [self.object.flat.id, self.object.flat.number] not in context['section_flat'][
-                    self.object.flat.section.id]:
+                if [self.object.flat.id, self.object.flat.number] not in context['section_flat'][self.object.flat.section.id]:
                     context['section_flat'][self.object.flat.section.id].append(
                         [self.object.flat.id, self.object.flat.number])
             else:
@@ -909,8 +915,7 @@ class ReceiptUpdateView(UpdateView):
         receipt_saved = form.save()
         for receipt_service_form in receipt_formset.forms:
             if receipt_service_form.cleaned_data.get('service') and receipt_service_form.cleaned_data.get('amount') \
-                    and receipt_service_form.cleaned_data.get('price') and receipt_service_form.cleaned_data.get(
-                'total_price'):
+                    and receipt_service_form.cleaned_data.get('price') and receipt_service_form.cleaned_data.get('total_price'):
                 form_saved = receipt_service_form.save(commit=False)
                 form_saved.receipt = receipt_saved
                 form_saved.save()
@@ -1037,12 +1042,13 @@ class NotorietyCreateView(CreateView):
             context['type'] = kwargs.get('type')
         else:
             context['type'] = self.request.GET.get('type') if self.request.GET.get(
-                'type') else 'outcome'          # if type is not defined it is set 'outcome'
-        context['personal_accounts'] = PersonalAccount.objects.select_related('flat', 'flat__owner')\
+                'type') else 'outcome'  # if type is not defined it is set 'outcome'
+        context['personal_accounts'] = PersonalAccount.objects.select_related('flat', 'flat__owner') \
             .filter(flat__isnull=False, status='active', flat__owner__isnull=False)
         context['owners'] = set([account.flat.owner for account in context['personal_accounts']])
         context['articles'] = ArticlePayment.objects.filter(type__exact=context['type'])
-        context['managers'] = User.objects.select_related('role').filter(role__role__in=['director', 'manager', 'accountant'])
+        context['managers'] = User.objects.select_related('role').filter(
+            role__role__in=['director', 'manager', 'accountant'])
         context['create_new'] = {'create': 'true'}
         return context
 
@@ -1057,8 +1063,8 @@ class NotorietyCreateView(CreateView):
         return self.render_to_response(context)
 
     def form_valid(self, form):
-        form.save()
-        return redirect('notoriety-create')
+        notoriety_saved = form.save()
+        return redirect('notoriety-detail', notoriety_pk=notoriety_saved.pk)
 
 
 class NotorietyDetailView(DetailView):
@@ -1111,7 +1117,6 @@ class NotorietyUpdateView(UpdateView):
     def post(self, request, *args, **kwargs):
         self.object = self.get_object()
         form = self.get_form_class()(request.POST, instance=self.object)
-        print(form.errors)
         if form.is_valid():
             return self.form_valid(form)
         context = self.get_context_data()
@@ -1119,9 +1124,8 @@ class NotorietyUpdateView(UpdateView):
         return self.render_to_response(context)
 
     def form_valid(self, form):
-        print(form.cleaned_data)
-        form.save()
-        return redirect('notorieties')
+        notoriety_saved = form.save()
+        return redirect('notoriety-detail', notoriety_pk=notoriety_saved.pk)
 
 
 class NotorietyListView(ListView):

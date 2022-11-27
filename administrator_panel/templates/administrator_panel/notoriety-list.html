@@ -88,14 +88,14 @@
                                 <td>{{ notoriety.article.name }}</td>
                                 <td>{% if notoriety.account %}{{ notoriety.account.flat.owner.surname }} {{ notoriety.account.flat.owner.name }} {% if notoriety.account.flat.owner.father %}{{ notoriety.account.flat.owner.father }}{% endif %}{% else %}(не указано){% endif %}</td>
                                 <td>{% if notoriety.account %}{{ notoriety.account.number }}{% else %}(не указано){% endif %}</td>
-                                <td>{% if notoriety.type == 'income' %}<span style="color: #4eb727;">Прихід</span>{% else %}<span style="color: #bb1642;">Розхід</span>{% endif %}</td>
-                                <td>{% if notoriety.type == 'income' %}<span style="color: #4eb727;">{{ notoriety.sum }}</span>{% else %}<span style="color: #bb1642;">-{{ notoriety.sum }}</span>{% endif %}</td>
+                                <td>{% if notoriety.type == 'income' %}<span style="color: #388f1a;">Прихід</span>{% else %}<span style="color: #bb1642;">Розхід</span>{% endif %}</td>
+                                <td>{% if notoriety.type == 'income' %}<span style="color: #388f1a;">{{ notoriety.sum }}</span>{% else %}<span style="color: #bb1642;">-{{ notoriety.sum }}</span>{% endif %}</td>
                                 <td class="text-right">
                                     <div class="btn-group pull-right">
                                         <a class="btn btn-default btn-sm" title="Редагувати" href="{% url 'notoriety-update' notoriety_pk=notoriety.pk %}">
                                             <i class="fa fa-pencil"></i>
                                         </a>
-                                        <button id="{{ receipt.pk }}" type="button" class="btn btn-default btn-sm delete-notoriety" title="Видалити">
+                                        <button id="{{ notoriety.pk }}" type="button" class="btn btn-default btn-sm delete-notoriety" title="Видалити">
                                             <i class="fa fa-trash"></i>
                                         </button>
                                     </div>
@@ -157,6 +157,49 @@
                     });
             },
         });
+    })
+
+    $('.delete-notoriety').on('click', function(event) {
+        event.preventDefault();
+        event.stopPropagation();
+        Swal.fire({
+            title: 'Ви впевнені?',
+            text: "Після видалення відомість неможливо буде повернути!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#A9A9A9',
+            cancelButtonText: 'Скасувати',
+            confirmButtonText: 'Видалити'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.ajax({
+                        type: 'get',
+                        url: `/administrator-panel/notoriety/delete/${$(this).attr('id')}/`,
+                        success: function (data) {
+                            if (data['answer'] === 'success') {
+                                $(event.target).closest('tr').remove();
+                                Swal.fire({
+                                        position: 'top-end',
+                                        icon: 'success',
+                                        title: 'Успішно видалено!',
+                                        showConfirmButton: false,
+                                        timer: 1200,
+                                    })
+                            }
+                            else {
+                                Swal.fire({
+                                    position: 'top-end',
+                                    icon: 'error',
+                                    title: 'Щось пішло не так!',
+                                    showConfirmButton: false,
+                                    timer: 1200
+                                });
+                            }
+                        }
+                    })
+                }
+            })
     })
 </script>
 {% endblock %}

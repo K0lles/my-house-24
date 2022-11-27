@@ -3,7 +3,7 @@ from django.utils import timezone
 
 from phonenumber_field.formfields import PhoneNumberField
 
-from configuration.models import User
+from configuration.models import User, Service
 from .models import House, HouseUser, Section, Floor, PersonalAccount, Flat, Evidence, Receipt, ReceiptService, \
     Notoriety
 from configuration.models import ArticlePayment
@@ -252,6 +252,7 @@ class ReceiptForm(ModelForm):
 
 class ReceiptServiceForm(ModelForm):
     receipt = ModelChoiceField(required=False, queryset=Receipt.objects.all())
+    service = ModelChoiceField(required=False, queryset=Service.objects.all())
 
     class Meta:
         model = ReceiptService

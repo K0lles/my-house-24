@@ -39,8 +39,8 @@
                 </div>
                 <div class="col-sm-12 col-lg-6 text-right">
                     <div class="btn-group">
-                        <button class="btn btn-default" type="button" style="margin-right: 10px;">Копіювати</button>
-                        <button class="btn btn-default" type="button"  style="margin-right: 10px;">Видалити</button>
+                        <a class="btn btn-default" href="{% url 'notoriety-create' %}?type={{ object.type }}&base_notoriety={{ object.pk }}" style="margin-right: 10px;">Копіювати</a>
+                        <button id="{{ object.pk }}" class="btn btn-default delete-notoriety" type="button"  style="margin-right: 10px;">Видалити</button>
                         <a class="btn btn-info" href="{% url 'notoriety-update' notoriety_pk=object.pk %}" style="margin-right: 10px;">Редагувати особовий рахунок</a>
                         <button class="btn btn-default" type="button"  style="margin-right: 10px;">Вивантажити в Excel</button>
                     </div>
@@ -51,27 +51,19 @@
                     <tbody>
                         <tr>
                             <th>Власник</th>
-                            <td>{% if object.status == 'income' %}<a href="{% url 'owner-detail' owner_pk=object.account.flat.owner.pk %}">{{ object.account.flat.owner.surname }} {{ object.account.flat.owner.name }} {{ object.account.flat.owner.father }}</a>{% else %}не указано{% endif %}</td>
+                            <td>{% if object.type == 'income' %}<a href="{% url 'owner-detail' owner_pk=object.account.flat.owner.pk %}">{{ object.account.flat.owner.surname }} {{ object.account.flat.owner.name }} {{ object.account.flat.owner.father }}</a>{% else %}не указано{% endif %}</td>
                         </tr>
                         <tr>
                             <th>Особовий рахунок</th>
-                            <td>{% if object.status == 'income' %}<a href="{% url 'personal-account-detail' account_pk=object.account.pk %}">{{ object.account.number }}</a>{% else %}не указано{% endif %}</td>
+                            <td>{% if object.type == 'income' %}<a href="{% url 'personal-account-detail' account_pk=object.account.pk %}">{{ object.account.number }}</a>{% else %}не указано{% endif %}</td>
                         </tr>
                         <tr>
                             <th>Стаття</th>
                             <td>{{ object.article.name }}</td>
                         </tr>
                         <tr>
-                            <th>Квитанція</th>
-                            <td>не указано</td>
-                        </tr>
-                        <tr>
-                            <th>Послуга</th>
-                            <td></td>
-                        </tr>
-                        <tr>
                             <th>Менеджер</th>
-                            <td><a href="{% url 'user-detail' pk=object.manager.pk %}">{{ object.manager.pk.surname }} {{ object.manager.pk.name }} {% if object.manager.father %}{{ object.manager.pk.father }}{% endif %}</a></td>
+                            <td><a href="{% url 'user-detail' pk=object.manager.pk %}">{{ object.manager.surname }} {{ object.manager.name }} {% if object.manager.father %}{{ object.manager.father }}{% endif %}</a></td>
                         </tr>
                         <tr>
                             <th>Сума</th>
@@ -86,4 +78,51 @@
             </div>
         </div>
     </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    $('.delete-notoriety').on('click', function() {
+        event.preventDefault();
+        Swal.fire({
+            title: 'Ви впевнені?',
+            text: "Після видалення відомість неможливо буде повернути!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#A9A9A9',
+            cancelButtonText: 'Скасувати',
+            confirmButtonText: 'Видалити'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.ajax({
+                        type: 'get',
+                        url: `/administrator-panel/notoriety/delete/${$(this).attr('id')}/`,
+                        success: function (data) {
+                            if (data['answer'] === 'success') {
+                                Swal.fire({
+                                        position: 'top-end',
+                                        icon: 'success',
+                                        title: 'Успішно видалено!',
+                                        showConfirmButton: false,
+                                        timer: 1200,
+                                    }).then((result) => {
+                                        window.location.href = "{% url 'notorieties' %}";
+                                })
+                            }
+                            else {
+                                Swal.fire({
+                                    position: 'top-end',
+                                    icon: 'error',
+                                    title: 'Щось пішло не так!',
+                                    showConfirmButton: false,
+                                    timer: 1200
+                                });
+                            }
+                        }
+                    })
+                }
+            })
+    })
+</script>
 {% endblock %}

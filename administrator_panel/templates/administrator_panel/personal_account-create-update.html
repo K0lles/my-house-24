@@ -68,7 +68,7 @@
                 <div class="row">
                     <div class="col-sm-12 text-right">
                         <button type="reset" class="btn btn-default" style="margin-right: 20px;">Відмінити</button>
-                        <button type="submit" class="btn btn-success" onclick="formIsValid()">Створити</button>
+                        <button type="submit" class="btn btn-success" onclick="formIsValid()">{% if not form.instance.pk %}Створити{% else %}Зберегти{% endif %}</button>
                     </div>
                 </div>
             </div>

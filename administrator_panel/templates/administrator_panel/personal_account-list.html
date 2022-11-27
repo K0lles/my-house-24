@@ -109,7 +109,7 @@
                             <td>{% if account.flat %}{{ account.flat.house.name }}{% else %}не указаний{% endif %}</td>
                             <td>{% if account.flat %}{{ account.flat.section.name }}{% else %}не указана{% endif %}</td>
                             <td>{% if account.flat and account.flat.owner %}{{ account.flat.owner.name }} {{ account.flat.owner.surname }}{% else %}не указаний{% endif %}</td>
-                            <td {% if account.rest > 0 %}style="color: #109302;" {% elif account.rest < 0 %}style="color: #a20000;"{% endif %}>{{ account.rest|floatformat:2 }} грн</td>
+                            <td {% if account.rest > 0 %}style="color: #109302;" {% elif account.rest < 0 %}style="color: #a20000;"{% endif %}>{% if account.rest %}{{ account.rest|floatformat:2 }} {% else %}0.00{% endif %} грн</td>
                             <td class="text-right">
                                 <div class="btn-group">
                                     <a href="{% url 'personal-account-update' account_pk=account.pk %}" class="btn btn-default">
@@ -134,6 +134,7 @@
 
     $('button.delete-personal_account').on('click', function (event) {
         event.stopPropagation();
+        event.preventDefault();
         Swal.fire({
             title: 'Ви впевнені?',
             text: "Після видалення особовий рахунок неможливо буде повернути!",

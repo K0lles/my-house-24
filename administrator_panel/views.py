@@ -1,6 +1,6 @@
 import json
 
-from django.db.models import Q, Count, Sum, Func, F, Value
+from django.db.models import Q, Count, Sum, Func, F, Value, Case, When, FloatField, Subquery, OuterRef, QuerySet
 from django.db.models.functions import Concat
 from django.http import Http404, JsonResponse, HttpResponseRedirect
 from django.shortcuts import render, redirect
@@ -8,6 +8,7 @@ from django.urls import reverse
 from django.views import View
 from django.views.generic import ListView, DetailView, CreateView, UpdateView
 from django.db.models.deletion import ProtectedError
+from django.views.generic.detail import SingleObjectMixin
 from django.views.generic.list import MultipleObjectMixin
 
 from configuration.models import Role, Tariff, Service, MeasurementUnit
@@ -366,7 +367,7 @@ def delete_flat(request, flat_pk):
         flat_to_delete = Flat.objects.get(pk=flat_pk)
         flat_to_delete.delete()
         return JsonResponse({'answer': 'success'})
-    except Flat.DoesNotExist:
+    except (Flat.DoesNotExist, KeyError, AttributeError, ProtectedError):
         return JsonResponse({'answer': 'failed'})
 
 
@@ -416,8 +417,7 @@ class PersonalAccountCreateView(CreateView):
     def get_context_data(self, **kwargs):
         context = super(PersonalAccountCreateView, self).get_context_data(**kwargs)
         context = personal_account_context(context, Flat.objects.select_related('personalaccount', 'house', 'section',
-                                                                                'owner').filter(
-            personalaccount__isnull=True))
+                                                                                'owner').filter(personalaccount__isnull=True))
         context['create_new'] = {'create': 'true'}
         return context
 
@@ -435,7 +435,7 @@ class PersonalAccountCreateView(CreateView):
         if account.flat:
             account.status = 'active'
             account.save()
-        return redirect('flats')
+        return redirect('personal-account-detail', account_pk=account.pk)
 
 
 class PersonalAccountDetailView(DetailView):
@@ -445,9 +445,9 @@ class PersonalAccountDetailView(DetailView):
 
     def get_object(self, queryset=None):
         try:
-            return PersonalAccount.objects.select_related('flat__house',
-                                                          'flat__section',
-                                                          'flat', 'flat__owner').get(pk=self.kwargs['account_pk'])
+            return PersonalAccount.objects\
+                .select_related('flat__house', 'flat__section', 'flat', 'flat__owner')\
+                .get(pk=self.kwargs['account_pk'])
         except PersonalAccount.DoesNotExist:
             raise Http404()
 
@@ -455,16 +455,23 @@ class PersonalAccountDetailView(DetailView):
 class PersonalAccountListView(ListView):
     model = PersonalAccount
     template_name = 'administrator_panel/personal_account-list.html'
-    queryset = PersonalAccount.objects.select_related('flat',
-                                                      'flat__section',
-                                                      'flat__house',
-                                                      'flat__owner').all().order_by('-id')
 
     # needed to be finished
     def get_queryset(self):
-        return PersonalAccount.objects.prefetch_related('notoriety_set', 'receipt_set', 'receipt_set__receiptservices').all().annotate(
-                    rest=(Sum('notoriety__sum', filter=Q(notoriety__type='income')) - Sum('receipt__receiptservices__total_price', filter=Q(receipt__is_completed=True)))
-           )
+        return PersonalAccount.objects \
+                .select_related('flat', 'flat__section', 'flat__house', 'flat__owner')\
+                .prefetch_related('notoriety_set', 'receipt_set', 'receipt_set__receiptservices') \
+                .all() \
+                .order_by('-id')\
+                .annotate(
+                    rest=Sum('notoriety__sum'),
+                    rest_val=Case(When(rest__isnull=True, then=(Value(0.00))), default='rest', output_field=FloatField()),
+                    receipt_sum=Sum('receipt__receiptservices__total_price', filter=(Q(receipt__is_completed=True))),
+                    receipt_sum_val=Case(When(receipt_sum__isnull=True, then=Value(0.00)), default='receipt_sum',
+                                         output_field=FloatField()),
+                    receipt_count=Count('receipt__receiptservices', filter=Q(receipt__is_completed=True)),
+                    diff=F('rest_val') - F('receipt_sum_val')
+                )
 
 
 class PersonalAccountUpdateView(UpdateView):
@@ -486,7 +493,8 @@ class PersonalAccountUpdateView(UpdateView):
         context = personal_account_context(context, Flat.objects.select_related('personalaccount',
                                                                                 'house',
                                                                                 'section',
-                                                                                'owner').filter(personalaccount__isnull=True))
+                                                                                'owner').filter(
+            personalaccount__isnull=True))
 
         context['create_new'] = {'create': 'false'}
 
@@ -500,8 +508,7 @@ class PersonalAccountUpdateView(UpdateView):
             # add current flat to section's list of flats for displaying in frontend
             if context['section_flat'].get(self.object.flat.section.id):
                 if [self.object.flat.id, self.object.flat.number] not in context['section_flat'][self.object.flat.section.id]:
-                    context['section_flat'][self.object.flat.section.id].append(
-                        [self.object.flat.id, self.object.flat.number])
+                    context['section_flat'][self.object.flat.section.id].append([self.object.flat.id, self.object.flat.number])
             else:
                 context['section_flat'][self.object.flat.section.id] = [[self.object.flat.id, self.object.flat.number]]
 
@@ -529,15 +536,17 @@ class PersonalAccountUpdateView(UpdateView):
         if not form.cleaned_data.get('flat'):
             account_saved.flat = None
         account_saved.save()
-        return redirect('flats')
+        return redirect('personal-account-detail', account_pk=account_saved.pk)
 
 
 def delete_personal_account(request, account_pk):
     try:
-        account_to_delete = PersonalAccount.objects.get(pk=account_pk)
+        account_to_delete = PersonalAccount.objects.prefetch_related('flat__evidence_set').get(pk=account_pk)
+        if account_to_delete.flat.evidence_set.all().count() > 0:
+            raise PersonalAccount.DoesNotExist()
         account_to_delete.delete()
         return JsonResponse({'answer': 'success'})
-    except PersonalAccount.DoesNotExist:
+    except (PersonalAccount.DoesNotExist, KeyError, AttributeError, ProtectedError):
         return JsonResponse({'answer': 'failed'})
 
 
@@ -945,12 +954,9 @@ class ReceiptDetailView(DetailView):
 
 class ReceiptListView(ListView):
     model = Receipt
-    queryset = Receipt.objects.select_related('account',
-                                              'account__flat',
-                                              'account__flat__house',
-                                              'account__flat__section',
-                                              'account__flat__owner').prefetch_related(
-        'receiptservices').all().order_by('-id') \
+    queryset = Receipt.objects\
+        .select_related('account', 'account__flat', 'account__flat__house', 'account__flat__section', 'account__flat__owner')\
+        .prefetch_related('receiptservices').all().order_by('-id') \
         .annotate(summ=Sum('receiptservices__total_price'))
     template_name = 'administrator_panel/receipt-list.html'
 
@@ -1043,12 +1049,22 @@ class NotorietyCreateView(CreateView):
         else:
             context['type'] = self.request.GET.get('type') if self.request.GET.get(
                 'type') else 'outcome'  # if type is not defined it is set 'outcome'
+
+        if self.request.GET.get('base_notoriety'):
+            try:
+                context['base_notoriety'] = Notoriety.objects \
+                    .select_related('manager', 'manager__role', 'account', 'account__flat__owner', 'article', ) \
+                    .get(pk=self.request.GET.get('base_notoriety'))
+            except Notoriety.DoesNotExist:
+                raise Http404()
+
         context['personal_accounts'] = PersonalAccount.objects.select_related('flat', 'flat__owner') \
             .filter(flat__isnull=False, status='active', flat__owner__isnull=False)
         context['owners'] = set([account.flat.owner for account in context['personal_accounts']])
         context['articles'] = ArticlePayment.objects.filter(type__exact=context['type'])
         context['managers'] = User.objects.select_related('role').filter(
             role__role__in=['director', 'manager', 'accountant'])
+
         context['create_new'] = {'create': 'true'}
         return context
 
@@ -1092,12 +1108,9 @@ class NotorietyUpdateView(UpdateView):
 
     def get_object(self, queryset=None):
         try:
-            return Notoriety.objects.select_related('account',
-                                                    'account__flat',
-                                                    'account__flat__owner',
-                                                    'manager',
-                                                    'manager__role',
-                                                    'article').get(pk=self.kwargs.get('notoriety_pk'))
+            return Notoriety.objects\
+                .select_related('account', 'account__flat', 'account__flat__owner', 'manager', 'manager__role', 'article')\
+                .get(pk=self.kwargs.get('notoriety_pk'))
         except (Notoriety.DoesNotExist, KeyError, AttributeError):
             return None
 
@@ -1110,8 +1123,7 @@ class NotorietyUpdateView(UpdateView):
             .filter(flat__isnull=False, status='active', flat__owner__isnull=False)
         context['owners'] = set([account.flat.owner for account in context['personal_accounts']])
         context['articles'] = ArticlePayment.objects.filter(type__exact=context['type'])
-        context['managers'] = User.objects.select_related('role').filter(
-            role__role__in=['director', 'manager', 'accountant'])
+        context['managers'] = User.objects.select_related('role').filter(role__role__in=['director', 'manager', 'accountant'])
         return context
 
     def post(self, request, *args, **kwargs):
@@ -1132,3 +1144,28 @@ class NotorietyListView(ListView):
     model = Notoriety
     template_name = 'administrator_panel/notoriety-list.html'
     queryset = Notoriety.objects.select_related('article', 'account', 'account__flat__owner').all().order_by('-id')
+
+
+class NotorietyDeleteView(SingleObjectMixin, View):
+    model = Notoriety
+    pk_url_kwarg = 'notoriety_pk'
+
+    def get_queryset(self):
+        return Notoriety.objects.all()
+
+    def get_object(self, queryset=None):
+        try:
+            return queryset.get(pk=self.kwargs.get('notoriety_pk'))
+        except (Notoriety.DoesNotExist, KeyError, AttributeError):
+            return None
+
+    def get(self, request, *args, **kwargs):
+        self.object = self.get_object(self.get_queryset())
+        try:
+            self.object.delete()
+            if self.request.is_ajax():
+                return JsonResponse({'answer': 'success'})
+            return redirect('notorieties')
+        except (Notoriety.DoesNotExist, KeyError, AttributeError):
+            if self.request.is_ajax():
+                return JsonResponse({'answer': 'failed'})

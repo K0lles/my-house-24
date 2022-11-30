@@ -417,7 +417,8 @@ class PersonalAccountCreateView(CreateView):
     def get_context_data(self, **kwargs):
         context = super(PersonalAccountCreateView, self).get_context_data(**kwargs)
         context = personal_account_context(context, Flat.objects.select_related('personalaccount', 'house', 'section',
-                                                                                'owner').filter(personalaccount__isnull=True))
+                                                                                'owner').filter(
+            personalaccount__isnull=True))
         context['create_new'] = {'create': 'true'}
         return context
 
@@ -445,11 +446,49 @@ class PersonalAccountDetailView(DetailView):
 
     def get_object(self, queryset=None):
         try:
-            return PersonalAccount.objects\
-                .select_related('flat__house', 'flat__section', 'flat', 'flat__owner')\
+            return PersonalAccount.objects \
+                .select_related('flat__house', 'flat__section', 'flat', 'flat__owner') \
                 .get(pk=self.kwargs['account_pk'])
         except PersonalAccount.DoesNotExist:
             raise Http404()
+
+
+def count_main_prices(personal_accounts: QuerySet):
+    # making annotation separately in order to avoid multiplied wrong answer
+    accounts_with_notoriety_sum = personal_accounts.annotate(
+        rest=Sum(Case(When(notoriety__sum__isnull=True, then=Value(0.00)),
+                      default='notoriety__sum',
+                      output_field=FloatField())))  # get sum of all notorieties bounded to account number
+    accounts_with_receipt_sum = personal_accounts.annotate(
+        receipt_sum=Sum(Case(When(receipt__receiptservices__total_price=True, then=Value(0.00)),
+                             default='receipt__receiptservices__total_price',
+                             output_field=FloatField()),
+                        filter=(Q(receipt__is_completed=True))))  # get sum of all receipts bounded to account number
+
+    # pass all annotation calculations to main object_list
+    personal_accounts = personal_accounts.annotate(
+        rest=Subquery(accounts_with_notoriety_sum.filter(pk=OuterRef('id')).values('rest')[:1]),
+        receipt_sum=Subquery(accounts_with_receipt_sum.filter(pk=OuterRef('id')).values('receipt_sum')[:1]),
+        subtraction=Case(When(rest__isnull=True, then=Value(0.00)), default='rest', output_field=FloatField()) -
+                    Case(When(receipt_sum__isnull=True, then=Value(0.00)), default='receipt_sum',
+                         output_field=FloatField()))
+
+    # count sum of all notorieties
+    checkout_condition = Notoriety.objects.all().values('sum') \
+        .aggregate(
+        sum=Sum('sum', filter=Q(type='income'), output_field=FloatField()) - Sum('sum', filter=Q(type='outcome'),
+                                                                                 output_field=FloatField()))
+
+    # count sum by all account's positive rest
+    sum_by_account = personal_accounts.aggregate(
+        sum=Sum(Case(When(subtraction__lte=0, then=Value(0.0)), default='subtraction', output_field=FloatField())))
+
+    # count debt by all account's negative rest
+    debt_by_account = personal_accounts.aggregate(
+        debt=-Sum(Case(When(subtraction__gte=0, then=Value(0.0)), default='subtraction', output_field=FloatField())))
+
+    return {'checkout_condition': checkout_condition, 'debt_by_account': debt_by_account, 'sum_by_account': sum_by_account,
+            'personal_accounts': personal_accounts}
 
 
 class PersonalAccountListView(ListView):
@@ -459,19 +498,16 @@ class PersonalAccountListView(ListView):
     # needed to be finished
     def get_queryset(self):
         return PersonalAccount.objects \
-                .select_related('flat', 'flat__section', 'flat__house', 'flat__owner')\
-                .prefetch_related('notoriety_set', 'receipt_set', 'receipt_set__receiptservices') \
-                .all() \
-                .order_by('-id')\
-                .annotate(
-                    rest=Sum('notoriety__sum'),
-                    rest_val=Case(When(rest__isnull=True, then=(Value(0.00))), default='rest', output_field=FloatField()),
-                    receipt_sum=Sum('receipt__receiptservices__total_price', filter=(Q(receipt__is_completed=True))),
-                    receipt_sum_val=Case(When(receipt_sum__isnull=True, then=Value(0.00)), default='receipt_sum',
-                                         output_field=FloatField()),
-                    receipt_count=Count('receipt__receiptservices', filter=Q(receipt__is_completed=True)),
-                    diff=F('rest_val') - F('receipt_sum_val')
-                )
+            .select_related('flat', 'flat__section', 'flat__house', 'flat__owner') \
+            .prefetch_related('notoriety_set', 'receipt_set', 'receipt_set__receiptservices') \
+            .all() \
+            .order_by('-id')
+
+    def get_context_data(self, *, object_list=None, **kwargs):
+        context = super(PersonalAccountListView, self).get_context_data(object_list=object_list, **kwargs)
+        context.update(count_main_prices(context['object_list']))
+
+        return context
 
 
 class PersonalAccountUpdateView(UpdateView):
@@ -507,8 +543,10 @@ class PersonalAccountUpdateView(UpdateView):
 
             # add current flat to section's list of flats for displaying in frontend
             if context['section_flat'].get(self.object.flat.section.id):
-                if [self.object.flat.id, self.object.flat.number] not in context['section_flat'][self.object.flat.section.id]:
-                    context['section_flat'][self.object.flat.section.id].append([self.object.flat.id, self.object.flat.number])
+                if [self.object.flat.id, self.object.flat.number] not in context['section_flat'][
+                        self.object.flat.section.id]:
+                    context['section_flat'][self.object.flat.section.id].append(
+                        [self.object.flat.id, self.object.flat.number])
             else:
                 context['section_flat'][self.object.flat.section.id] = [[self.object.flat.id, self.object.flat.number]]
 
@@ -848,7 +886,8 @@ class ReceiptCreateView(CreateView):
         receipt_saved = form.save()
         for receipt_service_form in receipt_formset.forms:
             if receipt_service_form.cleaned_data.get('service') and receipt_service_form.cleaned_data.get('amount') \
-                    and receipt_service_form.cleaned_data.get('price') and receipt_service_form.cleaned_data.get('total_price'):
+                    and receipt_service_form.cleaned_data.get('price') and receipt_service_form.cleaned_data.get(
+                'total_price'):
                 form_saved = receipt_service_form.save(commit=False)
                 form_saved.receipt = receipt_saved
                 form_saved.save()
@@ -924,7 +963,8 @@ class ReceiptUpdateView(UpdateView):
         receipt_saved = form.save()
         for receipt_service_form in receipt_formset.forms:
             if receipt_service_form.cleaned_data.get('service') and receipt_service_form.cleaned_data.get('amount') \
-                    and receipt_service_form.cleaned_data.get('price') and receipt_service_form.cleaned_data.get('total_price'):
+                    and receipt_service_form.cleaned_data.get('price') and receipt_service_form.cleaned_data.get(
+                'total_price'):
                 form_saved = receipt_service_form.save(commit=False)
                 form_saved.receipt = receipt_saved
                 form_saved.save()
@@ -954,11 +994,20 @@ class ReceiptDetailView(DetailView):
 
 class ReceiptListView(ListView):
     model = Receipt
-    queryset = Receipt.objects\
-        .select_related('account', 'account__flat', 'account__flat__house', 'account__flat__section', 'account__flat__owner')\
-        .prefetch_related('receiptservices').all().order_by('-id') \
-        .annotate(summ=Sum('receiptservices__total_price'))
     template_name = 'administrator_panel/receipt-list.html'
+
+    def get_queryset(self):
+        return Receipt.objects \
+                      .select_related('account', 'account__flat', 'account__flat__house', 'account__flat__section',
+                                      'account__flat__owner') \
+                      .prefetch_related('receiptservices').all().order_by('-id') \
+                      .annotate(summ=Sum('receiptservices__total_price'))
+
+    def get_context_data(self, *, object_list=None, **kwargs):
+        context = super(ReceiptListView, self).get_context_data(object_list=object_list, **kwargs)
+        context.update(count_main_prices(PersonalAccount.objects.all()))
+
+        return context
 
 
 class EvidenceResponse(MultipleObjectMixin, View):
@@ -1108,8 +1157,9 @@ class NotorietyUpdateView(UpdateView):
 
     def get_object(self, queryset=None):
         try:
-            return Notoriety.objects\
-                .select_related('account', 'account__flat', 'account__flat__owner', 'manager', 'manager__role', 'article')\
+            return Notoriety.objects \
+                .select_related('account', 'account__flat', 'account__flat__owner', 'manager', 'manager__role',
+                                'article') \
                 .get(pk=self.kwargs.get('notoriety_pk'))
         except (Notoriety.DoesNotExist, KeyError, AttributeError):
             return None
@@ -1123,7 +1173,8 @@ class NotorietyUpdateView(UpdateView):
             .filter(flat__isnull=False, status='active', flat__owner__isnull=False)
         context['owners'] = set([account.flat.owner for account in context['personal_accounts']])
         context['articles'] = ArticlePayment.objects.filter(type__exact=context['type'])
-        context['managers'] = User.objects.select_related('role').filter(role__role__in=['director', 'manager', 'accountant'])
+        context['managers'] = User.objects.select_related('role').filter(
+            role__role__in=['director', 'manager', 'accountant'])
         return context
 
     def post(self, request, *args, **kwargs):
@@ -1144,6 +1195,12 @@ class NotorietyListView(ListView):
     model = Notoriety
     template_name = 'administrator_panel/notoriety-list.html'
     queryset = Notoriety.objects.select_related('article', 'account', 'account__flat__owner').all().order_by('-id')
+
+    def get_context_data(self, *, object_list=None, **kwargs):
+        context = super(NotorietyListView, self).get_context_data(object_list=object_list, **kwargs)
+        context.update(count_main_prices(PersonalAccount.objects.all()))
+
+        return context
 
 
 class NotorietyDeleteView(SingleObjectMixin, View):

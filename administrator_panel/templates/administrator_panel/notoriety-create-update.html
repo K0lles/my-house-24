@@ -46,7 +46,7 @@
                             <select class="form-select" id="id_owner" name="owner" onchange="setAccountsByOwner(this)">
                                 <option value="none">Вибрати...</option>
                                 {% for owner in owners %}
-                                    <option value="{{ owner.pk }}" {% if form.instance.account.flat.owner.pk == owner.pk or base_notoriety.account.flat.owner.pk == owner.pk %}selected{% endif %}>{{ owner.surname }} {{ owner.name }} {% if owner.father %}{{ owner.father }}{% endif %}</option>
+                                    <option value="{{ owner.pk }}" {% if form.instance.account.flat.owner.pk == owner.pk or base_notoriety.account.flat.owner.pk == owner.pk or base_account.flat.owner.pk == owner.pk %}selected{% endif %}>{{ owner.surname }} {{ owner.name }} {% if owner.father %}{{ owner.father }}{% endif %}</option>
                                 {% endfor %}
                             </select>
                             <p id="id_owner-errors" style="color: red;"></p>
@@ -65,6 +65,12 @@
                                     {% for account in personal_accounts %}
                                         {% if account.flat.owner.pk == base_notoriety.account.flat.owner.pk %}
                                             <option value="{{ account.pk }}" data-owner="{{ account.flat.owner.pk }}" {% if base_notoriety.account.pk == account.pk %}selected{% endif %}>{{ account.number }}</option>
+                                        {% endif %}
+                                    {% endfor %}
+                                {% elif base_account %}
+                                    {% for account in personal_accounts %}
+                                        {% if account.flat.owner.pk == account.flat.owner.pk %}
+                                            <option value="{{ account.pk }}" data-owner="{{ account.flat.owner.pk }}" {% if base_account.pk == account.pk %}selected{% endif %}>{{ account.number }}</option>
                                         {% endif %}
                                     {% endfor %}
                                 {% else %}

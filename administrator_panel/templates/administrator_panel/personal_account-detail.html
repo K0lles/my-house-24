@@ -24,7 +24,7 @@
                 </div>
                 <div class="col-sm-12 col-lg-6 text-right">
                     <div class="btn-group">
-                        <a class="btn btn-default {% if not object.flat or object.status == 'inactive' %}disabled{% endif %}" {% if object.flat %}href="#"{% endif %} style="margin-right: 10px;"><i class="fa fa-dollar"></i> Прийняти платіж</a>
+                        <a class="btn btn-default {% if not object.flat or object.status == 'inactive' %}disabled{% endif %}" {% if object.flat %}href="{% url 'notoriety-create' %}?type=income&account={{ object.pk }}"{% endif %} style="margin-right: 10px;"><i class="fa fa-dollar"></i> Прийняти платіж</a>
                         <a class="btn btn-default {% if not object.flat or object.status == 'inactive' %}disabled{% endif %}" {% if object.flat %}href="{% url 'receipt-create' %}?flat_id={{ object.flat.pk }}"{% endif %} style="margin-right: 10px;"><i class="fa fa-clone"></i> Оформити квитанцію</a>
                         <a class="btn btn-info" href="{% url 'personal-account-update' account_pk=object.pk %}">Редагувати особовий рахунок</a>
                     </div>
@@ -58,7 +58,7 @@
                         </tr>
                         <tr>
                             <th>Залишок</th>
-                            <td>{{ object.rest|floatformat:2 }} грн</td>
+                            <td {% if object.subtraction > 0 %}style="color: #109302;" {% elif object.subtraction < 0 %}style="color: #a20000;"{% endif %}>{% if object.subtraction %}{{ object.subtraction|floatformat:2 }} {% else %}0.00{% endif %} грн</td>
                         </tr>
                     </tbody>
                 </table>

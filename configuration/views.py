@@ -1,6 +1,8 @@
+from django.contrib.auth import authenticate, login, logout
 from django.db.models import ProtectedError
 from django.http import JsonResponse, Http404
 from django.shortcuts import render, redirect
+from django.views import View
 from django.views.generic import CreateView, DeleteView, ListView, DetailView, UpdateView
 
 from .models import *
@@ -429,3 +431,38 @@ def delete_article(request, pk):
     except (ArticlePayment.DoesNotExist, ProtectedError):
         return JsonResponse({'answer': 'failed'})
     return JsonResponse({'answer': 'success'})
+
+
+class UserLoginView(CreateView):
+    model = User
+    template_name = 'configuration/user-login.html'
+    form_class = UserRegistrationForm
+
+    def get(self, request, *args, **kwargs):
+        if request.user.is_authenticated:
+            return redirect('flats')
+        self.object = None
+        context = self.get_context_data()
+        return self.render_to_response(context)
+
+    def post(self, request, *args, **kwargs):
+        email = request.POST.get('email')
+        password = request.POST.get('password')
+        if email and password:
+            user = authenticate(username=email,
+                                password=password)
+            if user and user.role.role == 'user':
+                login(request, user)
+                return redirect('flats')
+        self.object = None
+        context = self.get_context_data()
+        context['error'] = 'Неправильно введені дані'
+        return self.render_to_response(context=context)
+
+
+class UserLogoutView(View):
+    def get(self, request, *args, **kwargs):
+        if request.user.is_authenticated:
+            logout(request)
+            print('was logged in')
+        return redirect('user-login')

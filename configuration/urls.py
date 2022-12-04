@@ -25,4 +25,6 @@ urlpatterns = [
     path('article-payment/create/', ArticlePaymentCreateView.as_view(), name='article-payment-create'),
     path('article-payment/update/<int:pk>/', ArticlePaymentUpdateView.as_view(), name='article-payment-update'),
     path('article-payment/delete/<int:pk>/', delete_article, name='delete-article'),
+    path('cabinet/login/', UserLoginView.as_view(), name='user-login'),
+    path('cabinet/logout/', UserLogoutView.as_view(), name='user-logout'),
 ]

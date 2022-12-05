@@ -79,7 +79,7 @@
                                 </div>
                             </div>
                             <div class="col-xs-12">
-                                <button type="submit" class="btn btn-primary btn-block" name="login-button">Вхід</button>
+                                <button type="submit" class="btn btn-primary btn-block" name="login-button" onclick="validateAll()">Вхід</button>
                             </div>
                         </div>
                     </form>
@@ -130,7 +130,27 @@
             return false;
         }
     return true;
-}
+    }
+
+    function validateAll() {
+        event.preventDefault();
+        let is_valid = true;
+        $('#login-form').find(`input[type='email']`).each(function () {
+            if (!emailTypeValidationLocal(this)) is_valid = false;
+        })
+
+        $('#login-form').find(`input[type='password']`).each(function () {
+            if (!passwordTypeValidationLocal(this)) is_valid = false;
+        })
+
+        if (is_valid) {
+            $('#login-form').submit();
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
 
 </script>
 <script src="{% static 'scripts.js' %}"></script>

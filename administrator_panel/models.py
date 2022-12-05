@@ -120,6 +120,7 @@ class Message(models.Model):
 
 
 class Template(models.Model):
+    name = models.CharField(max_length=255)
     file = models.FileField(upload_to='receipts/templates')
     is_default = models.BooleanField(default=False, verbose_name='За замовчуванням')
 

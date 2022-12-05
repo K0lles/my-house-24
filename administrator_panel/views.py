@@ -1276,3 +1276,67 @@ class NotorietyDeleteView(SingleObjectMixin, View):
         except (Notoriety.DoesNotExist, KeyError, AttributeError):
             if self.request.is_ajax():
                 return JsonResponse({'answer': 'failed'})
+
+
+class ReceiptTemplateCreateView(CreateView):
+    model = Template
+    template_name = 'administrator_panel/template-create.html'
+    form_class = ReceiptTemplateForm
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['object_list'] = Template.objects.all().order_by('id')
+        return context
+
+    def post(self, request, *args, **kwargs):
+        form = self.get_form_class()(request.POST, request.FILES)
+        if form.is_valid():
+            form.save()
+            return redirect('template-create')
+        return redirect('template-create')
+
+
+class TemplateDefault(SingleObjectMixin, View):
+    model = Template
+    pk_url_kwarg = 'template_pk'
+
+    def get_object(self, queryset=None):
+        try:
+            return Template.objects.get(pk=self.kwargs.get('template_pk'))
+        except Template.DoesNotExist:
+            return None
+
+    def get(self, request, *args, **kwargs):
+        obj = self.get_object()
+        if obj:
+            try:
+                another_default = Template.objects.get(is_default=True)
+                another_default.is_default = False
+                another_default.save()
+            except Template.DoesNotExist:
+                pass
+            obj.is_default = True
+            obj.save()
+            return redirect('template-create')
+        return redirect('template-create')
+
+
+class TemplateDeleteView(SingleObjectMixin, View):
+    model = Template
+    pk_url_kwarg = 'template_pk'
+
+    def get_object(self, queryset=None):
+        try:
+            return Template.objects.get(pk=self.kwargs.get('template_pk'))
+        except Template.DoesNotExist:
+            return None
+
+    def get(self, request, *args, **kwargs):
+        obj = self.get_object()
+        if obj:
+            if not obj.is_default:
+                obj.delete()
+                return JsonResponse({'answer': 'success'})
+            return JsonResponse({'answer': 'template is default'})
+        return JsonResponse({'answer': 'failed'})
+

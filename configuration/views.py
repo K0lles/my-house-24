@@ -464,5 +464,4 @@ class UserLogoutView(View):
     def get(self, request, *args, **kwargs):
         if request.user.is_authenticated:
             logout(request)
-            print('was logged in')
         return redirect('user-login')

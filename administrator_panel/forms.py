@@ -5,7 +5,7 @@ from phonenumber_field.formfields import PhoneNumberField
 
 from configuration.models import User, Service
 from .models import House, HouseUser, Section, Floor, PersonalAccount, Flat, Evidence, Receipt, ReceiptService, \
-    Notoriety
+    Notoriety, Template
 from configuration.models import ArticlePayment
 
 
@@ -299,3 +299,10 @@ class NotorietyForm(ModelForm):
             self._errors['type'] = 'Сталася помилка'
 
         return cleaned_data
+
+
+class ReceiptTemplateForm(ModelForm):
+
+    class Meta:
+        model = Template
+        exclude = ('is_default',)

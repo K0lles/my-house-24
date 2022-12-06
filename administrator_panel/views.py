@@ -1,4 +1,4 @@
-import json
+import openpyxl
 
 from django.db.models import Q, Count, Sum, Func, F, Value, Case, When, FloatField, Subquery, OuterRef, QuerySet
 from django.db.models.functions import Concat
@@ -1339,4 +1339,40 @@ class TemplateDeleteView(SingleObjectMixin, View):
                 return JsonResponse({'answer': 'success'})
             return JsonResponse({'answer': 'template is default'})
         return JsonResponse({'answer': 'failed'})
+
+
+class BuildReceiptFileView(SingleObjectMixin, View):
+    model = Receipt
+
+    def get(self, request, *args, **kwargs):
+        try:
+            template = Template.objects.get(pk=request.GET.get('template')).file
+            receipt = Receipt.objects.select_related('account',
+                                                     'account__flat',
+                                                     'account__flat__owner')\
+                .prefetch_related('receiptservices', 'receiptservices__service')\
+                .get(pk=request.GET.get('receipt'))
+            payment_requisites = ArticlePayment.objects.first()
+            wb = openpyxl.Workbook()
+            base_template = openpyxl.load_workbook(filename=template.path)
+            base_sheet = base_template.active
+            ws = wb.create_sheet(f'receipt-№{receipt.number}_{timezone.now().day}.{timezone.now().month}.{timezone.now().year}')
+            reserved_words = {
+                '%payCompany%': payment_requisites.name if payment_requisites else 'N\A',
+                '%accountNumber%': receipt.account.number,
+                '%invoiceNumber%': receipt.number,
+                '%invoiceDate%': f'{receipt.date_from.day}.{receipt.date_from.month}.{receipt.date_from.year}',
+                '%invoiceAddress%': f'{receipt.account.flat.owner.surname} {receipt.account.flat.owner.name} {receipt.account.flat.owner.father}' if receipt.account.flat.owner else 'N\A',
+            }
+            for index, row in enumerate(base_sheet):
+                for index_second, cell in enumerate(row):
+                    val = base_sheet.cell(row=index+1, column=index_second+1).value
+                    if val:
+                        if val.startswith('%'):
+                            pass
+                        print(base_sheet.cell(row=index+1, column=index_second+1).value)
+            return JsonResponse({'answer': 'okey'})
+        except (Template.DoesNotExist, Receipt.DoesNotExist):
+            return JsonResponse({'answer': 'failed'})
+
 

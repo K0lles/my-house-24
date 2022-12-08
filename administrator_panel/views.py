@@ -495,14 +495,17 @@ def calculate_notoriety_and_receipt_sum(personal_accounts: QuerySet):
 
     return {'personal_accounts': personal_accounts}
 
-
 def calculate_totals(personal_accounts: QuerySet):
     """Calculating sum of overall cash register, overall sum by all accounts and overall sum of debt by all accounts"""
     # count sum of all notorieties
     checkout_condition = Notoriety.objects.all().values('sum') \
         .aggregate(
-        sum=Sum('sum', filter=Q(type='income'), output_field=FloatField()) - Sum('sum', filter=Q(type='outcome'),
-                                                                                 output_field=FloatField()))
+        notoriety_income_sum=Sum('sum', filter=Q(type='income'), output_field=FloatField()),
+        notoriety_outcome_sum=Sum('sum', filter=Q(type='outcome'),output_field=FloatField()))
+    checkout_condition = {
+        'sum': (checkout_condition.get('notoriety_income_sum') if checkout_condition.get('notoriety_income_sum') else 0.00)
+               - (checkout_condition.get('notoriety_outcome_sum') if checkout_condition.get('notoriety_outcome_sum') else 0.00)
+    }
 
     # count sum by all account's positive rest
     sum_by_account = personal_accounts.aggregate(
@@ -1346,12 +1349,31 @@ class BuildReceiptFileView(SingleObjectMixin, View):
 
     def get(self, request, *args, **kwargs):
         try:
+            print(request.GET)
+            print(request.GET.get('template'))
             template = Template.objects.get(pk=request.GET.get('template')).file
             receipt = Receipt.objects.select_related('account',
                                                      'account__flat',
                                                      'account__flat__owner')\
-                .prefetch_related('receiptservices', 'receiptservices__service')\
-                .get(pk=request.GET.get('receipt'))
+                .prefetch_related('receiptservices',
+                                  'receiptservices__service',
+                                  'account__notoriety_set')\
+                .filter(pk=request.GET.get('receipt'))
+            if receipt.count() == 0:
+                raise Receipt.DoesNotExist()
+            sum_income_notorieties = receipt\
+                .annotate(notoriety_income_sum=Sum('account__notoriety__sum',
+                         filter=Q(account__notoriety__type='income'),
+                         output_field=FloatField())).values('notoriety_income_sum')
+            print(sum_income_notorieties)
+
+            sum_outcome_notorieties = receipt\
+                .annotate(notoriety_outcome_sum=Sum('account__notoriety__sum',
+                         filter=Q(account__notoriety__type='outcome'),
+                         output_field=FloatField())).values('notoriety_outcome_sum')
+
+            print(sum_outcome_notorieties)
+            receipt = receipt[0]
             payment_requisites = ArticlePayment.objects.first()
             wb = openpyxl.Workbook()
             base_template = openpyxl.load_workbook(filename=template.path)
@@ -1363,7 +1385,10 @@ class BuildReceiptFileView(SingleObjectMixin, View):
                 '%invoiceNumber%': receipt.number,
                 '%invoiceDate%': f'{receipt.date_from.day}.{receipt.date_from.month}.{receipt.date_from.year}',
                 '%invoiceAddress%': f'{receipt.account.flat.owner.surname} {receipt.account.flat.owner.name} {receipt.account.flat.owner.father}' if receipt.account.flat.owner else 'N\A',
+                '%accountBalance%': (sum_income_notorieties[0].get('notoriety_income_sum') if sum_income_notorieties[0].get('notoriety_income_sum') else 0.00) -
+                                    (sum_outcome_notorieties[0].get('notoriety_outcome_sum') if sum_outcome_notorieties[0].get('notoriety_outcome_sum') else 0.00)
             }
+            print(reserved_words)
             for index, row in enumerate(base_sheet):
                 for index_second, cell in enumerate(row):
                     val = base_sheet.cell(row=index+1, column=index_second+1).value

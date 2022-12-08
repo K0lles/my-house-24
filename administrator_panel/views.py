@@ -13,6 +13,7 @@ from django.views.generic.list import MultipleObjectMixin
 
 from configuration.models import Role, Tariff, Service, MeasurementUnit
 from .forms import *
+from my_house_24 import settings
 
 
 class HouseCreateView(CreateView):
@@ -494,6 +495,7 @@ def calculate_notoriety_and_receipt_sum(personal_accounts: QuerySet):
                          output_field=FloatField()))
 
     return {'personal_accounts': personal_accounts}
+
 
 def calculate_totals(personal_accounts: QuerySet):
     """Calculating sum of overall cash register, overall sum by all accounts and overall sum of debt by all accounts"""
@@ -1349,9 +1351,8 @@ class BuildReceiptFileView(SingleObjectMixin, View):
 
     def get(self, request, *args, **kwargs):
         try:
-            print(request.GET)
-            print(request.GET.get('template'))
             template = Template.objects.get(pk=request.GET.get('template')).file
+
             receipt = Receipt.objects.select_related('account',
                                                      'account__flat',
                                                      'account__flat__owner')\
@@ -1361,43 +1362,49 @@ class BuildReceiptFileView(SingleObjectMixin, View):
                 .filter(pk=request.GET.get('receipt'))
             if receipt.count() == 0:
                 raise Receipt.DoesNotExist()
-            sum_income_notorieties = receipt\
-                .annotate(notoriety_income_sum=Sum('account__notoriety__sum',
-                         filter=Q(account__notoriety__type='income'),
-                         output_field=FloatField())).values('notoriety_income_sum')
-            print(sum_income_notorieties)
 
-            sum_outcome_notorieties = receipt\
-                .annotate(notoriety_outcome_sum=Sum('account__notoriety__sum',
-                         filter=Q(account__notoriety__type='outcome'),
-                         output_field=FloatField())).values('notoriety_outcome_sum')
+            # get account for calculating the total sum on account
+            personal_account = PersonalAccount.objects\
+                .select_related('flat', 'flat__section', 'flat__house', 'flat__owner') \
+                .prefetch_related('notoriety_set', 'receipt_set', 'receipt_set__receiptservices')\
+                .filter(pk=receipt[0].account.pk)
+            if personal_account.count() == 0:
+                raise PersonalAccount.DoesNotExist()
 
-            print(sum_outcome_notorieties)
+            personal_account = calculate_notoriety_and_receipt_sum(personal_account)['personal_accounts']
+            print(personal_account)
+            receipt = receipt.annotate(receipt_sum=Sum('receiptservices__total_price'))
+
             receipt = receipt[0]
             payment_requisites = ArticlePayment.objects.first()
+
             wb = openpyxl.Workbook()
             base_template = openpyxl.load_workbook(filename=template.path)
             base_sheet = base_template.active
             ws = wb.create_sheet(f'receipt-№{receipt.number}_{timezone.now().day}.{timezone.now().month}.{timezone.now().year}')
+
             reserved_words = {
-                '%payCompany%': payment_requisites.name if payment_requisites else 'N\A',
+                '%payCompany%': payment_requisites.name if payment_requisites else 'N/A',
                 '%accountNumber%': receipt.account.number,
                 '%invoiceNumber%': receipt.number,
                 '%invoiceDate%': f'{receipt.date_from.day}.{receipt.date_from.month}.{receipt.date_from.year}',
                 '%invoiceAddress%': f'{receipt.account.flat.owner.surname} {receipt.account.flat.owner.name} {receipt.account.flat.owner.father}' if receipt.account.flat.owner else 'N\A',
-                '%accountBalance%': (sum_income_notorieties[0].get('notoriety_income_sum') if sum_income_notorieties[0].get('notoriety_income_sum') else 0.00) -
-                                    (sum_outcome_notorieties[0].get('notoriety_outcome_sum') if sum_outcome_notorieties[0].get('notoriety_outcome_sum') else 0.00)
+                '%accountBalance%': personal_account[0].subtraction,
+                '%total%': receipt.receipt_sum,
+                '%invoiceMonth%': f'{receipt.date_from.month} {receipt.date_from.year}',
+                '%totalDebt%': abs(personal_account[0].subtraction) if personal_account[0].subtraction < 0 else 0.00,
+
             }
-            print(reserved_words)
             for index, row in enumerate(base_sheet):
                 for index_second, cell in enumerate(row):
                     val = base_sheet.cell(row=index+1, column=index_second+1).value
                     if val:
                         if val.startswith('%'):
-                            pass
-                        print(base_sheet.cell(row=index+1, column=index_second+1).value)
+                            ws.cell(row=index+1, column=index_second+1).value = reserved_words.get(val)
+                        else:
+                            ws.cell(row=index+1, column=index_second+1).value = val
+                        print(ws.cell(row=index+1, column=index_second+1).value)
+            wb.save(f'{settings.MEDIA_ROOT}/receipts/receipt-№{receipt.number}_{timezone.now().day}.{timezone.now().month}.{timezone.now().year}.xlsx')
             return JsonResponse({'answer': 'okey'})
-        except (Template.DoesNotExist, Receipt.DoesNotExist):
+        except (Template.DoesNotExist, Receipt.DoesNotExist, PersonalAccount.DoesNotExist):
             return JsonResponse({'answer': 'failed'})
-
-

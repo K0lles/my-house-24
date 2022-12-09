@@ -1372,7 +1372,6 @@ class BuildReceiptFileView(SingleObjectMixin, View):
                 raise PersonalAccount.DoesNotExist()
 
             personal_account = calculate_notoriety_and_receipt_sum(personal_account)['personal_accounts']
-            print(personal_account)
             receipt = receipt.annotate(receipt_sum=Sum('receiptservices__total_price'))
 
             receipt = receipt[0]
@@ -1381,7 +1380,10 @@ class BuildReceiptFileView(SingleObjectMixin, View):
             wb = openpyxl.Workbook()
             base_template = openpyxl.load_workbook(filename=template.path)
             base_sheet = base_template.active
-            ws = wb.create_sheet(f'receipt-№{receipt.number}_{timezone.now().day}.{timezone.now().month}.{timezone.now().year}')
+            # ws = wb.create_sheet(f'receipt-№{receipt.number}_{timezone.now().day}.{timezone.now().month}.{timezone.now().year}')
+
+            import locale
+            locale.setlocale(locale.LC_ALL, 'uk_UA.utf8')
 
             reserved_words = {
                 '%payCompany%': payment_requisites.name if payment_requisites else 'N/A',
@@ -1391,19 +1393,31 @@ class BuildReceiptFileView(SingleObjectMixin, View):
                 '%invoiceAddress%': f'{receipt.account.flat.owner.surname} {receipt.account.flat.owner.name} {receipt.account.flat.owner.father}' if receipt.account.flat.owner else 'N\A',
                 '%accountBalance%': personal_account[0].subtraction,
                 '%total%': receipt.receipt_sum,
-                '%invoiceMonth%': f'{receipt.date_from.month} {receipt.date_from.year}',
+                '%invoiceMonth%': f'{receipt.date_from.strftime("%B")} {receipt.date_from.year}',
                 '%totalDebt%': abs(personal_account[0].subtraction) if personal_account[0].subtraction < 0 else 0.00,
-
             }
+
+            from copy import copy
+
             for index, row in enumerate(base_sheet):
                 for index_second, cell in enumerate(row):
                     val = base_sheet.cell(row=index+1, column=index_second+1).value
+
+                    # copy styles from parent worksheet
+                    if base_sheet.cell(row=index+1, column=index_second+1).has_style:
+                        wb.worksheets[0].cell(row=index + 1, column=index_second + 1).font = copy(base_sheet.cell(
+                            row=index+1, column=index_second+1).font)
+                        wb.worksheets[0].cell(row=index + 1, column=index_second + 1).border = copy(base_sheet.cell(
+                            row=index + 1, column=index_second + 1).border)
+                        wb.worksheets[0].cell(row=index + 1, column=index_second + 1).fill = copy(base_sheet.cell(
+                            row=index + 1, column=index_second + 1).fill)
+
                     if val:
                         if val.startswith('%'):
-                            ws.cell(row=index+1, column=index_second+1).value = reserved_words.get(val)
+                            wb.worksheets[0].cell(row=index+1, column=index_second+1).value = reserved_words.get(val)
                         else:
-                            ws.cell(row=index+1, column=index_second+1).value = val
-                        print(ws.cell(row=index+1, column=index_second+1).value)
+                            wb.worksheets[0].cell(row=index+1, column=index_second+1).value = val
+                        print(wb.worksheets[0].cell(row=index+1, column=index_second+1).value)
             wb.save(f'{settings.MEDIA_ROOT}/receipts/receipt-№{receipt.number}_{timezone.now().day}.{timezone.now().month}.{timezone.now().year}.xlsx')
             return JsonResponse({'answer': 'okey'})
         except (Template.DoesNotExist, Receipt.DoesNotExist, PersonalAccount.DoesNotExist):

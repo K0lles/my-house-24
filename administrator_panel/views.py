@@ -1399,6 +1399,17 @@ class BuildReceiptFileView(SingleObjectMixin, View):
 
             from copy import copy
 
+            # copy merged cells from base template
+            for merged_range in base_sheet.merged_cells:
+                wb.worksheets[0].merge_cells(str(merged_range))
+
+            # copy width and height of each row
+            for index, rd in base_sheet.row_dimensions.items():
+                wb.worksheets[0].row_dimensions[index] = copy(rd)
+
+            for index, cd in base_sheet.column_dimensions.items():
+                wb.worksheets[0].column_dimensions[index] = copy(cd)
+
             for index, row in enumerate(base_sheet):
                 for index_second, cell in enumerate(row):
                     val = base_sheet.cell(row=index+1, column=index_second+1).value
@@ -1417,7 +1428,6 @@ class BuildReceiptFileView(SingleObjectMixin, View):
                             wb.worksheets[0].cell(row=index+1, column=index_second+1).value = reserved_words.get(val)
                         else:
                             wb.worksheets[0].cell(row=index+1, column=index_second+1).value = val
-                        print(wb.worksheets[0].cell(row=index+1, column=index_second+1).value)
             wb.save(f'{settings.MEDIA_ROOT}/receipts/receipt-№{receipt.number}_{timezone.now().day}.{timezone.now().month}.{timezone.now().year}.xlsx')
             return JsonResponse({'answer': 'okey'})
         except (Template.DoesNotExist, Receipt.DoesNotExist, PersonalAccount.DoesNotExist):

@@ -1358,6 +1358,7 @@ class BuildReceiptFileView(SingleObjectMixin, View):
                                                      'account__flat__owner')\
                 .prefetch_related('receiptservices',
                                   'receiptservices__service',
+                                  'receiptservices__service__measurement_unit',
                                   'account__notoriety_set')\
                 .filter(pk=request.GET.get('receipt'))
             if receipt.count() == 0:
@@ -1375,12 +1376,11 @@ class BuildReceiptFileView(SingleObjectMixin, View):
             receipt = receipt.annotate(receipt_sum=Sum('receiptservices__total_price'))
 
             receipt = receipt[0]
-            payment_requisites = ArticlePayment.objects.first()
+            payment_requisites = PaymentRequisite.objects.first()
 
             wb = openpyxl.Workbook()
             base_template = openpyxl.load_workbook(filename=template.path)
             base_sheet = base_template.active
-            # ws = wb.create_sheet(f'receipt-№{receipt.number}_{timezone.now().day}.{timezone.now().month}.{timezone.now().year}')
 
             import locale
             locale.setlocale(locale.LC_ALL, 'uk_UA.utf8')
@@ -1392,7 +1392,7 @@ class BuildReceiptFileView(SingleObjectMixin, View):
                 '%invoiceDate%': f'{receipt.date_from.day}.{receipt.date_from.month}.{receipt.date_from.year}',
                 '%invoiceAddress%': f'{receipt.account.flat.owner.surname} {receipt.account.flat.owner.name} {receipt.account.flat.owner.father}' if receipt.account.flat.owner else 'N\A',
                 '%accountBalance%': personal_account[0].subtraction,
-                '%total%': receipt.receipt_sum,
+                '%total%': receipt.receipt_sum if receipt.receipt_sum else 0.00,
                 '%invoiceMonth%': f'{receipt.date_from.strftime("%B")} {receipt.date_from.year}',
                 '%totalDebt%': abs(personal_account[0].subtraction) if personal_account[0].subtraction < 0 else 0.00,
             }
@@ -1410,6 +1410,8 @@ class BuildReceiptFileView(SingleObjectMixin, View):
             for index, cd in base_sheet.column_dimensions.items():
                 wb.worksheets[0].column_dimensions[index] = copy(cd)
 
+            start_moving = None
+            end_moving = None
             for index, row in enumerate(base_sheet):
                 for index_second, cell in enumerate(row):
                     val = base_sheet.cell(row=index+1, column=index_second+1).value
@@ -1424,10 +1426,64 @@ class BuildReceiptFileView(SingleObjectMixin, View):
                             row=index + 1, column=index_second + 1).fill)
 
                     if val:
-                        if val.startswith('%'):
+
+                        if val.startswith('%') and val not in ['%serviceName%', '%servicePrice%', '%serviceUnit%', '%serviceAmount%', '%serviceTotal%']:
+                            # if val == '%LOOP STARTING%':
+                            #     # wb.worksheets[0].insert_rows(idx=index + 2, amount=receipt.receiptservices.all().count())
+                            #     wb.worksheets[0].move_range(
+                            #         f'{base_sheet.cell(row=index + 2, column=index_second + 1).coordinate}:{base_sheet.cell(row=index + 2, column=index_second + 4).coordinate}',
+                            #         rows=receipt.receiptservices.all().count(),
+                            #         cols=0
+                            #     )
+                            #     continue
+                            # if val in ['%serviceName%', '%servicePrice%', '%serviceUnit%', '%serviceAmount%', '%serviceTotal%']:
+                            #     set_service_info(val,
+                            #                      wb.worksheets[0].cell(row=index + 1, column=index_second + 1).coordinate,
+                            #                      wb,
+                            #                      index + 1,
+                            #                      index_second + 1)
+                            #     continue
+                            # if val == '%total%':
+                            #     wb.worksheets[0].cell(row=index + 1, column=index_second + 1 + receipt.receiptservices.all().count()).value = reserved_words.get(val)
+                            #     continue
+                            if val == '%LOOP STARTING%':
+                                start_moving = base_sheet.cell(row=index+1, column=index_second+1).coordinate
+                                continue
+                            if val == '%LOOP ENDIND%':
+                                end_moving = base_sheet.cell(row=index+1, column=index_second+1).coordinate
+
                             wb.worksheets[0].cell(row=index+1, column=index_second+1).value = reserved_words.get(val)
-                        else:
-                            wb.worksheets[0].cell(row=index+1, column=index_second+1).value = val
+                            continue
+
+                        # if val == 'РАЗОМ:':
+                        #     print(wb.worksheets[0].cell(row=index + 1, column=index_second + 1 + receipt.receiptservices.all().count()).coordinate)
+                        #     wb.worksheets[0][wb.worksheets[0].cell(row=index + 1, column=index_second + 1 + receipt.receiptservices.all().count()).coordinate] = val
+                            #wb.worksheets[0].cell(row=index + 1, column=index_second + 1 + receipt.receiptservices.all().count()).value = val
+                        wb.worksheets[0].cell(row=index+1, column=index_second+1).value = val
+            wb.worksheets[0].move_range(f'{start_moving}:{end_moving}', rows=receipt.receiptservices.all().count(), cols=0)
+
+            def set_service_info(name: str, workbook: openpyxl.Workbook, starting_row: int, starting_column: int):
+                """Inner function for passing into template service's information"""
+
+                if name == '%serviceName%':
+                    receipt_services = [receipt_service.service.name for receipt_service in receipt.receiptservices.all()]
+                elif name == '%serviceUnit%':
+                    receipt_services = [receipt_service.service.measurement_unit.name for receipt_service in receipt.receiptservices.all()]
+                elif name == '%serviceAmount%':
+                    receipt_services = [receipt_service.amount for receipt_service in receipt.receiptservices.all()]
+                else:
+                    receipt_services = [receipt_service.total_price for receipt_service in receipt.receiptservices.all()]
+
+                for row_index in range(starting_row, starting_row + receipt.receiptservices.all().count()):
+                    workbook.worksheets[0].cell(row=row_index, column=starting_column)\
+                        .value = receipt_services[row_index - starting_row]
+
+            for index, row in enumerate(base_sheet):
+                for index_second, cell in enumerate(row):
+                    val = base_sheet.cell(row=index + 1, column=index_second + 1).value
+                    if val in ['%serviceName%', '%servicePrice%', '%serviceUnit%', '%serviceAmount%', '%serviceTotal%']:
+                        set_service_info(val, wb, index + 1, index_second + 1)
+
             wb.save(f'{settings.MEDIA_ROOT}/receipts/receipt-№{receipt.number}_{timezone.now().day}.{timezone.now().month}.{timezone.now().year}.xlsx')
             return JsonResponse({'answer': 'okey'})
         except (Template.DoesNotExist, Receipt.DoesNotExist, PersonalAccount.DoesNotExist):

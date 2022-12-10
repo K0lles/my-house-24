@@ -6,7 +6,7 @@ from phonenumber_field.formfields import PhoneNumberField
 from configuration.models import User, Service
 from .models import House, HouseUser, Section, Floor, PersonalAccount, Flat, Evidence, Receipt, ReceiptService, \
     Notoriety, Template
-from configuration.models import ArticlePayment
+from configuration.models import PaymentRequisite, ArticlePayment
 
 
 class HouseForm(ModelForm):

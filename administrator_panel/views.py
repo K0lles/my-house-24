@@ -1412,6 +1412,7 @@ class BuildReceiptFileView(SingleObjectMixin, View):
 
             start_moving = None
             end_moving = None
+            executed_moving = False
             for index, row in enumerate(base_sheet):
                 for index_second, cell in enumerate(row):
                     val = base_sheet.cell(row=index+1, column=index_second+1).value
@@ -1447,10 +1448,11 @@ class BuildReceiptFileView(SingleObjectMixin, View):
                             #     wb.worksheets[0].cell(row=index + 1, column=index_second + 1 + receipt.receiptservices.all().count()).value = reserved_words.get(val)
                             #     continue
                             if val == '%LOOP STARTING%':
-                                start_moving = base_sheet.cell(row=index+1, column=index_second+1).coordinate
+                                start_moving = base_sheet.cell(row=index+1, column=index_second+1)
                                 continue
                             if val == '%LOOP ENDIND%':
-                                end_moving = base_sheet.cell(row=index+1, column=index_second+1).coordinate
+                                end_moving = base_sheet.cell(row=index+1, column=index_second+1)
+                                continue
 
                             wb.worksheets[0].cell(row=index+1, column=index_second+1).value = reserved_words.get(val)
                             continue
@@ -1460,7 +1462,7 @@ class BuildReceiptFileView(SingleObjectMixin, View):
                         #     wb.worksheets[0][wb.worksheets[0].cell(row=index + 1, column=index_second + 1 + receipt.receiptservices.all().count()).coordinate] = val
                             #wb.worksheets[0].cell(row=index + 1, column=index_second + 1 + receipt.receiptservices.all().count()).value = val
                         wb.worksheets[0].cell(row=index+1, column=index_second+1).value = val
-            wb.worksheets[0].move_range(f'{start_moving}:{end_moving}', rows=receipt.receiptservices.all().count(), cols=0)
+            # wb.worksheets[0].move_range(f'{start_moving}:{end_moving}', rows=receipt.receiptservices.all().count(), cols=0)
 
             def set_service_info(name: str, workbook: openpyxl.Workbook, starting_row: int, starting_column: int):
                 """Inner function for passing into template service's information"""
@@ -1475,12 +1477,20 @@ class BuildReceiptFileView(SingleObjectMixin, View):
                     receipt_services = [receipt_service.total_price for receipt_service in receipt.receiptservices.all()]
 
                 for row_index in range(starting_row, starting_row + receipt.receiptservices.all().count()):
+                    if name == '%serviceName%':
+                        start_moving.row += 1
+                        end_moving.row += 1
+                        workbook.worksheets[0].move_range(f'{start_moving.coordinate}:{end_moving.coordinate}', rows=1, cols=0)
+
                     workbook.worksheets[0].cell(row=row_index, column=starting_column)\
                         .value = receipt_services[row_index - starting_row]
+                    if name == '%serviceTotal%':
+                        pass
+                    workbook.worksheets[0].cell(row=row_index, column=starting_column)._style = copy(workbook.worksheets[0].cell(row=row_index - 1, column=starting_column)._style)
 
-            for index, row in enumerate(base_sheet):
+            for index, row in enumerate(wb.worksheets[0]):
                 for index_second, cell in enumerate(row):
-                    val = base_sheet.cell(row=index + 1, column=index_second + 1).value
+                    val = wb.worksheets[0].cell(row=index + 1, column=index_second + 1).value
                     if val in ['%serviceName%', '%servicePrice%', '%serviceUnit%', '%serviceAmount%', '%serviceTotal%']:
                         set_service_info(val, wb, index + 1, index_second + 1)
 

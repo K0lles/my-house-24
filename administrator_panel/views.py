@@ -1,4 +1,5 @@
 import openpyxl
+from openpyxl.utils import get_column_letter
 
 from django.db.models import Q, Count, Sum, Func, F, Value, Case, When, FloatField, Subquery, OuterRef, QuerySet
 from django.db.models.functions import Concat
@@ -1429,10 +1430,10 @@ class BuildReceiptFileView(SingleObjectMixin, View):
 
                         if val.startswith('%') and val not in ['%serviceName%', '%servicePrice%', '%serviceUnit%', '%serviceAmount%', '%serviceTotal%']:
                             if val == '%LOOP STARTING%':
-                                start_moving = base_sheet.cell(row=index+1, column=index_second+1)
+                                start_moving = base_sheet.cell(row=index+2, column=index_second+1)
                                 continue
                             if val == '%LOOP ENDING%':
-                                end_moving = base_sheet.cell(row=index+1, column=index_second+1)
+                                end_moving = base_sheet.cell(row=index+2, column=index_second+1)
                                 continue
 
                             wb.worksheets[0].cell(row=index+1, column=index_second+1).value = reserved_words.get(val)
@@ -1440,7 +1441,20 @@ class BuildReceiptFileView(SingleObjectMixin, View):
                         wb.worksheets[0].cell(row=index+1, column=index_second+1).value = val
 
             # moving footer of cycle for correct display receipt services
-            wb.worksheets[0].move_range(f'{start_moving.coordinate}:{end_moving.coordinate}', rows=receipt.receiptservices.all().count(), cols=0)
+            wb.worksheets[0].move_range(f'{start_moving.coordinate}:{end_moving.coordinate}', rows=receipt.receiptservices.all().count()-2, cols=0)
+            current_total_row = start_moving.row + receipt.receiptservices.all().count() - 2
+
+            # merging cells in rows with services' totals
+            wb.worksheets[0].merge_cells(
+                f'{get_column_letter(start_moving.column)}{current_total_row}:{get_column_letter(start_moving.column + 1)}{current_total_row}')
+            wb.worksheets[0].merge_cells(
+                f'{get_column_letter(start_moving.column + 2)}{current_total_row}:{get_column_letter(start_moving.column + 3)}{current_total_row}')
+            wb.worksheets[0].merge_cells(
+                f'{get_column_letter(start_moving.column + 4)}{current_total_row}:{get_column_letter(start_moving.column + 5)}{current_total_row}')
+            wb.worksheets[0].merge_cells(
+                f'{get_column_letter(start_moving.column + 6)}{current_total_row}:{get_column_letter(start_moving.column + 7)}{current_total_row}')
+            wb.worksheets[0].merge_cells(
+                f'{get_column_letter(start_moving.column + 8)}{current_total_row}:{get_column_letter(start_moving.column + 10)}{current_total_row}')
 
             def set_service_info(name: str, workbook: openpyxl.Workbook, starting_row: int, starting_column: int):
                 """Inner function for passing into template service's information"""
@@ -1451,43 +1465,32 @@ class BuildReceiptFileView(SingleObjectMixin, View):
                     receipt_services = [receipt_service.service.measurement_unit.name for receipt_service in receipt.receiptservices.all()]
                 elif name == '%serviceAmount%':
                     receipt_services = [receipt_service.amount for receipt_service in receipt.receiptservices.all()]
+                elif name == '%servicePrice%':
+                    receipt_services = [receipt_service.price for receipt_service in receipt.receiptservices.all()]
                 else:
                     receipt_services = [receipt_service.total_price for receipt_service in receipt.receiptservices.all()]
 
                 for row_index in range(starting_row, starting_row + receipt.receiptservices.all().count()):
-                    # try:
-                    #     if name == '%serviceName%':
-                    #         start_moving.row += 1
-                    #         end_moving.row += 1
-                    #         workbook.worksheets[0].move_range(f'{start_moving.coordinate}:{end_moving.coordinate}', rows=1, cols=0)
-                    # except AttributeError:
-                    #     pass
 
-                    if row_index > 1:
-                        if name != '%serviceTotal%':
-                            workbook.worksheets[0].merge_cells(start_row=row_index, start_column=starting_column,
-                                                               end_row=row_index + 1, end_column=starting_column)
-                        elif name == '%serviceTotal%':
-                            workbook.worksheets[0].merge_cells(start_row=row_index, start_column=starting_column,
-                                                               end_row=row_index + 2, end_column=starting_column)
+                    # merging cells for better display
+                    if name != '%serviceTotal%':
+                        workbook.worksheets[0].merge_cells(f'{get_column_letter(starting_column)}{row_index}:{get_column_letter(starting_column+1)}{row_index}')
+                    elif name == '%serviceTotal%':
+                        workbook.worksheets[0].merge_cells(
+                            f'{get_column_letter(starting_column)}{row_index + 3}:{get_column_letter(starting_column + 2)}{row_index + 3}')
 
-                        if workbook.worksheets[0].cell(row=row_index - 1, column=starting_column).has_style:
-                            wb.worksheets[0].cell(row=row_index, column=starting_column).font = \
-                                copy(workbook.worksheets[0].cell(row=row_index - 1, column=starting_column).font)
+                    # setting for new cells with services styles of previous cells from template
+                    if workbook.worksheets[0].cell(row=row_index - 1, column=starting_column).has_style and row_index != starting_row:
+                        wb.worksheets[0].cell(row=row_index, column=starting_column).font = \
+                            copy(workbook.worksheets[0].cell(row=row_index - 1, column=starting_column).font)
 
-                            wb.worksheets[0].cell(row=row_index, column=starting_column).border = \
-                                copy(workbook.worksheets[0].cell(row=row_index - 1, column=starting_column).border)
+                        wb.worksheets[0].cell(row=row_index, column=starting_column).border = \
+                            copy(workbook.worksheets[0].cell(row=row_index - 1, column=starting_column).border)
 
-                            wb.worksheets[0].cell(row=row_index, column=starting_column).fill = \
-                                copy(workbook.worksheets[0].cell(row=row_index - 1, column=starting_column).fill)
+                        wb.worksheets[0].cell(row=row_index, column=starting_column).fill = \
+                            copy(workbook.worksheets[0].cell(row=row_index - 1, column=starting_column).fill)
 
-                    print(workbook.worksheets[0][f'{starting_column}{row_index}'])
-                    workbook.worksheets[0][f'{starting_column}{row_index}'].value = receipt_services[row_index - starting_row]
-                    # workbook.worksheets[0].cell(row=row_index, column=starting_column)\
-                    #     .value = receipt_services[row_index - starting_row]
-
-
-                    # workbook.worksheets[0].cell(row=row_index, column=starting_column)._style = copy(workbook.worksheets[0].cell(row=row_index - 1, column=starting_column)._style)
+                    workbook.worksheets[0].cell(row=row_index, column=starting_column).value = receipt_services[row_index - starting_row]
 
             for index, row in enumerate(wb.worksheets[0]):
                 for index_second, cell in enumerate(row):

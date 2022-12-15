@@ -1,3 +1,5 @@
+import base64
+
 import openpyxl
 from openpyxl.utils import get_column_letter
 
@@ -1347,10 +1349,21 @@ class TemplateDeleteView(SingleObjectMixin, View):
         return JsonResponse({'answer': 'failed'})
 
 
+class TemplateChooseView(ListView):
+    model = Template
+    queryset = Template.objects.all()
+    template_name = 'administrator_panel/template-download.html'
+
+    def get_context_object_name(self, object_list):
+        context = super().get_context_object_name(object_list)
+        context['receipt'] = self.request.GET.get('receipt')
+        return context
+
+
 class BuildReceiptFileView(SingleObjectMixin, View):
     model = Receipt
 
-    def get(self, request, *args, **kwargs):
+    def post(self, request, *args, **kwargs):
         try:
             template = Template.objects.get(pk=request.GET.get('template')).file
 
@@ -1474,7 +1487,8 @@ class BuildReceiptFileView(SingleObjectMixin, View):
 
                     # merging cells for better display
                     if name != '%serviceTotal%':
-                        workbook.worksheets[0].merge_cells(f'{get_column_letter(starting_column)}{row_index}:{get_column_letter(starting_column+1)}{row_index}')
+                        workbook.worksheets[0].merge_cells(
+                            f'{get_column_letter(starting_column)}{row_index}:{get_column_letter(starting_column+1)}{row_index}')
                     elif name == '%serviceTotal%':
                         workbook.worksheets[0].merge_cells(
                             f'{get_column_letter(starting_column)}{row_index + 3}:{get_column_letter(starting_column + 2)}{row_index + 3}')
@@ -1498,7 +1512,9 @@ class BuildReceiptFileView(SingleObjectMixin, View):
                     if val in ['%serviceName%', '%servicePrice%', '%serviceUnit%', '%serviceAmount%', '%serviceTotal%']:
                         set_service_info(val, wb, index + 1, index_second + 1)
 
-            wb.save(f'{settings.MEDIA_ROOT}/receipts/receipt-№{receipt.number}_{timezone.now().day}.{timezone.now().month}.{timezone.now().year}.xlsx')
-            return JsonResponse({'answer': 'okey'})
+            file_name = f'receipt-#{receipt.number}_{timezone.now().day}.{timezone.now().month}.{timezone.now().year}.xlsx'
+            file_path = f'{settings.MEDIA_ROOT}/receipts/{file_name}'
+            wb.save(file_path)
+            return JsonResponse({'answer': 'okey', 'file_path': f'{settings.MEDIA_URL}receipts/{file_name}'})
         except (Template.DoesNotExist, Receipt.DoesNotExist, PersonalAccount.DoesNotExist):
             return JsonResponse({'answer': 'failed'})

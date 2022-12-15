@@ -48,5 +48,6 @@ urlpatterns = [
     path('receipt/template/', ReceiptTemplateCreateView.as_view(), name='template-create'),
     path('receipt/template/<int:template_pk>/', TemplateDefault.as_view(), name='template-default'),
     path('receipt/template/delete/<int:template_pk>/', TemplateDeleteView.as_view(), name='template-delete'),
+    path('receipt/template/choose/', TemplateChooseView.as_view(), name='template-choose'),
     path('receipt/template/download/', BuildReceiptFileView.as_view(), name='build-receipt-file'),
 ]

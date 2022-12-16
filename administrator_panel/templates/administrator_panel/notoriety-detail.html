@@ -39,10 +39,11 @@
                 </div>
                 <div class="col-sm-12 col-lg-6 text-right">
                     <div class="btn-group">
+                        {% csrf_token %}
                         <a class="btn btn-default" href="{% url 'notoriety-create' %}?type={{ object.type }}&base_notoriety={{ object.pk }}" style="margin-right: 10px;">Копіювати</a>
                         <button id="{{ object.pk }}" class="btn btn-default delete-notoriety" type="button"  style="margin-right: 10px;">Видалити</button>
                         <a class="btn btn-info" href="{% url 'notoriety-update' notoriety_pk=object.pk %}" style="margin-right: 10px;">Редагувати особовий рахунок</a>
-                        <button class="btn btn-default" type="button"  style="margin-right: 10px;">Вивантажити в Excel</button>
+                        <button class="btn btn-default" type="button" onclick="downloadNotorietyTemplate()" style="margin-right: 10px;">Вивантажити в Excel</button>
                     </div>
                 </div>
             </div>
@@ -124,5 +125,24 @@
                 }
             })
     })
+
+    function downloadNotorietyTemplate() {
+        let notoriety = {{ object.pk }};
+        $.ajax({
+            url: `{% url 'notoriety-template-download' %}`,
+            type: 'POST',
+            headers: {
+                'X-CSRFToken': $("input[name=csrfmiddlewaretoken]").val()
+            },
+            data: {
+                'notoriety': notoriety
+            },
+            success: function(data) {
+                if (data['answer'] === 'success') {
+                    window.location = data['file_path'];
+                }
+            }
+        })
+    }
 </script>
 {% endblock %}

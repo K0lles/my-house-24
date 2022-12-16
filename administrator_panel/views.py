@@ -1,6 +1,7 @@
 import base64
 
 import openpyxl
+from openpyxl.styles import Alignment
 from openpyxl.utils import get_column_letter
 
 from django.db.models import Q, Count, Sum, Func, F, Value, Case, When, FloatField, Subquery, OuterRef, QuerySet
@@ -1206,6 +1207,56 @@ class NotorietyDetailView(DetailView):
             return None
 
 
+class NotorietyTemplateDownload(SingleObjectMixin, View):
+    model = Notoriety
+
+    def post(self, request, *args, **kwargs):
+        try:
+            notoriety = Notoriety.objects \
+                .select_related('account', 'account__flat__owner', 'article') \
+                .get(pk=request.POST.get('notoriety'))
+        except (Notoriety.DoesNotExist, AttributeError):
+            return JsonResponse({'answer': 'failed'})
+
+        wb = openpyxl.Workbook()
+        ws = wb.active
+
+        ws['A1'].value = 'Платіж'
+        ws['A2'].value = 'Дата'
+        ws['A3'].value = 'Власник квартири'
+        ws['A4'].value = 'Особовий рахунок'
+        ws['A5'].value = 'Статус'
+        ws['A6'].value = 'Стаття'
+        ws['A7'].value = 'Сума'
+        ws['A8'].value = 'Валюта'
+        ws['A9'].value = 'Коментар'
+        ws['A10'].value = 'Менеджер'
+
+        ws['B1'].value = f'#{notoriety.number}'
+        ws['B2'].value = f'{notoriety.created_at.day}.{notoriety.created_at.month}.{notoriety.created_at.year}'
+        ws['B3'].value = f'{notoriety.account.flat.owner.surname} {notoriety.account.flat.owner.name} {notoriety.account.flat.owner.father}' if notoriety.account else ''
+        ws['B4'].value = notoriety.account.number if notoriety.account else ''
+        ws['B5'].value = 'Проведена' if notoriety.is_completed else 'Не проведена'
+        ws['B6'].value = notoriety.article.name
+        ws['B7'].value = notoriety.sum if notoriety.type == 'income' else -abs(notoriety.sum)
+        ws['B8'].value = 'UAH'
+        ws['B9'].value = notoriety.comment
+        ws['B10'].value = f'{notoriety.manager.surname} {notoriety.manager.name} {notoriety.manager.father}'
+
+        ws.column_dimensions['A'].width = 25
+        ws.column_dimensions['B'].width = 35
+        ws['B7'].alignment = Alignment(horizontal="left")
+
+        from os import path, mkdir
+        if not path.exists(f'{settings.MEDIA_ROOT}/notorieties'):
+            mkdir(f'{settings.MEDIA_ROOT}/notorieties')
+
+        file_name = f'notoriety_{notoriety.number}_{notoriety.created_at.day}.{notoriety.created_at.month}.{notoriety.created_at.year}.xlsx'
+        file_path = f'{settings.MEDIA_ROOT}/notorieties/{file_name}'
+        wb.save(file_path)
+        return JsonResponse({'answer': 'success', 'file_path': f'{settings.MEDIA_URL}/notorieties/{file_name}'})
+
+
 class NotorietyUpdateView(UpdateView):
     model = Notoriety
     template_name = 'administrator_panel/notoriety-create-update.html'
@@ -1512,7 +1563,7 @@ class BuildReceiptFileView(SingleObjectMixin, View):
                     if val in ['%serviceName%', '%servicePrice%', '%serviceUnit%', '%serviceAmount%', '%serviceTotal%']:
                         set_service_info(val, wb, index + 1, index_second + 1)
 
-            file_name = f'receipt_{receipt.number}_{timezone.now().day}.{timezone.now().month}.{timezone.now().year}.xlsx'
+            file_name = f'receipt_{receipt.number}_{receipt.created_at.day}.{receipt.created_at.month}.{receipt.created_at.year}.xlsx'
             file_path = f'{settings.MEDIA_ROOT}/receipts/{file_name}'
             wb.save(file_path)
             return JsonResponse({'answer': 'success', 'file_path': f'{settings.MEDIA_URL}receipts/{file_name}'})

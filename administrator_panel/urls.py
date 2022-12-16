@@ -45,6 +45,7 @@ urlpatterns = [
     path('notoriety/create/', NotorietyCreateView.as_view(), name='notoriety-create'),
     path('notoriety/update/<int:notoriety_pk>/', NotorietyUpdateView.as_view(), name='notoriety-update'),
     path('notoriety/delete/<int:notoriety_pk>/', NotorietyDeleteView.as_view(), name='notoriety-delete'),
+    path('notoriety/template/download/', NotorietyTemplateDownload.as_view(), name='notoriety-template-download'),
     path('receipt/template/', ReceiptTemplateCreateView.as_view(), name='template-create'),
     path('receipt/template/<int:template_pk>/', TemplateDefault.as_view(), name='template-default'),
     path('receipt/template/delete/<int:template_pk>/', TemplateDeleteView.as_view(), name='template-delete'),

@@ -2,7 +2,7 @@
 {% load static %}
 
 {% block content_header %}
-    <h1>Налаштування шаблонів</h1>
+    <h1>Друкована форма документа</h1>
 {% endblock %}
 
 {% block main_content %}
@@ -18,15 +18,42 @@
             </div>
             <div class="row">
                 <div class="col-xs-12 col-sm-7 col-lg-4">
+                    {% csrf_token %}
                     {% for object in object_list %}
-                        <div class="form-group">
-                            <label class="form-label" for="templates">
-                                <input class="form-check-input" id="{{ object.pk }}" name="templates" {% if object.is_default %}checked{% endif %}>
+                        <div class="form-group" style="margin-left: 2%; margin-top: 2%;">
+                            <label for="receipt-template-{{ object.pk }}">
+                                <input type="radio" id="receipt-template-{{ object.pk }}" value="{{ object.pk }}" class="form-check-input" id="receipt-template-{{ object.pk }}" name="templates" {% if object.is_default %}checked{% endif %}>
+                                {{ object.name }}
                             </label>
                         </div>
                     {% endfor %}
                 </div>
             </div>
+            <div class="row">
+                <div class="col-sm-12 text-right add-href">
+                    <button type="button" class="btn btn-success" style="margin-right: 1%;" onclick="fetchForTemplate()">Завантажити</button>
+                    <button type="button" class="btn btn-default">Відправити на e-mail</button>
+                </div>
+            </div>
         </div>
     </div>
+{% endblock %}
+{% block scripts %}
+<script>
+    function fetchForTemplate() {
+        let template = $('input[type="radio"]:checked').val();
+        $.ajax({
+            url: `{% url 'build-receipt-file' %}?receipt={{ receipt }}&template=${template}`,
+            type: 'POST',
+            headers: {
+                'X-CSRFToken': $("input[name=csrfmiddlewaretoken]").val()
+            },
+            success: function(data) {
+                if (data['answer'] === 'success') {
+                    window.location = data['file_path'];
+                }
+            }
+        })
+    }
+</script>
 {% endblock %}

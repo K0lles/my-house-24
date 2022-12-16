@@ -1354,8 +1354,8 @@ class TemplateChooseView(ListView):
     queryset = Template.objects.all()
     template_name = 'administrator_panel/template-download.html'
 
-    def get_context_object_name(self, object_list):
-        context = super().get_context_object_name(object_list)
+    def get_context_data(self, *, object_list=None, **kwargs):
+        context = super().get_context_data(object_list=object_list)
         context['receipt'] = self.request.GET.get('receipt')
         return context
 
@@ -1512,9 +1512,9 @@ class BuildReceiptFileView(SingleObjectMixin, View):
                     if val in ['%serviceName%', '%servicePrice%', '%serviceUnit%', '%serviceAmount%', '%serviceTotal%']:
                         set_service_info(val, wb, index + 1, index_second + 1)
 
-            file_name = f'receipt-#{receipt.number}_{timezone.now().day}.{timezone.now().month}.{timezone.now().year}.xlsx'
+            file_name = f'receipt_{receipt.number}_{timezone.now().day}.{timezone.now().month}.{timezone.now().year}.xlsx'
             file_path = f'{settings.MEDIA_ROOT}/receipts/{file_name}'
             wb.save(file_path)
-            return JsonResponse({'answer': 'okey', 'file_path': f'{settings.MEDIA_URL}receipts/{file_name}'})
+            return JsonResponse({'answer': 'success', 'file_path': f'{settings.MEDIA_URL}receipts/{file_name}'})
         except (Template.DoesNotExist, Receipt.DoesNotExist, PersonalAccount.DoesNotExist):
             return JsonResponse({'answer': 'failed'})

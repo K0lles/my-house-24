@@ -1,29 +1,28 @@
-import base64
-
 import openpyxl
 from openpyxl.styles import Alignment
 from openpyxl.utils import get_column_letter
 
-from django.db.models import Q, Count, Sum, Func, F, Value, Case, When, FloatField, Subquery, OuterRef, QuerySet
+from django.db.models import Q, Sum, Value, Case, When, FloatField, Subquery, OuterRef, QuerySet
 from django.db.models.functions import Concat
-from django.http import Http404, JsonResponse, HttpResponseRedirect
-from django.shortcuts import render, redirect
+from django.http import Http404, JsonResponse
+from django.shortcuts import redirect
 from django.urls import reverse
 from django.views import View
-from django.views.generic import ListView, DetailView, CreateView, UpdateView
 from django.db.models.deletion import ProtectedError
 from django.views.generic.detail import SingleObjectMixin
 from django.views.generic.list import MultipleObjectMixin
 
 from configuration.models import Role, Tariff, Service, MeasurementUnit
 from .forms import *
+from .mixins import *
 from my_house_24 import settings
 
 
-class HouseCreateView(CreateView):
+class HouseCreateView(PermissionCreateView):
     model = House
     template_name = 'administrator_panel/house-create-update.html'
     form_class = HouseForm
+    string_permission = 'building_access'
 
     def get_context_data(self, **kwargs):
         context = super(HouseCreateView, self).get_context_data(**kwargs)
@@ -85,11 +84,12 @@ class HouseCreateView(CreateView):
         return house
 
 
-class HouseUpdateView(UpdateView):
+class HouseUpdateView(PermissionUpdateView):
     model = House
     template_name = 'administrator_panel/house-create-update.html'
     pk_url_kwarg = 'house_pk'
     form_class = HouseForm
+    string_permission = 'building_access'
 
     def get_object(self, queryset=None):
         try:
@@ -158,10 +158,11 @@ class HouseUpdateView(UpdateView):
                 floor_saved.save()
 
 
-class HouseDetailView(DetailView):
+class HouseDetailView(PermissionDetailView):
     model = House
     template_name = 'administrator_panel/house-detail.html'
     pk_url_kwarg = 'house_pk'
+    string_permission = 'building_access'
 
     def get_object(self, queryset=None):
         try:
@@ -171,13 +172,16 @@ class HouseDetailView(DetailView):
             raise Http404()
 
 
-class HouseListView(ListView):
+class HouseListView(PermissionListView):
     model = House
     queryset = House.objects.all()
     template_name = 'administrator_panel/house-list.html'
+    string_permission = 'building_access'
 
 
 def delete_house(request, house_pk):
+    if request.user.is_anonymous or not request.user.role.building_access:
+        return JsonResponse({'answer': 'Ви не маєте доступу до будинків'})
     try:
         house = House.objects.get(pk=house_pk)
         house.delete()
@@ -187,6 +191,8 @@ def delete_house(request, house_pk):
 
 
 def delete_section(request, section_pk):
+    if request.user.is_anonymous or not request.user.role.building_access:
+        return JsonResponse({'answer': 'Ви не маєте доступу до будинків'})
     try:
         section_to_delete = Section.objects.get(pk=section_pk)
         section_to_delete.delete()
@@ -196,6 +202,8 @@ def delete_section(request, section_pk):
 
 
 def delete_floor(request, floor_pk):
+    if request.user.is_anonymous or not request.user.role.building_access:
+        return JsonResponse({'answer': 'Ви не маєте доступу до будинків'})
     try:
         floor_to_delete = Floor.objects.get(pk=floor_pk)
         floor_to_delete.delete()
@@ -205,6 +213,8 @@ def delete_floor(request, floor_pk):
 
 
 def delete_house_user(request, house_user_pk):
+    if request.user.is_anonymous or not request.user.role.building_access:
+        return JsonResponse({'answer': 'Ви не маєте доступу до будинків'})
     try:
         house_user_to_delete = HouseUser.objects.get(pk=house_user_pk)
         house_user_to_delete.delete()
@@ -213,10 +223,11 @@ def delete_house_user(request, house_user_pk):
         return JsonResponse({'answer': 'failed'})
 
 
-class FlatCreateView(CreateView):
+class FlatCreateView(PermissionCreateView):
     model = Flat
     template_name = 'administrator_panel/flat-create-update.html'
     form_class = FlatForm
+    string_permission = 'flat_access'
 
     def get_context_data(self, **kwargs):
         context = super(FlatCreateView, self).get_context_data(**kwargs)
@@ -273,10 +284,11 @@ class FlatCreateView(CreateView):
         return redirect('flat-detail', flat_pk=created_flat.pk)
 
 
-class FlatDetailView(DetailView):
+class FlatDetailView(PermissionDetailView):
     model = Flat
     template_name = 'administrator_panel/flat-detail.html'
     pk_url_kwarg = 'flat_pk'
+    string_permission = 'flat_access'
 
     def get_object(self, queryset=None):
         try:
@@ -286,29 +298,35 @@ class FlatDetailView(DetailView):
             raise Http404()
 
 
-class FlatListView(ListView):
+class FlatListView(PermissionListView):
     model = Flat
     template_name = 'administrator_panel/flat-list.html'
-    queryset = Flat.objects.select_related('house', 'section', 'floor', 'owner', 'personalaccount').all().order_by('-id')
-    
+    queryset = Flat.objects.select_related('house', 'section', 'floor', 'owner', 'personalaccount').all().order_by(
+        '-id')
+    string_permission = 'flat_access'
+
     def get_context_data(self, *, object_list=None, **kwargs):
         context = super(FlatListView, self).get_context_data(object_list=object_list, **kwargs)
-        personal_accounts = calculate_notoriety_and_receipt_sum(PersonalAccount.objects.select_related('flat').filter(flat__isnull=False, status='active')).get('personal_accounts')
-        context['object_list'] = context['object_list']\
+        personal_accounts = calculate_notoriety_and_receipt_sum(
+            PersonalAccount.objects.select_related('flat').filter(flat__isnull=False, status='active')).get(
+            'personal_accounts')
+        context['object_list'] = context['object_list'] \
             .annotate(
             rest=Subquery(personal_accounts.filter(pk=OuterRef('personalaccount__id')).values('rest')[:1]),
-            receipt_sum=Subquery(personal_accounts.filter(pk=OuterRef('personalaccount__id')).values('receipt_sum')[:1]),
+            receipt_sum=Subquery(
+                personal_accounts.filter(pk=OuterRef('personalaccount__id')).values('receipt_sum')[:1]),
             subtraction=Case(When(rest__isnull=True, then=Value(0.00)), default='rest', output_field=FloatField()) -
-                    Case(When(receipt_sum__isnull=True, then=Value(0.00)), default='receipt_sum',
-                         output_field=FloatField()))
+                        Case(When(receipt_sum__isnull=True, then=Value(0.00)), default='receipt_sum',
+                             output_field=FloatField()))
         return context
 
 
-class FlatUpdateView(UpdateView):
+class FlatUpdateView(PermissionUpdateView):
     model = Flat
     template_name = 'administrator_panel/flat-create-update.html'
     form_class = FlatForm
     pk_url_kwarg = 'flat_pk'
+    string_permission = 'flat_access'
 
     def get_object(self, queryset=None):
         try:
@@ -379,6 +397,8 @@ class FlatUpdateView(UpdateView):
 
 
 def delete_flat(request, flat_pk):
+    if request.user.is_anonymous or not request.user.role.flat_access:
+        return JsonResponse({'answer': 'Ви не маєте доступу до квартир'})
     try:
         flat_to_delete = Flat.objects.get(pk=flat_pk)
         flat_to_delete.delete()
@@ -425,10 +445,11 @@ def personal_account_context(context, flats=Flat.objects.none()):
     return context
 
 
-class PersonalAccountCreateView(CreateView):
+class PersonalAccountCreateView(PermissionCreateView):
     model = PersonalAccount
     template_name = 'administrator_panel/personal_account-create-update.html'
     form_class = PersonalAccountForm
+    string_permission = 'bill_access'
 
     def get_context_data(self, **kwargs):
         context = super(PersonalAccountCreateView, self).get_context_data(**kwargs)
@@ -455,10 +476,11 @@ class PersonalAccountCreateView(CreateView):
         return redirect('personal-account-detail', account_pk=account.pk)
 
 
-class PersonalAccountDetailView(DetailView):
+class PersonalAccountDetailView(PermissionDetailView):
     model = PersonalAccount
     template_name = 'administrator_panel/personal_account-detail.html'
     pk_url_kwarg = 'account_pk'
+    string_permission = 'bill_access'
 
     def get_object(self, queryset=None):
         try:
@@ -507,10 +529,12 @@ def calculate_totals(personal_accounts: QuerySet):
     checkout_condition = Notoriety.objects.all().values('sum') \
         .aggregate(
         notoriety_income_sum=Sum('sum', filter=Q(type='income'), output_field=FloatField()),
-        notoriety_outcome_sum=Sum('sum', filter=Q(type='outcome'),output_field=FloatField()))
+        notoriety_outcome_sum=Sum('sum', filter=Q(type='outcome'), output_field=FloatField()))
     checkout_condition = {
-        'sum': (checkout_condition.get('notoriety_income_sum') if checkout_condition.get('notoriety_income_sum') else 0.00)
-               - (checkout_condition.get('notoriety_outcome_sum') if checkout_condition.get('notoriety_outcome_sum') else 0.00)
+        'sum': (checkout_condition.get('notoriety_income_sum') if checkout_condition.get(
+            'notoriety_income_sum') else 0.00)
+               - (checkout_condition.get('notoriety_outcome_sum') if checkout_condition.get(
+            'notoriety_outcome_sum') else 0.00)
     }
 
     # count sum by all account's positive rest
@@ -533,11 +557,11 @@ def count_all_totals(personal_accounts: QuerySet):
     return answer
 
 
-class PersonalAccountListView(ListView):
+class PersonalAccountListView(PermissionListView):
     model = PersonalAccount
     template_name = 'administrator_panel/personal_account-list.html'
+    string_permission = 'bill_access'
 
-    # needed to be finished
     def get_queryset(self):
         return PersonalAccount.objects \
             .select_related('flat', 'flat__section', 'flat__house', 'flat__owner') \
@@ -551,11 +575,12 @@ class PersonalAccountListView(ListView):
         return context
 
 
-class PersonalAccountUpdateView(UpdateView):
+class PersonalAccountUpdateView(PermissionUpdateView):
     model = PersonalAccount
     template_name = 'administrator_panel/personal_account-create-update.html'
     pk_url_kwarg = 'account_pk'
     form_class = PersonalAccountForm
+    string_permission = 'bill_access'
 
     def get_object(self, queryset=None):
         try:
@@ -625,6 +650,8 @@ class PersonalAccountUpdateView(UpdateView):
 
 
 def delete_personal_account(request, account_pk):
+    if request.user.is_anonymous or not request.user.role.bill_access:
+        return JsonResponse({'answer': 'Ви не маєте доступу до особових рахунків'})
     try:
         account_to_delete = PersonalAccount.objects.prefetch_related('flat__evidence_set').get(pk=account_pk)
         if account_to_delete.flat.evidence_set.all().count() > 0:
@@ -643,10 +670,11 @@ def personal_account_is_unique(request):
         return JsonResponse({'answer': 'success'})
 
 
-class OwnerCreateView(CreateView):
+class OwnerCreateView(PermissionCreateView):
     model = User
     template_name = 'administrator_panel/owner-create-update.html'
     form_class = OwnerForm
+    string_permission = 'owner_access'
 
     def post(self, request, *args, **kwargs):
         form = self.get_form_class()(request.POST, request.FILES)
@@ -675,11 +703,12 @@ class OwnerCreateView(CreateView):
         return redirect('owners')
 
 
-class OwnerUpdateView(UpdateView):
+class OwnerUpdateView(PermissionUpdateView):
     model = User
     template_name = 'administrator_panel/owner-create-update.html'
     form_class = OwnerForm
     pk_url_kwarg = 'owner_pk'
+    string_permission = 'owner_access'
 
     def get_object(self, queryset=None):
         try:
@@ -709,16 +738,18 @@ class OwnerUpdateView(UpdateView):
         return redirect('owners')
 
 
-class OwnerListView(ListView):
+class OwnerListView(PermissionListView):
     model = User
     queryset = User.objects.prefetch_related('flat_set', 'flat_set__house').filter(role__role='owner').order_by('-id')
     template_name = 'administrator_panel/owner-list.html'
+    string_permission = 'owner_access'
 
 
-class OwnerDetailView(DetailView):
+class OwnerDetailView(PermissionDetailView):
     model = User
     template_name = 'administrator_panel/owner-detail.html'
     pk_url_kwarg = 'owner_pk'
+    string_permission = 'owner_access'
 
     def get_object(self, queryset=None):
         try:
@@ -728,6 +759,8 @@ class OwnerDetailView(DetailView):
 
 
 def delete_owner(request, owner_pk):
+    if request.user.is_anonymous or not request.user.role.owner_access:
+        return JsonResponse({'answer': 'Ви не маєте доступу до власників квартир'})
     try:
         user = User.objects.prefetch_related('flat_set__receipt_set', 'flat_set__personalaccount').get(pk=owner_pk)
         if not user.flat_set.all().exists():
@@ -738,10 +771,11 @@ def delete_owner(request, owner_pk):
         return JsonResponse({'answer': 'failed'})
 
 
-class EvidenceCreateView(CreateView):
+class EvidenceCreateView(PermissionCreateView):
     model = Evidence
     template_name = 'administrator_panel/evidence-create-update.html'
     form_class = EvidenceForm
+    string_permission = 'counter_access'
 
     def get_context_data(self, **kwargs):
         context = super(EvidenceCreateView, self).get_context_data(**kwargs)
@@ -771,13 +805,14 @@ class EvidenceCreateView(CreateView):
         return redirect('evidence-detail', evidence_pk=evidence_saved.pk)
 
 
-class EvidenceDetailView(DetailView):
+class EvidenceDetailView(PermissionDetailView):
     model = Evidence
     template_name = 'administrator_panel/evidence-detail.html'
     pk_url_kwarg = 'evidence_pk'
+    string_permission = 'counter_access'
 
 
-class GroupedEvidenceListView(ListView):
+class GroupedEvidenceListView(PermissionListView):
     model = Evidence
     template_name = 'administrator_panel/evidence-grouped-list.html'
     queryset = Evidence.objects.select_related('service',
@@ -786,11 +821,13 @@ class GroupedEvidenceListView(ListView):
                                                'flat__section',
                                                'service__measurement_unit').all().annotate(
         distinct_name=Concat('flat', 'service')).distinct('distinct_name')
+    string_permission = 'counter_access'
 
 
-class ServiceEvidenceListView(ListView):
+class ServiceEvidenceListView(PermissionListView):
     model = Evidence
     template_name = 'administrator_panel/evidence-counter-list.html'
+    string_permission = 'counter_access'
 
     def get_queryset(self):
         flat_pk = self.request.GET.get('flat')
@@ -803,11 +840,12 @@ class ServiceEvidenceListView(ListView):
             raise Http404()
 
 
-class EvidenceUpdateView(UpdateView):
+class EvidenceUpdateView(PermissionUpdateView):
     model = Evidence
     template_name = 'administrator_panel/evidence-create-update.html'
     form_class = EvidenceForm
     pk_url_kwarg = 'evidence_pk'
+    string_permission = 'counter_access'
 
     def get_object(self, queryset=None):
         try:
@@ -842,6 +880,8 @@ class EvidenceUpdateView(UpdateView):
 
 
 def delete_evidence(request, evidence_pk):
+    if request.user.is_anonymous or not request.user.role.counter_access:
+        return JsonResponse({'answer': 'Ви не маєте доступу до показників лічильників'})
     try:
         evidence_to_delete = Evidence.objects.get(pk=evidence_pk)
         evidence_to_delete.delete()
@@ -850,10 +890,11 @@ def delete_evidence(request, evidence_pk):
         return JsonResponse({'answer': 'failed'})
 
 
-class ReceiptCreateView(CreateView):
+class ReceiptCreateView(PermissionCreateView):
     model = Receipt
     template_name = 'administrator_panel/receipt-create-update.html'
     form_class = ReceiptForm
+    string_permission = 'receipt_access'
 
     def get_context_data(self, **kwargs):
         context = super(ReceiptCreateView, self).get_context_data(**kwargs)
@@ -933,19 +974,19 @@ class ReceiptCreateView(CreateView):
         receipt_saved = form.save()
         for receipt_service_form in receipt_formset.forms:
             if receipt_service_form.cleaned_data.get('service') and receipt_service_form.cleaned_data.get('amount') \
-                    and receipt_service_form.cleaned_data.get('price') and receipt_service_form.cleaned_data.get(
-                'total_price'):
+                    and receipt_service_form.cleaned_data.get('price') and receipt_service_form.cleaned_data.get('total_price'):
                 form_saved = receipt_service_form.save(commit=False)
                 form_saved.receipt = receipt_saved
                 form_saved.save()
         return redirect('receipt-detail', receipt_pk=receipt_saved.pk)
 
 
-class ReceiptUpdateView(UpdateView):
+class ReceiptUpdateView(PermissionUpdateView):
     model = Receipt
     template_name = 'administrator_panel/receipt-create-update.html'
     pk_url_kwarg = 'receipt_id'
     form_class = ReceiptForm
+    string_permission = 'receipt_access'
 
     def get_object(self, queryset=None):
         try:
@@ -1010,18 +1051,18 @@ class ReceiptUpdateView(UpdateView):
         receipt_saved = form.save()
         for receipt_service_form in receipt_formset.forms:
             if receipt_service_form.cleaned_data.get('service') and receipt_service_form.cleaned_data.get('amount') \
-                    and receipt_service_form.cleaned_data.get('price') and receipt_service_form.cleaned_data.get(
-                'total_price'):
+                    and receipt_service_form.cleaned_data.get('price') and receipt_service_form.cleaned_data.get('total_price'):
                 form_saved = receipt_service_form.save(commit=False)
                 form_saved.receipt = receipt_saved
                 form_saved.save()
         return redirect('receipt-detail', receipt_pk=receipt_saved.pk)
 
 
-class ReceiptDetailView(DetailView):
+class ReceiptDetailView(PermissionDetailView):
     model = Receipt
     template_name = 'administrator_panel/receipt-detail.html'
     pk_url_kwarg = 'receipt_pk'
+    string_permission = 'receipt_access'
 
     def get_object(self, queryset=None):
         try:
@@ -1039,9 +1080,10 @@ class ReceiptDetailView(DetailView):
             raise Http404()
 
 
-class ReceiptListView(ListView):
+class ReceiptListView(PermissionListView):
     model = Receipt
     template_name = 'administrator_panel/receipt-list.html'
+    string_permission = 'receipt_access'
 
     def get_queryset(self):
         return Receipt.objects \
@@ -1059,6 +1101,11 @@ class ReceiptListView(ListView):
 
 class EvidenceResponse(MultipleObjectMixin, View):
     model = Evidence
+
+    def dispatch(self, request, *args, **kwargs):
+        if request.user.is_anonymous or not request.user.role.counter_access:
+            return JsonResponse({'answer': 'Ви не маєте доступу до показань лічильників'})
+        return super().dispatch(request, *args, **kwargs)
 
     def get_queryset(self):
         try:
@@ -1099,6 +1146,8 @@ class EvidenceResponse(MultipleObjectMixin, View):
 
 
 def receipt_service_delete(request, receipt_service_delete_pk):
+    if request.user.is_anonymous or not request.user.role.receipt_access:
+        return JsonResponse({'answer': 'Ви не маєте доступу до квитанцій'})
     try:
         receipt_service_to_delete = ReceiptService.objects.get(pk=receipt_service_delete_pk)
         receipt_service_to_delete.delete()
@@ -1108,6 +1157,8 @@ def receipt_service_delete(request, receipt_service_delete_pk):
 
 
 def delete_receipt(request):
+    if request.user.is_anonymous or not request.user.role.receipt_access:
+        return JsonResponse({'answer': 'Ви не маєте доступу до квитанцій'})
     if request.is_ajax():
         try:
             receipt_to_delete = Receipt.objects.get(pk=request.GET.get('receipt_id'))
@@ -1133,10 +1184,11 @@ def delete_receipt(request):
     return redirect('receipts')
 
 
-class NotorietyCreateView(CreateView):
+class NotorietyCreateView(PermissionCreateView):
     model = Notoriety
     template_name = 'administrator_panel/notoriety-create-update.html'
     form_class = NotorietyForm
+    string_permission = 'checkout_access'
 
     def get_context_data(self, **kwargs):
         context = super(NotorietyCreateView, self).get_context_data(**kwargs)
@@ -1158,8 +1210,8 @@ class NotorietyCreateView(CreateView):
         # create notoriety with indicated personal account
         if self.request.GET.get('account'):
             try:
-                context['base_account'] = PersonalAccount.objects\
-                    .select_related('flat', 'flat__owner')\
+                context['base_account'] = PersonalAccount.objects \
+                    .select_related('flat', 'flat__owner') \
                     .get(pk=self.request.GET.get('account'))
                 context['type'] = 'income'
             except (PersonalAccount.DoesNotExist, KeyError, AttributeError):
@@ -1190,10 +1242,11 @@ class NotorietyCreateView(CreateView):
         return redirect('notoriety-detail', notoriety_pk=notoriety_saved.pk)
 
 
-class NotorietyDetailView(DetailView):
+class NotorietyDetailView(PermissionDetailView):
     model = Notoriety
     template_name = 'administrator_panel/notoriety-detail.html'
     pk_url_kwarg = 'notoriety_pk'
+    string_permission = 'checkout_access'
 
     def get_object(self, queryset=None):
         try:
@@ -1209,6 +1262,11 @@ class NotorietyDetailView(DetailView):
 
 class NotorietyTemplateDownload(SingleObjectMixin, View):
     model = Notoriety
+
+    def dispatch(self, request, *args, **kwargs):
+        if request.user.is_anonymous or not request.user.role.checkout_access:
+            return JsonResponse({'answer': 'Ви не маєте доступу до каси'})
+        return super().dispatch(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
         try:
@@ -1234,7 +1292,8 @@ class NotorietyTemplateDownload(SingleObjectMixin, View):
 
         ws['B1'].value = f'#{notoriety.number}'
         ws['B2'].value = f'{notoriety.created_at.day}.{notoriety.created_at.month}.{notoriety.created_at.year}'
-        ws['B3'].value = f'{notoriety.account.flat.owner.surname} {notoriety.account.flat.owner.name} {notoriety.account.flat.owner.father}' if notoriety.account else ''
+        ws[
+            'B3'].value = f'{notoriety.account.flat.owner.surname} {notoriety.account.flat.owner.name} {notoriety.account.flat.owner.father}' if notoriety.account else ''
         ws['B4'].value = notoriety.account.number if notoriety.account else ''
         ws['B5'].value = 'Проведена' if notoriety.is_completed else 'Не проведена'
         ws['B6'].value = notoriety.article.name
@@ -1257,11 +1316,12 @@ class NotorietyTemplateDownload(SingleObjectMixin, View):
         return JsonResponse({'answer': 'success', 'file_path': f'{settings.MEDIA_URL}/notorieties/{file_name}'})
 
 
-class NotorietyUpdateView(UpdateView):
+class NotorietyUpdateView(PermissionUpdateView):
     model = Notoriety
     template_name = 'administrator_panel/notoriety-create-update.html'
     pk_url_kwarg = 'notoriety_pk'
     form_class = NotorietyForm
+    string_permission = 'checkout_access'
 
     def get_object(self, queryset=None):
         try:
@@ -1299,11 +1359,12 @@ class NotorietyUpdateView(UpdateView):
         return redirect('notoriety-detail', notoriety_pk=notoriety_saved.pk)
 
 
-class NotorietyListView(ListView):
+class NotorietyListView(PermissionListView):
     model = Notoriety
     template_name = 'administrator_panel/notoriety-list.html'
     queryset = Notoriety.objects.select_related('article', 'account', 'account__flat__owner').all().order_by(
         '-created_at')
+    string_permission = 'checkout_access'
 
     def get_context_data(self, *, object_list=None, **kwargs):
         context = super(NotorietyListView, self).get_context_data(object_list=object_list, **kwargs)
@@ -1315,6 +1376,11 @@ class NotorietyListView(ListView):
 class NotorietyDeleteView(SingleObjectMixin, View):
     model = Notoriety
     pk_url_kwarg = 'notoriety_pk'
+
+    def dispatch(self, request, *args, **kwargs):
+        if request.user.is_anonymous or not request.user.role.checkout_access:
+            return JsonResponse({'answer': 'Ви не маєте доступу до каси'})
+        return super().dispatch(request, *args, **kwargs)
 
     def get_queryset(self):
         return Notoriety.objects.all()
@@ -1337,10 +1403,11 @@ class NotorietyDeleteView(SingleObjectMixin, View):
                 return JsonResponse({'answer': 'failed'})
 
 
-class ReceiptTemplateCreateView(CreateView):
+class ReceiptTemplateCreateView(PermissionCreateView):
     model = Template
     template_name = 'administrator_panel/template-create.html'
     form_class = ReceiptTemplateForm
+    string_permission = 'receipt_access'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -1358,6 +1425,11 @@ class ReceiptTemplateCreateView(CreateView):
 class TemplateDefault(SingleObjectMixin, View):
     model = Template
     pk_url_kwarg = 'template_pk'
+
+    def dispatch(self, request, *args, **kwargs):
+        if request.user.is_anonymous or not request.user.role.receipt_access:
+            return JsonResponse({'answer': 'Ви не маєте доступу до квитанцій'})
+        return super().dispatch(request, *args, **kwargs)
 
     def get_object(self, queryset=None):
         try:
@@ -1384,6 +1456,11 @@ class TemplateDeleteView(SingleObjectMixin, View):
     model = Template
     pk_url_kwarg = 'template_pk'
 
+    def dispatch(self, request, *args, **kwargs):
+        if request.user.is_anonymous or not request.user.role.receipt_access:
+            return JsonResponse({'answer': 'Ви не маєте доступу до квитанцій'})
+        return super().dispatch(request, *args, **kwargs)
+
     def get_object(self, queryset=None):
         try:
             return Template.objects.get(pk=self.kwargs.get('template_pk'))
@@ -1400,10 +1477,11 @@ class TemplateDeleteView(SingleObjectMixin, View):
         return JsonResponse({'answer': 'failed'})
 
 
-class TemplateChooseView(ListView):
+class TemplateChooseView(PermissionListView):
     model = Template
     queryset = Template.objects.all()
     template_name = 'administrator_panel/template-download.html'
+    string_permission = 'receipt_access'
 
     def get_context_data(self, *, object_list=None, **kwargs):
         context = super().get_context_data(object_list=object_list)
@@ -1414,25 +1492,30 @@ class TemplateChooseView(ListView):
 class BuildReceiptFileView(SingleObjectMixin, View):
     model = Receipt
 
+    def dispatch(self, request, *args, **kwargs):
+        if request.user.is_anonymous or not request.user.role.receipt_access:
+            return JsonResponse({'answer': 'Ви не маєте доступу'})
+        return super().dispatch(request, *args, **kwargs)
+
     def post(self, request, *args, **kwargs):
         try:
             template = Template.objects.get(pk=request.GET.get('template')).file
 
             receipt = Receipt.objects.select_related('account',
                                                      'account__flat',
-                                                     'account__flat__owner')\
+                                                     'account__flat__owner') \
                 .prefetch_related('receiptservices',
                                   'receiptservices__service',
                                   'receiptservices__service__measurement_unit',
-                                  'account__notoriety_set')\
+                                  'account__notoriety_set') \
                 .filter(pk=request.GET.get('receipt'))
             if receipt.count() == 0:
                 raise Receipt.DoesNotExist()
 
             # get account for calculating the total sum on account
-            personal_account = PersonalAccount.objects\
+            personal_account = PersonalAccount.objects \
                 .select_related('flat', 'flat__section', 'flat__house', 'flat__owner') \
-                .prefetch_related('notoriety_set', 'receipt_set', 'receipt_set__receiptservices')\
+                .prefetch_related('notoriety_set', 'receipt_set', 'receipt_set__receiptservices') \
                 .filter(pk=receipt[0].account.pk)
             if personal_account.count() == 0:
                 raise PersonalAccount.DoesNotExist()
@@ -1479,12 +1562,12 @@ class BuildReceiptFileView(SingleObjectMixin, View):
             end_moving = None
             for index, row in enumerate(base_sheet):
                 for index_second, cell in enumerate(row):
-                    val = base_sheet.cell(row=index+1, column=index_second+1).value
+                    val = base_sheet.cell(row=index + 1, column=index_second + 1).value
 
                     # copy styles from parent worksheet
-                    if base_sheet.cell(row=index+1, column=index_second+1).has_style:
+                    if base_sheet.cell(row=index + 1, column=index_second + 1).has_style:
                         wb.worksheets[0].cell(row=index + 1, column=index_second + 1).font = copy(base_sheet.cell(
-                            row=index+1, column=index_second+1).font)
+                            row=index + 1, column=index_second + 1).font)
                         wb.worksheets[0].cell(row=index + 1, column=index_second + 1).border = copy(base_sheet.cell(
                             row=index + 1, column=index_second + 1).border)
                         wb.worksheets[0].cell(row=index + 1, column=index_second + 1).fill = copy(base_sheet.cell(
@@ -1492,20 +1575,23 @@ class BuildReceiptFileView(SingleObjectMixin, View):
 
                     if val:
 
-                        if val.startswith('%') and val not in ['%serviceName%', '%servicePrice%', '%serviceUnit%', '%serviceAmount%', '%serviceTotal%']:
+                        if val.startswith('%') and val not in ['%serviceName%', '%servicePrice%', '%serviceUnit%',
+                                                               '%serviceAmount%', '%serviceTotal%']:
                             if val == '%LOOP STARTING%':
-                                start_moving = base_sheet.cell(row=index+2, column=index_second+1)
+                                start_moving = base_sheet.cell(row=index + 2, column=index_second + 1)
                                 continue
                             if val == '%LOOP ENDING%':
-                                end_moving = base_sheet.cell(row=index+2, column=index_second+1)
+                                end_moving = base_sheet.cell(row=index + 2, column=index_second + 1)
                                 continue
 
-                            wb.worksheets[0].cell(row=index+1, column=index_second+1).value = reserved_words.get(val)
+                            wb.worksheets[0].cell(row=index + 1, column=index_second + 1).value = reserved_words.get(
+                                val)
                             continue
-                        wb.worksheets[0].cell(row=index+1, column=index_second+1).value = val
+                        wb.worksheets[0].cell(row=index + 1, column=index_second + 1).value = val
 
             # moving footer of cycle for correct display receipt services
-            wb.worksheets[0].move_range(f'{start_moving.coordinate}:{end_moving.coordinate}', rows=receipt.receiptservices.all().count()-2, cols=0)
+            wb.worksheets[0].move_range(f'{start_moving.coordinate}:{end_moving.coordinate}',
+                                        rows=receipt.receiptservices.all().count() - 2, cols=0)
             current_total_row = start_moving.row + receipt.receiptservices.all().count() - 2
 
             # merging cells in rows with services' totals
@@ -1524,28 +1610,32 @@ class BuildReceiptFileView(SingleObjectMixin, View):
                 """Inner function for passing into template service's information"""
 
                 if name == '%serviceName%':
-                    receipt_services = [receipt_service.service.name for receipt_service in receipt.receiptservices.all()]
+                    receipt_services = [receipt_service.service.name for receipt_service in
+                                        receipt.receiptservices.all()]
                 elif name == '%serviceUnit%':
-                    receipt_services = [receipt_service.service.measurement_unit.name for receipt_service in receipt.receiptservices.all()]
+                    receipt_services = [receipt_service.service.measurement_unit.name for receipt_service in
+                                        receipt.receiptservices.all()]
                 elif name == '%serviceAmount%':
                     receipt_services = [receipt_service.amount for receipt_service in receipt.receiptservices.all()]
                 elif name == '%servicePrice%':
                     receipt_services = [receipt_service.price for receipt_service in receipt.receiptservices.all()]
                 else:
-                    receipt_services = [receipt_service.total_price for receipt_service in receipt.receiptservices.all()]
+                    receipt_services = [receipt_service.total_price for receipt_service in
+                                        receipt.receiptservices.all()]
 
                 for row_index in range(starting_row, starting_row + receipt.receiptservices.all().count()):
 
                     # merging cells for better display
                     if name != '%serviceTotal%':
                         workbook.worksheets[0].merge_cells(
-                            f'{get_column_letter(starting_column)}{row_index}:{get_column_letter(starting_column+1)}{row_index}')
+                            f'{get_column_letter(starting_column)}{row_index}:{get_column_letter(starting_column + 1)}{row_index}')
                     elif name == '%serviceTotal%':
                         workbook.worksheets[0].merge_cells(
-                            f'{get_column_letter(starting_column)}{row_index + 3}:{get_column_letter(starting_column + 2)}{row_index + 3}')
+                            f'{get_column_letter(starting_column)}{row_index}:{get_column_letter(starting_column + 2)}{row_index}')
 
                     # setting for new cells with services styles of previous cells from template
-                    if workbook.worksheets[0].cell(row=row_index - 1, column=starting_column).has_style and row_index != starting_row:
+                    if workbook.worksheets[0].cell(row=row_index - 1,
+                                                   column=starting_column).has_style and row_index != starting_row:
                         wb.worksheets[0].cell(row=row_index, column=starting_column).font = \
                             copy(workbook.worksheets[0].cell(row=row_index - 1, column=starting_column).font)
 
@@ -1555,7 +1645,8 @@ class BuildReceiptFileView(SingleObjectMixin, View):
                         wb.worksheets[0].cell(row=row_index, column=starting_column).fill = \
                             copy(workbook.worksheets[0].cell(row=row_index - 1, column=starting_column).fill)
 
-                    workbook.worksheets[0].cell(row=row_index, column=starting_column).value = receipt_services[row_index - starting_row]
+                    workbook.worksheets[0].cell(row=row_index, column=starting_column).value = receipt_services[
+                        row_index - starting_row]
 
             for index, row in enumerate(wb.worksheets[0]):
                 for index_second, cell in enumerate(row):

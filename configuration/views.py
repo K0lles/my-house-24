@@ -4,15 +4,17 @@ from django.http import JsonResponse, Http404
 from django.shortcuts import render, redirect
 from django.views import View
 from django.views.generic import CreateView, DeleteView, ListView, DetailView, UpdateView
+from administrator_panel.mixins import *
 
 from .models import *
 from .forms import *
 
 
-class MeasurementUnitListView(CreateView):
+class MeasurementUnitListView(PermissionCreateView):
     model = MeasurementUnit
     form_class = MeasurementUnitForm
     template_name = 'configuration/measurement_unit-list.html'
+    string_permission = 'service_access'
 
     def get_context_data(self, **kwargs):
         measurement_unit_queryset = MeasurementUnit.objects.all().order_by('id')
@@ -37,10 +39,11 @@ class MeasurementUnitListView(CreateView):
         return self.render_to_response(context)
 
 
-class MeasurementUnitDeleteView(DeleteView):
+class MeasurementUnitDeleteView(PermissionDeleteView):
     model = MeasurementUnit
     template_name = 'configuration/measurement_unit-list.html'
     pk_url_kwarg = 'pk'
+    string_permission = 'service_access'
 
     def delete(self, request, *args, **kwargs):
         try:
@@ -54,10 +57,11 @@ class MeasurementUnitDeleteView(DeleteView):
         return JsonResponse({'answer': 'success'})
 
 
-class ServiceCreateListView(CreateView):
+class ServiceCreateListView(PermissionCreateView):
     model = Service
     form_class = ServiceForm
     template_name = 'configuration/service-list.html'
+    string_permission = 'service_access'
 
     def get_context_data(self, **kwargs):
         context = super(ServiceCreateListView, self).get_context_data(**kwargs)
@@ -83,10 +87,11 @@ class ServiceCreateListView(CreateView):
         return self.render_to_response(context)
 
 
-class ServiceDeleteView(DeleteView):
+class ServiceDeleteView(PermissionDeleteView):
     model = Service
     template_name = 'configuration/service-list.html'
     pk_url_kwarg = 'pk'
+    string_permission = 'service_access'
 
     def delete(self, request, *args, **kwargs):
         try:
@@ -103,10 +108,11 @@ class ServiceDeleteView(DeleteView):
         return JsonResponse({'answer': 'success'})
 
 
-class TariffCreateView(CreateView):
+class TariffCreateView(PermissionCreateView):
     model = Tariff
     template_name = 'configuration/tariff-create-update.html'
     form_class = TariffForm
+    string_permission = 'tariff_access'
 
     def get_object(self, queryset=None):
         try:
@@ -151,15 +157,17 @@ class TariffCreateView(CreateView):
         return redirect('tariffs')
 
 
-class TariffListView(ListView):
+class TariffListView(PermissionListView):
     queryset = Tariff.objects.all().order_by('updated_at')
     template_name = 'configuration/tariff-list.html'
+    string_permission = 'tariff_access'
 
 
-class TariffDetailView(DetailView):
+class TariffDetailView(PermissionDetailView):
     model = Tariff
     template_name = 'configuration/tariff-detail.html'
     pk_url_kwarg = 'pk'
+    string_permission = 'tariff_access'
 
     def get_object(self, queryset=None):
         return Tariff.objects.prefetch_related('tariffservice_set',
@@ -167,11 +175,12 @@ class TariffDetailView(DetailView):
                                                'tariffservice_set__service__measurement_unit').get(pk=self.kwargs.get('pk'))
 
 
-class TariffUpdateView(UpdateView):
+class TariffUpdateView(PermissionUpdateView):
     model = Tariff
     template_name = 'configuration/tariff-create-update.html'
     pk_url_kwarg = 'pk'
     form_class = TariffForm
+    string_permission = 'tariff_access'
 
     def get_object(self, queryset=None):
         try:
@@ -218,6 +227,8 @@ class TariffUpdateView(UpdateView):
 
 
 def tariff_delete(request, pk):
+    if request.user.is_anonymous or not request.user.role.tariff_access:
+        return JsonResponse({'answer': 'Ви не маєте доступу до тарифів'})
     try:
         tariff_to_delete = Tariff.objects.get(pk=pk)
         tariff_to_delete.delete()
@@ -227,6 +238,8 @@ def tariff_delete(request, pk):
 
 
 def tariff_service_delete(request, pk_tariff_service_to_delete):
+    if request.user.is_anonymous or not request.user.role.tariff_access:
+        return JsonResponse({'answer': 'Ви не маєте доступу до тарифів'})
     try:
         tariff_service_to_delete = TariffService.objects.get(pk=pk_tariff_service_to_delete)
         tariff_service_to_delete.delete()
@@ -235,9 +248,10 @@ def tariff_service_delete(request, pk_tariff_service_to_delete):
     return JsonResponse({'answer': 'success'})
 
 
-class RolesListUpdate(ListView):
+class RolesListUpdate(PermissionListView):
     model = Role
     template_name = 'configuration/role-list.html'
+    string_permission = 'role_access'
 
     def get_context_data(self, *, object_list=None, **kwargs):
         context = super(RolesListUpdate, self).get_context_data()
@@ -258,10 +272,11 @@ class RolesListUpdate(ListView):
         return self.render_to_response(context)
 
 
-class UserCreateView(CreateView):
+class UserCreateView(PermissionCreateView):
     model = User
     template_name = 'configuration/user-create-update.html'
     form_class = UserForm
+    string_permission = 'user_access'
 
     def get_context_data(self, **kwargs):
         context = super(UserCreateView, self).get_context_data(**kwargs)
@@ -288,10 +303,11 @@ class UserCreateView(CreateView):
                                  role=form.cleaned_data.get('role'))
 
 
-class UserDetailView(DetailView):
+class UserDetailView(PermissionDetailView):
     model = User
     template_name = 'configuration/user-detail.html'
     pk_url_kwarg = 'pk'
+    string_permission = 'user_access'
 
     def get_object(self, queryset=None):
         try:
@@ -300,11 +316,12 @@ class UserDetailView(DetailView):
             raise Http404()
 
 
-class UserUpdateView(UpdateView):
+class UserUpdateView(PermissionUpdateView):
     model = User
     template_name = 'configuration/user-create-update.html'
     form_class = UserForm
     pk_url_kwarg = 'pk'
+    string_permission = 'user_access'
 
     def get_object(self, queryset=None):
         try:
@@ -342,15 +359,18 @@ class UserUpdateView(UpdateView):
         return redirect('users')
 
 
-class UserListView(ListView):
+class UserListView(PermissionListView):
     model = User
     template_name = 'configuration/user-list.html'
+    string_permission = 'user_access'
 
     def get_queryset(self):
         return User.objects.select_related('role').all().order_by('pk')
 
 
 def delete_user(request, pk):
+    if request.user.is_anonymous or not request.user.role.user_access:
+        return JsonResponse({'answer': 'Ви не маєте доступу до користувачів'})
     try:
         user = User.objects.get(pk=pk)
         user.delete()
@@ -359,10 +379,11 @@ def delete_user(request, pk):
     return JsonResponse({'answer': 'success'})
 
 
-class PaymentRequisitesCreateView(CreateView):
+class PaymentRequisitesCreateView(PermissionCreateView):
     model = PaymentRequisite
     template_name = 'configuration/payment-requisite.html'
     form_class = PaymentRequisitesForm
+    string_permission = 'payment_requisite_access'
 
     def get_form(self, form_class=None):
         return PaymentRequisitesForm(instance=PaymentRequisite.objects.first())
@@ -376,10 +397,11 @@ class PaymentRequisitesCreateView(CreateView):
         return self.render_to_response(self.get_context_data())
 
 
-class ArticlePaymentCreateView(CreateView):
+class ArticlePaymentCreateView(PermissionCreateView):
     model = ArticlePayment
     template_name = 'configuration/article-payment-create-update.html'
     form_class = ArticlePaymentForm
+    string_permission = 'payment_requisite_access'
 
     def get_form(self, form_class=None):
         return ArticlePaymentForm()
@@ -395,17 +417,19 @@ class ArticlePaymentCreateView(CreateView):
         return self.render_to_response(context)
 
 
-class ArticlePaymentListView(ListView):
+class ArticlePaymentListView(PermissionListView):
     model = ArticlePayment
     template_name = 'configuration/article-payment-list.html'
     queryset = ArticlePayment.objects.all().order_by('pk')
+    string_permission = 'payment_requisite_access'
 
 
-class ArticlePaymentUpdateView(UpdateView):
+class ArticlePaymentUpdateView(PermissionUpdateView):
     model = ArticlePayment
     template_name = 'configuration/article-payment-create-update.html'
     form_class = ArticlePaymentForm
     pk_url_kwarg = 'pk'
+    string_permission = 'payment_requisite_access'
 
     def get_object(self, queryset=None):
         try:
@@ -425,6 +449,8 @@ class ArticlePaymentUpdateView(UpdateView):
 
 
 def delete_article(request, pk):
+    if request.user.is_anonymous or not request.user.role.payment_requisite_access:
+        return JsonResponse({'answer': 'Ви не маєте доступу до користувачів'})
     try:
         article_to_delete = ArticlePayment.objects.get(pk=pk)
         article_to_delete.delete()
@@ -451,8 +477,39 @@ class UserLoginView(CreateView):
         if email and password:
             user = authenticate(username=email,
                                 password=password)
-            if user and user.role.role == 'user':
+            if user and user.role.role == 'owner':
                 login(request, user)
+                if request.POST.get('remember_me'):
+                    self.request.session.set_expiry(0)
+                return redirect('flats')
+        self.object = None
+        context = self.get_context_data()
+        context['error'] = 'Неправильно введені дані'
+        return self.render_to_response(context=context)
+
+
+class ManagementLoginView(CreateView):
+    model = User
+    template_name = 'configuration/user-staff-login.html'
+    form_class = UserRegistrationForm
+
+    def get(self, request, *args, **kwargs):
+        if self.request.user.is_authenticated:
+            return redirect('flats')
+        self.object = None
+        context = self.get_context_data()
+        return self.render_to_response(context)
+
+    def post(self, request, *args, **kwargs):
+        email = request.POST.get('email')
+        password = request.POST.get('password')
+        if email and password:
+            user = authenticate(username=email,
+                                password=password)
+            if user and user.role.role != 'owner':
+                login(request, user)
+                if request.POST.get('remember_me'):
+                    self.request.session.set_expiry(0)
                 return redirect('flats')
         self.object = None
         context = self.get_context_data()

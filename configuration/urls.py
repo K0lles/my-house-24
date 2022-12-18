@@ -27,4 +27,5 @@ urlpatterns = [
     path('article-payment/delete/<int:pk>/', delete_article, name='delete-article'),
     path('cabinet/login/', UserLoginView.as_view(), name='user-login'),
     path('cabinet/logout/', UserLogoutView.as_view(), name='user-logout'),
+    path('admin/login/', ManagementLoginView.as_view(), name='user-staff-login'),
 ]

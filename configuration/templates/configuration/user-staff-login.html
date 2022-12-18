@@ -50,15 +50,15 @@
         </div>
         <nav style="background: white;">
             <div class="nav nav-tabs justify-content-center" id="nav-tab" role="tablist">
-                <a class="nav-link active" href="{% url 'user-login' %}" aria-expanded="true" style="border-top: 3px solid #3c8dbc;">Для жителів</a>
-                <a class="nav-link" href="{% url 'user-staff-login' %}" aria-expanded="true">Для адміністрації</a>
+                <a class="nav-link active" href="{% url 'user-login' %}" aria-expanded="true">Для жителів</a>
+                <a class="nav-link" href="#" aria-expanded="true" style="border-top: 3px solid #3c8dbc;">Для адміністрації</a>
             </div>
         </nav>
         <div class="tab-content" style="background: white;">
             <div class="tab-pane active" id="tab_1">
                 <div class="login-box-body">
-                    <p class="login-box-msg">Вхід у особистий кабінет</p>
-                    <form id="login-form" action="{% url 'user-login' %}" method="post">
+                    <p class="login-box-msg">Вхід у кабінет управління</p>
+                    <form id="login-form" action="{% url 'user-staff-login' %}" method="post">
                     {% csrf_token %}
                         <div class="form-group" style="position: relative;">
                             <input type="email" id="{{ form.email.auto_id }}" class="form-control" name="{{ form.email.html_name }}" {% if form.email.value %}value="{{ form.email.value }}"{% endif %} placeholder="E-mail" aria-required="true" style="display: inline; {% if error %}border: 1px solid red;{% endif %}" onchange="emailTypeValidationLocal(this)">

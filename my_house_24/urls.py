@@ -3,6 +3,10 @@ from django.contrib import admin
 from django.urls import path, include
 
 from my_house_24 import settings
+from .views import PageNotFoundView, InternalServerError
+
+handler404 = PageNotFoundView.as_view()
+handler505 = InternalServerError.as_view()
 
 urlpatterns = [
     path('admin/', admin.site.urls),

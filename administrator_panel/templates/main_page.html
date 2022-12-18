@@ -65,7 +65,6 @@
 
     <!-- Right navbar links -->
     <ul class="navbar-nav ml-auto">
-      <!-- Navbar Search -->
       <!-- Messages Dropdown Menu -->
       <li class="nav-item dropdown">
         <a class="nav-link" data-toggle="dropdown" href="#">
@@ -124,6 +123,53 @@
           <a href="#" class="dropdown-item dropdown-footer">See All Messages</a>
         </div>
       </li>
+        {% if request.user.is_authenticated %}
+      <li class="nav-item dropdown">
+        <a class="nav-link" data-toggle="dropdown" href="#">
+          <img class="user-image img-circle" {% if not request.user.logo %}src="{% static 'all_logos/empty-image.jpeg' %}"{% else %}src="{{ request.user.logo.url }}"{% endif %} width="25px" height="25px">
+          <span>{{ request.user.surname }} {{ request.user.name }} {% if request.user.father %}{{ request.user.father }}{% endif %}</span>
+        </a>
+        <div class="dropdown-menu dropdown-menu-lg dropdown-menu-right">
+          <a href="#" class="dropdown-item">
+            <div class="user-header">
+
+            </div>
+            <!-- Message Start -->
+            <div class="media">
+              <img src="{% static 'all_logos/empty-image.jpeg' %}" alt="{{ request.user.name }}" class="img-size-50 mr-3 img-circle">
+              <div class="media-body">
+                <h3 class="dropdown-item-title">
+                  Brad Diesel
+                </h3>
+              </div>
+            </div>
+            <!-- Message End -->
+          </a>
+        </div>
+      </li>
+        {% endif %}
+      {% comment %}<li class="nav-item user user-menu">
+        <a href="#" data-toggle="dropdown" aria-expanded="false" class="dropdown-item-title nav-link">
+          {% if request.user.is_authenticated %}
+              <img {% if request.user.logo %}src="{{ request.user.logo.url }}"{% endif %} class="user-image" alt="{{ request.user.name }}">
+              {{ request.user.surname }} {{ request.user.name }}
+          {% else %}Анонімний{% endif %}
+        </a>
+        <ul class="dropdown-menu">
+            <!-- User image -->
+            <li class="user-header">
+                <img {% if request.user.logo %}src="{{ request.user.logo.url }}"{% endif %} class="img-circle" alt="{{ request.user.name }}">
+                <p>Иванов 122 Иван 22 Сидорович 22</p>
+            </li>
+            <!-- Menu Footer-->
+            <li class="user-footer">
+                <div class="pull-left">
+                    <a class="btn btn-default btn-flat" href="/cabinet/user/view">Профиль</a>                            </div>
+                <div class="pull-right">
+                    <a class="btn btn-default btn-flat" href="/cabinet/site/logout" data-method="post">Выход</a>                            </div>
+            </li>
+        </ul>
+      </li>{% endcomment %}
       <!-- Notifications Dropdown Menu -->
     </ul>
   </nav>

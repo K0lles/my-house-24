@@ -68,20 +68,20 @@
                                         timer: 1200,
                                     })
                                 }
-                                else if (response['answer'] === 'failed') {
-                                    Swal.fire({
-                                        position: 'top-end',
-                                        icon: 'error',
-                                        title: 'Щось пішло не так!',
-                                        showConfirmButton: false,
-                                        timer: 1200
-                                    });
-                                }
                                 else if (response['answer'] === 'template is default') {
                                     Swal.fire({
                                         position: 'top-end',
                                         icon: 'error',
                                         title: 'Шаблон за замовчуванням не можна видаляти!',
+                                        showConfirmButton: false,
+                                        timer: 1200
+                                    });
+                                }
+                                else {
+                                    Swal.fire({
+                                        position: 'top-end',
+                                        icon: 'error',
+                                        title: 'Щось пішло не так!',
                                         showConfirmButton: false,
                                         timer: 1200
                                     });

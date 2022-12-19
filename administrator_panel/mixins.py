@@ -1,4 +1,5 @@
 from django.contrib.auth.mixins import UserPassesTestMixin
+from django.shortcuts import redirect
 from django.views.generic import ListView, CreateView, UpdateView, DetailView, DeleteView
 
 
@@ -25,6 +26,8 @@ class PermissionListView(DirectorUserPassesTestMixin, ListView):
 
     def dispatch(self, request, *args, **kwargs):
         if not self.test_func():
+            if self.request.user.is_anonymous:
+                return redirect('user-login')
             return self.forbidden_page()
         return super().dispatch(request, *args, **kwargs)
 
@@ -39,6 +42,8 @@ class PermissionCreateView(DirectorUserPassesTestMixin, CreateView):
 
     def dispatch(self, request, *args, **kwargs):
         if not self.test_func():
+            if self.request.user.is_anonymous:
+                return redirect('user-login')
             return self.forbidden_page()
         return super().dispatch(request, *args, **kwargs)
 
@@ -53,6 +58,8 @@ class PermissionDetailView(DirectorUserPassesTestMixin, DetailView):
 
     def dispatch(self, request, *args, **kwargs):
         if not self.test_func():
+            if self.request.user.is_anonymous:
+                return redirect('user-login')
             return self.forbidden_page()
         return super().dispatch(request, *args, **kwargs)
 
@@ -67,6 +74,8 @@ class PermissionUpdateView(DirectorUserPassesTestMixin, UpdateView):
 
     def dispatch(self, request, *args, **kwargs):
         if not self.test_func():
+            if self.request.user.is_anonymous:
+                return redirect('user-login')
             return self.forbidden_page()
         return super().dispatch(request, *args, **kwargs)
 
@@ -81,5 +90,7 @@ class PermissionDeleteView(DirectorUserPassesTestMixin, DeleteView):
 
     def dispatch(self, request, *args, **kwargs):
         if not self.test_func():
+            if self.request.user.is_anonymous:
+                return redirect('user-login')
             return self.forbidden_page()
         return super().dispatch(request, *args, **kwargs)

@@ -477,7 +477,7 @@ class UserLoginView(CreateView):
         if email and password:
             user = authenticate(username=email,
                                 password=password)
-            if user and user.role.role == 'owner':
+            if user and user.role.role == 'owner' and user.status != 'disconnected':
                 login(request, user)
                 if request.POST.get('remember_me'):
                     self.request.session.set_expiry(0)
@@ -506,7 +506,7 @@ class ManagementLoginView(CreateView):
         if email and password:
             user = authenticate(username=email,
                                 password=password)
-            if user and user.role.role != 'owner':
+            if user and user.role.role != 'owner' and user.status != 'disconnected':
                 login(request, user)
                 if request.POST.get('remember_me'):
                     self.request.session.set_expiry(0)

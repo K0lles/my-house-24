@@ -531,10 +531,8 @@ def calculate_totals(personal_accounts: QuerySet):
         notoriety_income_sum=Sum('sum', filter=Q(type='income'), output_field=FloatField()),
         notoriety_outcome_sum=Sum('sum', filter=Q(type='outcome'), output_field=FloatField()))
     checkout_condition = {
-        'sum': (checkout_condition.get('notoriety_income_sum') if checkout_condition.get(
-            'notoriety_income_sum') else 0.00)
-               - (checkout_condition.get('notoriety_outcome_sum') if checkout_condition.get(
-            'notoriety_outcome_sum') else 0.00)
+        'sum': (checkout_condition.get('notoriety_income_sum') if checkout_condition.get('notoriety_income_sum') else 0.00) -
+               (checkout_condition.get('notoriety_outcome_sum') if checkout_condition.get('notoriety_outcome_sum') else 0.00)
     }
 
     # count sum by all account's positive rest

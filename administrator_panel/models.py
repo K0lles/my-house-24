@@ -111,11 +111,10 @@ class Application(models.Model):
 
 
 class Message(models.Model):
-    sender = models.ForeignKey(User, on_delete=models.PROTECT, verbose_name='Відправник', related_name='sender')
-    receiver = models.ForeignKey(User, on_delete=models.PROTECT, verbose_name='Кому', related_name='receiver')
+    sender = models.ForeignKey(User, on_delete=models.SET_NULL, verbose_name='Відправник', related_name='sender', blank=True, null=True)
+    receiver = models.ForeignKey(User, on_delete=models.SET_NULL, verbose_name='Кому', related_name='receiver', blank=True, null=True)
     theme = models.CharField(max_length=200, verbose_name='Тема')
     main_text = models.TextField(verbose_name='Повідомлення')
-    is_read = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now=True)
 
 

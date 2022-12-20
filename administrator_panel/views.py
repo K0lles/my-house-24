@@ -12,7 +12,7 @@ from django.db.models.deletion import ProtectedError
 from django.views.generic.detail import SingleObjectMixin
 from django.views.generic.list import MultipleObjectMixin
 
-from configuration.models import Role, Tariff, Service, MeasurementUnit
+from configuration.models import Role, Tariff, Service, MeasurementUnit, PaymentRequisite, ArticlePayment
 from .forms import *
 from .mixins import *
 from my_house_24 import settings
@@ -555,6 +555,7 @@ def count_all_totals(personal_accounts: QuerySet):
     return answer
 
 
+#TODO: Make exporting accounts to excel file
 class PersonalAccountListView(PermissionListView):
     model = PersonalAccount
     template_name = 'administrator_panel/personal_account-list.html'
@@ -1658,3 +1659,22 @@ class BuildReceiptFileView(SingleObjectMixin, View):
             return JsonResponse({'answer': 'success', 'file_path': f'{settings.MEDIA_URL}receipts/{file_name}'})
         except (Template.DoesNotExist, Receipt.DoesNotExist, PersonalAccount.DoesNotExist):
             return JsonResponse({'answer': 'failed'})
+
+
+class MessageCreateView(PermissionCreateView):
+    model = Message
+    template_name = 'administrator_panel/message-create.html'
+    form_class = MessageForm
+    string_permission = 'message_access'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context = personal_account_context(context,
+                                           Flat.objects
+                                           .select_related('personalaccount', 'house', 'section', 'owner')
+                                           .filter(owner__isnull=False))
+        return context
+
+    def post(self, request, *args, **kwargs):
+        form = self.get_form_class()(request.POST)
+        return redirect('message-create')

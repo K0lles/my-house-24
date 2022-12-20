@@ -1,12 +1,11 @@
-from django.forms import ModelForm, modelformset_factory, ModelChoiceField, CharField, DateField
+from django.forms import ModelForm, modelformset_factory, ModelChoiceField, CharField, DateField, BooleanField
 from django.utils import timezone
 
 from phonenumber_field.formfields import PhoneNumberField
 
 from configuration.models import User, Service
 from .models import House, HouseUser, Section, Floor, PersonalAccount, Flat, Evidence, Receipt, ReceiptService, \
-    Notoriety, Template
-from configuration.models import PaymentRequisite, ArticlePayment
+    Notoriety, Template, Message
 
 
 class HouseForm(ModelForm):
@@ -306,3 +305,11 @@ class ReceiptTemplateForm(ModelForm):
     class Meta:
         model = Template
         exclude = ('is_default',)
+
+
+class MessageForm(ModelForm):
+    send_all_debtors = BooleanField(required=False)
+
+    class Meta:
+        model = Message
+        exclude = ('sender',)

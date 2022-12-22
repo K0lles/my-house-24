@@ -1,4 +1,5 @@
 import openpyxl
+from django.views.generic.base import ContextMixin
 from openpyxl.styles import Alignment
 from openpyxl.utils import get_column_letter
 
@@ -555,7 +556,7 @@ def count_all_totals(personal_accounts: QuerySet):
     return answer
 
 
-#TODO: Make exporting accounts to excel file
+# TODO: Make exporting accounts to excel file
 class PersonalAccountListView(PermissionListView):
     model = PersonalAccount
     template_name = 'administrator_panel/personal_account-list.html'
@@ -667,6 +668,62 @@ def personal_account_is_unique(request):
         return JsonResponse({'answer': 'failed'})
     except PersonalAccount.DoesNotExist:
         return JsonResponse({'answer': 'success'})
+
+
+class PersonalAccountExcelView(View):
+
+    def get(self, request, *args, **kwargs):
+        if self.request.user.is_authenticated and self.request.user.role.bill_access:
+            personal_accounts_dict = calculate_notoriety_and_receipt_sum(PersonalAccount.objects
+                                                                         .select_related('flat', 'flat__section',
+                                                                                         'flat__house', 'flat__owner') \
+                                                                         .prefetch_related('notoriety_set',
+                                                                                           'receipt_set',
+                                                                                           'receipt_set__receiptservices')
+                                                                         .all())
+            wb = openpyxl.Workbook()
+            ws = wb.active
+            ws['A1'].value = 'Особовий рахунок'
+            ws['B1'].value = 'Статус'
+            ws['C1'].value = 'Будинок'
+            ws['D1'].value = 'Секція'
+            ws['E1'].value = 'Квартира'
+            ws['F1'].value = 'Власник'
+            ws['G1'].value = 'Залишок'
+
+            ws.column_dimensions['A'].width = 45
+            ws.column_dimensions['B'].width = 15
+            ws.column_dimensions['C'].width = 25
+            ws.column_dimensions['D'].width = 20
+            ws.column_dimensions['E'].width = 20
+            ws.column_dimensions['F'].width = 30
+            ws.column_dimensions['G'].width = 10
+
+            account: PersonalAccount
+            for index, account in enumerate(personal_accounts_dict['personal_accounts']):
+                ws[f'A{index + 2}'].value = account.number
+                ws[f'B{index + 2}'].value = account.get_status_display()
+
+                if account.flat:
+                    ws[f'C{index + 2}'].value = account.flat.house.name
+                    ws[f'D{index + 2}'].value = account.flat.section.name
+                    ws[f'E{index + 2}'].value = account.flat.number
+                    owner_string = account.flat.owner.surname if account.flat.owner.surname else ''
+                    owner_string += account.flat.owner.name if account.flat.owner.name else ''
+                    owner_string += account.flat.owner.father if account.flat.owner.father else ''
+                    ws[f'F{index + 2}'].value = owner_string
+
+                ws[f'G{index + 2}'].value = account.subtraction if account.subtraction else 0
+
+            from os import path, mkdir
+            if not path.exists(f'{settings.MEDIA_ROOT}/accounts'):
+                mkdir(f'{settings.MEDIA_ROOT}/accounts')
+
+            file_name = f'accounts_{timezone.now().day}-{timezone.now().month}-{timezone.now().year}.xlsx'
+            file_path = f'{settings.MEDIA_ROOT}/accounts/{file_name}'
+            wb.save(file_path)
+            return JsonResponse({'answer': 'success', 'file_path': f'{settings.MEDIA_URL}/accounts/{file_name}'})
+        return JsonResponse({'answer': 'failed'})
 
 
 class OwnerCreateView(PermissionCreateView):
@@ -1673,6 +1730,23 @@ class MessageCreateView(PermissionCreateView):
                                            Flat.objects
                                            .select_related('personalaccount', 'house', 'section', 'owner')
                                            .filter(owner__isnull=False))
+
+        context['house_floor']: dict[int, list[list[int, str]]] = {}
+        context['floor_flat']: dict[int, list[list[int, str]]] = {}
+
+        # adding dict with floors in each section and flats on each floor for correct display in template selections
+        for flat in context.get('flats'):
+            if not context.get('house_floor').get(flat.house.id):
+                context.get('house_floor')[flat.house.id] = [[flat.floor.id, flat.floor.name]]
+            else:
+                if [flat.floor.id, flat.floor.name] not in context.get('house_floor')[flat.house.id]:
+                    context.get('house_floor')[flat.house.id].append([flat.floor.id, flat.floor.name])
+
+            if not context.get('floor_flat').get(flat.floor.id):
+                context.get('floor_flat')[flat.floor.id] = [[flat.id, flat.number]]
+            else:
+                context.get('floor_flat')[flat.floor.id].append([flat.id, flat.number])
+
         return context
 
     def post(self, request, *args, **kwargs):

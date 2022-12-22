@@ -17,6 +17,7 @@ urlpatterns = [
     path('flat/update/<int:flat_pk>/', FlatUpdateView.as_view(), name='flat-update'),
     path('flat/delete/<int:flat_pk>/', delete_flat, name='flat-delete'),
     path('personal-account/', PersonalAccountListView.as_view(), name='personal-accounts'),
+    path('personal-account/template/download/', PersonalAccountExcelView.as_view(), name='personal-account-download'),
     path('personal-account/create/', PersonalAccountCreateView.as_view(), name='personal-account-create'),
     path('personal-account/<int:account_pk>/', PersonalAccountDetailView.as_view(), name='personal-account-detail'),
     path('personal-account/update/<int:account_pk>/', PersonalAccountUpdateView.as_view(), name='personal-account-update'),

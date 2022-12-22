@@ -40,9 +40,30 @@
                             <label class="form-check-label" for="{{ form.send_all_debtors.auto_id }}"><b>Власникам із заборгованостями</b></label>
                         </div>
                         <div class="form-group" style="margin-top: 3%;">
-                            <label class="form-label" for="">ЖК</label>
-                            <select class="form-select">
-
+                            <label class="form-label" for="id_house">ЖК</label>
+                            <select class="form-select" id="id_house" name="house" onchange="changedHouse(this)">
+                                <option>Всім</option>
+                                {% for house in houses %}
+                                    <option value="{{ house.pk }}">{{ house.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="id_section">Секція</label>
+                            <select class="form-select" id="id_section" name="section" onchange="changedSection(this)">
+                                <option>Всім</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="id_floor">Поверх</label>
+                            <select class="form-select" id="id_floor" name="floor" onchange="changedFloor(this)">
+                                <option>Всім</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="id_flat">Квартира</label>
+                            <select class="form-select" id="id_flat" name="flat">
+                                <option>Всім</option>
                             </select>
                         </div>
                     </div>
@@ -59,7 +80,6 @@
 
 {% block scripts %}
 <script>
-    //let editor1 = new RichTextEditor("#editor");
     ClassicEditor
         .create( document.querySelector( '#editor' ) )
         .catch( error => {} );
@@ -84,5 +104,81 @@
             return false;
         }
     }
+
+    let house_section = {{ house_section|safe }};
+    let house_floor = {{ house_floor|safe }};
+    let section_flat = {{ section_flat|safe }};
+    let floor_flat = {{ floor_flat|safe }};
+
+
+    function changedHouse(element) {
+        let selectedId = $(element).children("option:selected").val();
+        console.log(selectedId);
+        $('#id_section').find('option').remove().end().append('<option>Всім</option>');
+        $('#id-floor').find('option').remove().end().append('<option>Всім</option>');
+        $('#id_flat').find('option').remove().end().append('<option>Всім</option>');
+
+        if (house_section[selectedId]){
+            for (let key_array in house_section[selectedId]) {
+                let option_to_append = `<option value="${house_section[selectedId][key_array][0]}">${house_section[selectedId][key_array][1]}</option>`
+                $('#id_section').append(option_to_append);
+            }
+        }
+
+        if (house_floor[selectedId]) {
+            for (let key_array in house_floor[selectedId]) {
+                let option_to_append = `<option value="${house_floor[selectedId][key_array][0]}">${house_floor[selectedId][key_array][1]}</option>`
+                $('#id_floor').append(option_to_append);
+            }
+        }
+        element.style = 'border: 1px solid #58c76d';
+    }
+
+    function changedSection(element) {
+        let selectedId = $(element).children("option:selected").val();
+        $('#id_flat').find('option').remove().end().append('<option>Всім</option>');
+
+        if (selectedId === 'Всім') {
+            for (let outer_key in section_flat) {
+                for (let key_array in section_flat[selectedId]) {
+                    let option_to_append = `<option value="${section_flat[outer_key][key_array][0]}">${section_flat[outer_key][key_array][1]}</option>`
+                    $('#id_flat').append(option_to_append);
+                }
+            }
+        }
+
+        if (section_flat[selectedId]){
+            for (let key_array in section_flat[selectedId]) {
+                let option_to_append = `<option value="${section_flat[selectedId][key_array][0]}">${section_flat[selectedId][key_array][1]}</option>`
+                $('#id_flat').append(option_to_append);
+            }
+        }
+
+        element.style = 'border: 1px solid #58c76d';
+    }
+
+    function changedFloor(element) {
+        let selectedId = $(element).children("option:selected").val();
+        $('#id_flat').find('option').remove().end().append('<option>Всім</option>');
+        if (selectedId === 'Всім') {
+            {% comment %}let selectedId = $(element).children("option:selected").val();
+            for (let outer_key in section_flat) {
+                for (let key_array in section_flat[selectedId]) {
+                    let option_to_append = `<option value="${section_flat[outer_key][key_array][0]}">${section_flat[outer_key][key_array][1]}</option>`
+                    $('#id_flat').append(option_to_append);
+                }
+            }{% endcomment %}
+            changedSection($('#id-section'));
+            return;
+        }
+        if (floor_flat[selectedId]){
+            for (let key_array in floor_flat[selectedId]) {
+                let option_to_append = `<option value="${floor_flat[selectedId][key_array][0]}">${floor_flat[selectedId][key_array][1]}</option>`
+                $('#id_flat').append(option_to_append);
+            }
+        }
+        element.style = 'border: 1px solid #58c76d';
+    }
+
 </script>
 {% endblock %}

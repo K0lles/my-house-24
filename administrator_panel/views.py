@@ -699,7 +699,6 @@ class PersonalAccountExcelView(View):
             ws.column_dimensions['F'].width = 30
             ws.column_dimensions['G'].width = 10
 
-            account: PersonalAccount
             for index, account in enumerate(personal_accounts_dict['personal_accounts']):
                 ws[f'A{index + 2}'].value = account.number
                 ws[f'B{index + 2}'].value = account.get_status_display()
@@ -708,10 +707,11 @@ class PersonalAccountExcelView(View):
                     ws[f'C{index + 2}'].value = account.flat.house.name
                     ws[f'D{index + 2}'].value = account.flat.section.name
                     ws[f'E{index + 2}'].value = account.flat.number
-                    owner_string = account.flat.owner.surname if account.flat.owner.surname else ''
-                    owner_string += account.flat.owner.name if account.flat.owner.name else ''
-                    owner_string += account.flat.owner.father if account.flat.owner.father else ''
-                    ws[f'F{index + 2}'].value = owner_string
+                    if account.flat.owner:
+                        owner_string = account.flat.owner.surname + ' ' if account.flat.owner.surname else ''
+                        owner_string += account.flat.owner.name + ' ' if account.flat.owner.name else ''
+                        owner_string += account.flat.owner.father + ' ' if account.flat.owner.father else ''
+                        ws[f'F{index + 2}'].value = owner_string
 
                 ws[f'G{index + 2}'].value = account.subtraction if account.subtraction else 0
 
@@ -719,7 +719,7 @@ class PersonalAccountExcelView(View):
             if not path.exists(f'{settings.MEDIA_ROOT}/accounts'):
                 mkdir(f'{settings.MEDIA_ROOT}/accounts')
 
-            file_name = f'accounts_{timezone.now().day}-{timezone.now().month}-{timezone.now().year}.xlsx'
+            file_name = f'accounts_{timezone.now().day}.{timezone.now().month}.{timezone.now().year}.xlsx'
             file_path = f'{settings.MEDIA_ROOT}/accounts/{file_name}'
             wb.save(file_path)
             return JsonResponse({'answer': 'success', 'file_path': f'{settings.MEDIA_URL}/accounts/{file_name}'})
@@ -1274,8 +1274,8 @@ class NotorietyCreateView(PermissionCreateView):
                 raise Http404()
 
         context['personal_accounts'] = PersonalAccount.objects.select_related('flat', 'flat__owner') \
-            .filter(flat__isnull=False, status='active', flat__owner__isnull=False)
-        context['owners'] = set([account.flat.owner for account in context['personal_accounts']])
+            .filter(flat__isnull=False, status='active')
+        context['owners'] = set([account.flat.owner for account in context['personal_accounts'] if account.flat.owner])
         context['articles'] = ArticlePayment.objects.filter(type__exact=context['type'])
         context['managers'] = User.objects.select_related('role').filter(
             role__role__in=['director', 'manager', 'accountant'])
@@ -1348,9 +1348,13 @@ class NotorietyTemplateDownload(SingleObjectMixin, View):
 
         ws['B1'].value = f'#{notoriety.number}'
         ws['B2'].value = f'{notoriety.created_at.day}.{notoriety.created_at.month}.{notoriety.created_at.year}'
-        ws[
-            'B3'].value = f'{notoriety.account.flat.owner.surname} {notoriety.account.flat.owner.name} {notoriety.account.flat.owner.father}' if notoriety.account else ''
-        ws['B4'].value = notoriety.account.number if notoriety.account else ''
+        if notoriety.type == 'income':
+            if notoriety.account.flat.owner:
+                owner_string = notoriety.account.flat.owner.surname + ' ' if notoriety.account.flat.owner.surname else ''
+                owner_string += notoriety.account.flat.owner.name + ' ' if notoriety.account.flat.owner.name else ''
+                owner_string += notoriety.account.flat.owner.father if notoriety.account.flat.owner.father else ''
+                ws['B3'].value = owner_string
+            ws['B4'].value = notoriety.account.number if notoriety.account else ''
         ws['B5'].value = 'Проведена' if notoriety.is_completed else 'Не проведена'
         ws['B6'].value = notoriety.article.name
         ws['B7'].value = notoriety.sum if notoriety.type == 'income' else -abs(notoriety.sum)
@@ -1427,6 +1431,63 @@ class NotorietyListView(PermissionListView):
         context.update(count_all_totals(PersonalAccount.objects.all()))
 
         return context
+
+
+class NotorietyListTemplateDownload(View):
+
+    def get(self, request, *args, **kwargs):
+        if self.request.user.is_authenticated and self.request.user.role.checkout_access:
+
+            notorieties = Notoriety.objects\
+                .select_related('article', 'account', 'account__flat', 'account__flat__owner')\
+                .all()
+
+            wb = openpyxl.Workbook()
+            ws = wb.active
+            ws['A1'].value = '#'
+            ws['B1'].value = 'Дата'
+            ws['C1'].value = 'Прихід/розхід'
+            ws['D1'].value = 'Статус'
+            ws['E1'].value = 'Стаття'
+            ws['F1'].value = 'Сума'
+            ws['G1'].value = 'Валюта'
+            ws['H1'].value = 'Власник квартири'
+            ws['I1'].value = 'Особовий рахунок'
+
+            for index, notoriety in enumerate(notorieties):
+                ws[f'A{index + 2}'].value = notoriety.number
+                ws[f'B{index + 2}'].value = f'{notoriety.created_at.day}.{notoriety.created_at.month}.{notoriety.created_at.year}'
+                ws[f'C{index + 2}'].value = notoriety.get_type_display()
+                ws[f'D{index + 2}'].value = 'Проведена' if notoriety.is_completed else 'Не проведена'
+                ws[f'E{index + 2}'].value = notoriety.article.name
+                ws[f'F{index + 2}'].value = notoriety.sum if notoriety.type == 'income' else -abs(notoriety.sum)
+                ws[f'G{index + 2}'].value = 'UAH'
+                if notoriety.type == 'income' and notoriety.account.flat.owner:
+                    owner_string = notoriety.account.flat.owner.surname + ' ' if notoriety.account.flat.owner.surname else ''
+                    owner_string += notoriety.account.flat.owner.name + ' ' if notoriety.account.flat.owner.name else ''
+                    owner_string += notoriety.account.flat.owner.father if notoriety.account.flat.owner.father else ''
+                    ws[f'H{index + 2}'].value = owner_string
+                ws[f'I{index + 2}'].value = notoriety.account.number if notoriety.type == 'income' else None
+
+            ws.column_dimensions['A'].width = 45
+            ws.column_dimensions['B'].width = 15
+            ws.column_dimensions['C'].width = 15
+            ws.column_dimensions['D'].width = 15
+            ws.column_dimensions['E'].width = 35
+            ws.column_dimensions['F'].width = 15
+            ws.column_dimensions['G'].width = 10
+            ws.column_dimensions['H'].width = 30
+            ws.column_dimensions['I'].width = 30
+
+            from os import path, mkdir
+            if not path.exists(f'{settings.MEDIA_ROOT}/notorieties'):
+                mkdir(f'{settings.MEDIA_ROOT}/notorieties')
+
+            file_name = f'notorieties_{timezone.now().day}.{timezone.now().month}.{timezone.now().year}.xlsx'
+            file_path = f'{settings.MEDIA_ROOT}/notorieties/{file_name}'
+            wb.save(file_path)
+            return JsonResponse({'answer': 'success', 'file_path': f'{settings.MEDIA_URL}/notorieties/{file_name}'})
+        return JsonResponse({'answer': 'failed'})
 
 
 class NotorietyDeleteView(SingleObjectMixin, View):
@@ -1709,6 +1770,10 @@ class BuildReceiptFileView(SingleObjectMixin, View):
                     val = wb.worksheets[0].cell(row=index + 1, column=index_second + 1).value
                     if val in ['%serviceName%', '%servicePrice%', '%serviceUnit%', '%serviceAmount%', '%serviceTotal%']:
                         set_service_info(val, wb, index + 1, index_second + 1)
+
+            from os import path, mkdir
+            if not path.exists(f'{settings.MEDIA_ROOT}/receipts'):
+                mkdir(f'{settings.MEDIA_ROOT}/receipts')
 
             file_name = f'receipt_{receipt.number}_{receipt.created_at.day}.{receipt.created_at.month}.{receipt.created_at.year}.xlsx'
             file_path = f'{settings.MEDIA_ROOT}/receipts/{file_name}'

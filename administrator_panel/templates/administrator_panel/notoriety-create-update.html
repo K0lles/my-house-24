@@ -140,10 +140,15 @@
     if (create_new['create'] === 'true') $('#id_number').val(generateNumber());
 
     function changedAccount(element) {
+        if (!$(`#id_account :selected`).attr('data-owner')) {
+            $('#id_owner').val('none');
+            return;
+        }
         $('#id_owner').val($(`#id_account :selected`).attr('data-owner'));
         if ($(`#id_account :selected`).attr('data-owner') === 'none') {
             $('#id_owner').change();
         }
+
         fieldIsValid(element);
     }
 
@@ -153,24 +158,35 @@
         $('#id_account').append(`<option value="none" data-owner="none">Вибрати...</option>`);
         if (owner_id === 'none') {
             {% for account in personal_accounts %}
-                $('#id_account').append(`<option value="{{ account.pk }}" data-owner="{{ account.flat.owner.pk }}">{{ account.number }}</option>`);
+                $('#id_account').append(`<option value="{{ account.pk }}" {% if account.flat.owner %} data-owner="{{ account.flat.owner.pk }}"{% endif %}>{{ account.number }}</option>`);
             {% endfor %}
-            fieldIsValid(element);
+            element.style = 'border: 1px solid #58c76d';
             return;
         }
+
         {% for account in personal_accounts %}
-            if (parseInt(owner_id) === {{ account.flat.owner.pk }}) {
-                $('#id_account').append(`<option value="{{ account.pk }}" data-owner="${owner_id}">{{ account.number }}</option>`);
-            }
+            {% if account.flat.owner %}
+                if (parseInt(owner_id) === {{ account.flat.owner.pk }}) {
+                    $('#id_account').append(`<option value="{{ account.pk }}" data-owner="${owner_id}">{{ account.number }}</option>`);
+                }
+                {% else %}
+                    $('#id_account').append(`<option value="{{ account.pk }}">{{ account.number }}</option>`);
+            {% endif %}
         {% endfor %}
-        fieldIsValid(element);
+
+        element.style = 'border: 1px solid #58c76d';
     }
 
     function formIsValid() {
         event.preventDefault();
         let isValid = true;
         $('select').each(function () {
-            if (!fieldIsValid(this)) isValid = false;
+            if ($(this).attr('id') === 'id_owner') {
+                $(this).css('border', '1px solid #58c76d');
+            }
+            else {
+                if (!fieldIsValid(this)) isValid = false;
+            }
         })
 
         $('input').each(function () {

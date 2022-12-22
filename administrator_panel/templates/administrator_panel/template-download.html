@@ -51,6 +51,22 @@
             success: function(data) {
                 if (data['answer'] === 'success') {
                     window.location = data['file_path'];
+                    Swal.fire({
+                        position: 'top-end',
+                        icon: 'success',
+                        title: 'Очікуйте файл до завантаження!',
+                        showConfirmButton: false,
+                        timer: 1200,
+                    })
+                }
+                else {
+                    Swal.fire({
+                        position: 'top-end',
+                        icon: 'error',
+                        title: 'Щось пішло не так!',
+                        showConfirmButton: false,
+                        timer: 1200
+                    });
                 }
             }
         })

@@ -52,7 +52,7 @@
                     <tbody>
                         <tr>
                             <th>Власник</th>
-                            <td>{% if object.type == 'income' %}<a href="{% url 'owner-detail' owner_pk=object.account.flat.owner.pk %}">{{ object.account.flat.owner.surname }} {{ object.account.flat.owner.name }} {{ object.account.flat.owner.father }}</a>{% else %}не указано{% endif %}</td>
+                            <td>{% if object.type == 'income' and object.account.flat.owner %}<a href="{% url 'owner-detail' owner_pk=object.account.flat.owner.pk %}">{{ object.account.flat.owner.surname }} {{ object.account.flat.owner.name }} {{ object.account.flat.owner.father }}</a>{% else %}не указано{% endif %}</td>
                         </tr>
                         <tr>
                             <th>Особовий рахунок</th>
@@ -140,7 +140,32 @@
             success: function(data) {
                 if (data['answer'] === 'success') {
                     window.location = data['file_path'];
+                    Swal.fire({
+                        position: 'top-end',
+                        icon: 'success',
+                        title: 'Очікуйте файл до завантаження!',
+                        showConfirmButton: false,
+                        timer: 1200,
+                    })
                 }
+                else {
+                    Swal.fire({
+                        position: 'top-end',
+                        icon: 'error',
+                        title: 'Щось пішло не так!',
+                        showConfirmButton: false,
+                        timer: 1200
+                    });
+                }
+            },
+            error: function (xhr, ajaxOptions, thrownError) {
+                Swal.fire({
+                    position: 'top-end',
+                    icon: 'error',
+                    title: 'Щось пішло не так!',
+                    showConfirmButton: false,
+                    timer: 1200
+                });
             }
         })
     }

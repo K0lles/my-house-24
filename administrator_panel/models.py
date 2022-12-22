@@ -65,8 +65,8 @@ class Notoriety(models.Model):
     manager = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name='Менеджер', related_name='manager')    # only user with role 'manager'
 
     class TypeChoices(models.TextChoices):
-        income = 'income'
-        outcome = 'outcome'
+        income = ('income', 'Прихід')
+        outcome = ('outcome', 'Розхід')
 
     type = models.CharField(max_length=20, choices=TypeChoices.choices, default='income')    # is set in view while saving - income or outcome
     created_at = models.DateField(default=timezone.now)

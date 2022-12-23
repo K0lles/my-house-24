@@ -1,11 +1,12 @@
-from django.forms import ModelForm, modelformset_factory, ModelChoiceField, CharField, DateField, BooleanField
+from django.forms import ModelForm, modelformset_factory, ModelChoiceField, CharField, DateField, BooleanField, \
+    ChoiceField, Select
 from django.utils import timezone
 
 from phonenumber_field.formfields import PhoneNumberField
 
 from configuration.models import User, Service
 from .models import House, HouseUser, Section, Floor, PersonalAccount, Flat, Evidence, Receipt, ReceiptService, \
-    Notoriety, Template, Message
+    Notoriety, Template, Message, Application
 
 
 class HouseForm(ModelForm):
@@ -313,3 +314,10 @@ class MessageForm(ModelForm):
     class Meta:
         model = Message
         exclude = ('sender',)
+
+
+class ApplicationForm(ModelForm):
+
+    class Meta:
+        model = Application
+        fields = '__all__'

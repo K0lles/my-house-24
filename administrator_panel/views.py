@@ -1817,3 +1817,17 @@ class MessageCreateView(PermissionCreateView):
     def post(self, request, *args, **kwargs):
         form = self.get_form_class()(request.POST)
         return redirect('message-create')
+
+
+class ApplicationCreateView(PermissionCreateView):
+    model = Application
+    template_name = 'administrator_panel/application-create-update.html'
+    form_class = ApplicationForm
+    string_permission = 'master_apply_access'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['owners'] = User.objects.select_related('role').filter(role__role='owner')
+        context['flats'] = Flat.objects.select_related('personalaccount', 'owner').filter(personalaccount__isnull=False)
+        context['workers'] = User.objects.select_related('role').filter(role__role__in=['plumber', 'electrician'])
+        return context

@@ -90,24 +90,26 @@ class Receipt(models.Model):
 
 
 class Application(models.Model):
-    owner = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name='Власник')
     flat = models.ForeignKey(Flat, on_delete=models.CASCADE, verbose_name='Квартира')
 
     class MasterTypeChoices(models.TextChoices):
-        all = ('', 'Будь-який')
+        all = ('', 'Будь-який спеціаліст')
         plumber = ('plumber', 'Сантехнік')
         electrician = ('electrician', 'Електрик')
 
     master_type = models.CharField(max_length=20, choices=MasterTypeChoices.choices, verbose_name='Тип майстра')
-    description = models.TextField(verbose_name='Опис')
+    master = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name='Майстер')
+    description = models.TextField(verbose_name='Опис', blank=True, null=True)
+    comment = models.TextField(blank=True, null=True)
 
     class StatusChoices(models.TextChoices):
         new = ('new', 'Нова')
         in_work = ('in work', 'У роботі')
         completed = ('completed', 'Виконана')
 
-    status = models.CharField(max_length=15, choices=StatusChoices.choices, verbose_name='Статус')
-    created_at = models.DateTimeField(default=timezone.now)
+    status = models.CharField(max_length=15, choices=StatusChoices.choices, verbose_name='Статус', default='new')
+    desired_date = models.DateField(default=timezone.now)
+    desired_time = models.TimeField(default=timezone.now)
 
 
 class Message(models.Model):

@@ -169,8 +169,6 @@
                 if (parseInt(owner_id) === {{ account.flat.owner.pk }}) {
                     $('#id_account').append(`<option value="{{ account.pk }}" data-owner="${owner_id}">{{ account.number }}</option>`);
                 }
-                {% else %}
-                    $('#id_account').append(`<option value="{{ account.pk }}">{{ account.number }}</option>`);
             {% endif %}
         {% endfor %}
 

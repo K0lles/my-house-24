@@ -51,6 +51,8 @@
     <orderEntry type="library" name="quill" level="application" />
     <orderEntry type="library" name="quill.core" level="application" />
     <orderEntry type="library" name="ckeditor" level="application" />
+    <orderEntry type="library" name="moment.js" level="application" />
+    <orderEntry type="library" name="bootstrap-datetimepicker" level="application" />
   </component>
   <component name="TemplatesService">
     <option name="TEMPLATE_CONFIGURATION" value="Django" />

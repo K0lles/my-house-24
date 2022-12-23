@@ -54,4 +54,5 @@ urlpatterns = [
     path('receipt/template/choose/', TemplateChooseView.as_view(), name='template-choose'),
     path('receipt/template/download/', BuildReceiptFileView.as_view(), name='build-receipt-file'),
     path('message/create/', MessageCreateView.as_view(), name='message-create'),
+    path('application/create/', ApplicationCreateView.as_view(), name='application-create'),
 ]

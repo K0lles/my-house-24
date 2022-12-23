@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="JavaScriptLibraryMappings">
-    <file url="file://$PROJECT_DIR$" libraries="{admin-lte, bootstrap, bootstrap-datepicker, bootstrap-daterangepicker, ckeditor, datatables, default, font-awesome, icheck-bootstrap, ionicons, jquery, jqueryui, jqvmap, overlayscrollbars, quill, quill.core, sweetalert2, tempusdominus-bootstrap-4}" />
+    <file url="file://$PROJECT_DIR$" libraries="{admin-lte, bootstrap, bootstrap-datepicker, bootstrap-daterangepicker, bootstrap-datetimepicker, ckeditor, datatables, default, font-awesome, icheck-bootstrap, ionicons, jquery, jqueryui, jqvmap, moment.js, overlayscrollbars, quill, quill.core, sweetalert2, tempusdominus-bootstrap-4}" />
   </component>
 </project>

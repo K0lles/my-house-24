@@ -1,0 +1,180 @@
+{% extends 'main_page.html' %}
+{% load static %}
+
+{% block content_header %}
+    <h1>Заявки</h1>
+{% endblock %}
+
+{% block main_content %}
+    <div class="row" style="margin-bottom: 25px;">
+        <div class="col-sm-12 text-right">
+            <a href="{% url 'application-create' %}" class="btn btn-success">Додати заявку</a>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-sm-12 text-right">
+                    <a href="{% url 'applications' %}" class="btn btn-default">Очистити</a>
+                </div>
+            </div>
+            <table id="application-table" class="table table-borderless table-hover table-responsive">
+                <thead>
+                    <tr>
+                        <th>№ заявки<input type="text" class="form-control"></th>
+                        <th>Зручний час<input type="text" class="form-control"></th>
+                        <th>Тип майстра<input type="text" class="form-control"></th>
+                        <th>Опис<input type="text" class="form-control"></th>
+                        <th>Квартира<input type="text" class="form-control"></th>
+                        <th>Власник<input type="text" class="form-control"></th>
+                        <th>Телефон<input type="text" class="form-control"></th>
+                        <th>Майстер<input type="text" class="form-control"></th>
+                        <th>Статус<input type="text" class="form-control"></th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for object in object_list %}
+                        <tr data-href="{% url 'application-detail' application_pk=object.pk %}">
+                            <td>{{ object.pk }}</td>
+                            <td>{{ object.desired_date|date:'d.m.Y' }} - {{ object.desired_time|date:'H:i' }}</td>
+                            <td>{{ object.get_master_type_display }}</td>
+                            <td>{{ object.description }}</td>
+                            <td><a href="{% url 'flat-detail' flat_pk=object.flat.pk %}">{{ object.flat.number }}, {{ object.flat.house.name }}</a></td>
+                            <td>
+                                {% if object.flat.owner %}<a href="{% url 'owner-detail' owner_pk=object.flat.owner.pk %}">
+                                {% if object.flat.owner.surname %}{{ object.flat.owner.surname }}{% endif %}
+                                {% if object.flat.owner.name %}{{ object.flat.owner.name }}{% endif %}
+                                {% if object.flat.owner.father %}{{ object.flat.owner.father }}{% endif %}</a>
+                                {% else %}(не указано)
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if object.flat.owner and object.flat.owner.phone %}<a href="tel:{{ object.flat.owner.phone }}">{{ object.flat.owner.phone }}</a>
+                                {% else %}(не указано)
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{% url 'user-detail' pk=object.master.pk %}">
+                                    {% if object.master.surname %}{{ object.master.surname }}{% endif %}
+                                    {% if object.master.name %}{{ object.master.name }}{% endif %}
+                                </a>
+                            </td>
+                            <td>
+                                {% if object.status == 'new' %}<span class="badge badge-info">{{ object.get_status_display }}</span>
+                                {% elif object.status == 'in work' %}<span class="badge badge-warning">{{ object.get_status_display }}</span>
+                                {% else %}<span class="badge badge-success">{{ object.get_status_display }}</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-right">
+                                <div class="btn-group">
+                                    <a href="{% url 'application-update' application_pk=object.pk %}" class="btn btn-default">
+                                        <i class="fa fa-pencil"></i>
+                                    </a>
+                                    <button id="{{ object.pk }}" type="button" class="btn btn-default delete-application">
+                                        <i class="fa fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+
+    $('button.delete-application').on('click', function (event) {
+        event.stopPropagation();
+        Swal.fire({
+            title: 'Ви впевнені?',
+            text: "Після видалення заявку неможливо буде повернути!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#A9A9A9',
+            cancelButtonText: 'Скасувати',
+            confirmButtonText: 'Видалити'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.ajax({
+                            url: `delete/${$(this).attr('id')}/`,
+                            type: 'GET',
+                            success: function (response) {
+                                if (response['answer'] === 'success') {
+                                    $(event.target).closest('tr').remove();
+                                    Swal.fire({
+                                        position: 'top-end',
+                                        icon: 'success',
+                                        title: 'Успішно видалено!',
+                                        showConfirmButton: false,
+                                        timer: 1200,
+                                    })
+                                }
+                                else if (response['answer'] === 'failed') {
+                                    Swal.fire({
+                                        position: 'top-end',
+                                        icon: 'error',
+                                        title: 'Щось пішло не так!',
+                                        showConfirmButton: false,
+                                        timer: 1200
+                                    });
+                                }
+                                else {
+                                    Swal.fire({
+                                        position: 'top-end',
+                                        icon: 'error',
+                                        title: response['answer'],
+                                        showConfirmButton: false,
+                                        timer: 1200
+                                    });
+                                }
+                            }
+                        })
+                }
+            })
+    })
+
+    $(document).ready(function () {
+        $('#application-table').DataTable({
+            ordering: false,
+            dom: 'rtp',
+            language: {
+                paginate: {
+                    "previous": "<<",
+                    "next": ">>"
+                }
+            },
+            columns: [
+                {'data': '№ заявки'},
+                {'data': 'Зручний час'},
+                {'data': 'Тип майстра'},
+                {'data': 'Опис'},
+                {'data': 'Квартира'},
+                {'data': 'Власник'},
+                {'data': 'Телефон'},
+                {'data': 'Майстер'},
+                {'data': 'Статус'},
+                null
+            ],
+            initComplete: function () {
+                this.api()
+                    .columns()
+                    .every(function () {
+                        let that = this;
+
+                        $('input[type="text"]', this.header()).on('keyup change clear', function () {
+                            console.log(this.id)
+                            if (that.search() !== this.value) {
+                                that.search(this.value).draw();
+                            }
+                        });
+                    });
+            },
+        });
+    })
+</script>
+{% endblock %}

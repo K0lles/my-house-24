@@ -1819,6 +1819,13 @@ class MessageCreateView(PermissionCreateView):
         return redirect('message-create')
 
 
+class ApplicationListView(PermissionListView):
+    model = Application
+    template_name = 'administrator_panel/application-list.html'
+    string_permission = 'master_apply_access'
+    queryset = Application.objects.select_related('flat', 'flat__house', 'flat__owner', 'master').all()
+
+
 class ApplicationCreateView(PermissionCreateView):
     model = Application
     template_name = 'administrator_panel/application-create-update.html'
@@ -1831,3 +1838,81 @@ class ApplicationCreateView(PermissionCreateView):
         context['flats'] = Flat.objects.select_related('personalaccount', 'owner').filter(personalaccount__isnull=False)
         context['workers'] = User.objects.select_related('role').filter(role__role__in=['plumber', 'electrician'])
         return context
+
+    def post(self, request, *args, **kwargs):
+        form = self.get_form_class()(request.POST)
+        if form.is_valid():
+            return self.form_valid(form)
+        self.object = None
+        context = self.get_context_data()
+        return self.render_to_response(context)
+
+    def form_valid(self, form):
+        application = form.save()
+        return redirect('application-detail', application_pk=application.id)
+
+
+class ApplicationDetailView(PermissionDetailView):
+    model = Application
+    template_name = 'administrator_panel/application-detail.html'
+    pk_url_kwarg = 'application_pk'
+    string_permission = 'master_apply_access'
+
+    def get_object(self, queryset=None):
+        try:
+            return Application.objects.select_related('flat', 'flat__owner', 'flat__house').get(pk=self.kwargs.get('application_pk'))
+        except Application.DoesNotExist:
+            raise Http404()
+
+
+class ApplicationUpdateView(PermissionUpdateView):
+    model = Application
+    template_name = 'administrator_panel/application-create-update.html'
+    form_class = ApplicationForm
+    string_permission = 'master_apply_access'
+    pk_url_kwarg = 'application_pk'
+
+    def get_object(self, queryset=None):
+        try:
+            return Application.objects.get(pk=self.kwargs.get('application_pk'))
+        except Application.DoesNotExist:
+            raise Http404()
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['owners'] = User.objects.select_related('role').filter(role__role='owner')
+        context['flats'] = Flat.objects.select_related('personalaccount', 'owner').filter(personalaccount__isnull=False)
+        context['workers'] = User.objects.select_related('role').filter(role__role__in=['plumber', 'electrician'])
+        return context
+
+    def post(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        form = self.get_form_class()(request.POST, instance=self.object)
+        if form.is_valid():
+            return self.form_valid(form)
+        context = self.get_context_data()
+        return self.render_to_response(context)
+
+    def form_valid(self, form):
+        application = form.save()
+        return redirect('application-detail', application_pk=application.id)
+
+
+class ApplicationDeleteView(SingleObjectMixin, PermissionView):
+    model = Application
+    pk_url_kwarg = 'application_pk'
+    string_permission = 'master_apply_access'
+    name_view = 'заявок'
+
+    def get_object(self, queryset=None):
+        try:
+            return Application.objects.get(pk=self.kwargs.get('application_pk'))
+        except Application.DoesNotExist:
+            return None
+
+    def get(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        if not self.object:
+            return JsonResponse({'answer': 'failed'})
+        self.object.delete()
+        return JsonResponse({'answer': 'success'})

@@ -91,7 +91,6 @@
 
         $(`#message-form`).find(`input[id='id_theme']`).each(function () {
             if (!fieldIsValid(this)) {
-                console.log(!fieldIsValid(this));
                 isValid = false;
             }
         })
@@ -114,7 +113,6 @@
 
     function changedHouse(element) {
         let selectedId = $(element).children("option:selected").val();
-        console.log(selectedId);
         $('#id_section').find('option').remove().end().append('<option>Всім</option>');
         $('#id-floor').find('option').remove().end().append('<option>Всім</option>');
         $('#id_flat').find('option').remove().end().append('<option>Всім</option>');
@@ -162,13 +160,6 @@
         let selectedId = $(element).children("option:selected").val();
         $('#id_flat').find('option').remove().end().append('<option>Всім</option>');
         if (selectedId === 'Всім') {
-            {% comment %}let selectedId = $(element).children("option:selected").val();
-            for (let outer_key in section_flat) {
-                for (let key_array in section_flat[selectedId]) {
-                    let option_to_append = `<option value="${section_flat[outer_key][key_array][0]}">${section_flat[outer_key][key_array][1]}</option>`
-                    $('#id_flat').append(option_to_append);
-                }
-            }{% endcomment %}
             changedSection($('#id-section'));
             return;
         }

@@ -99,7 +99,7 @@ class Application(models.Model):
 
     master_type = models.CharField(max_length=20, choices=MasterTypeChoices.choices, verbose_name='Тип майстра')
     master = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name='Майстер')
-    description = models.TextField(verbose_name='Опис', blank=True, null=True)
+    description = models.TextField(verbose_name='Опис')
     comment = models.TextField(blank=True, null=True)
 
     class StatusChoices(models.TextChoices):

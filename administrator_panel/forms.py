@@ -317,6 +317,8 @@ class MessageForm(ModelForm):
 
 
 class ApplicationForm(ModelForm):
+    master_type = ChoiceField(choices=Application.MasterTypeChoices.choices, required=False)
+    desired_date = DateField(input_formats=['%d.%m.%Y'], initial=timezone.now())
 
     class Meta:
         model = Application

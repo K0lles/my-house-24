@@ -2,7 +2,7 @@
 {% load static %}
 
 {% block content_header %}
-    <h1>Квартира №{{ object.number }}</h1>
+    <h1>Квартира №{{ object.number }}, {{ object.house.name }}</h1>
 {% endblock %}
 
 {% block main_content %}

@@ -54,5 +54,9 @@ urlpatterns = [
     path('receipt/template/choose/', TemplateChooseView.as_view(), name='template-choose'),
     path('receipt/template/download/', BuildReceiptFileView.as_view(), name='build-receipt-file'),
     path('message/create/', MessageCreateView.as_view(), name='message-create'),
+    path('application/', ApplicationListView.as_view(), name='applications'),
     path('application/create/', ApplicationCreateView.as_view(), name='application-create'),
+    path('application/<int:application_pk>/', ApplicationDetailView.as_view(), name='application-detail'),
+    path('application/update/<int:application_pk>/', ApplicationUpdateView.as_view(), name='application-update'),
+    path('application/delete/<int:application_pk>/', ApplicationDeleteView.as_view(), name='application-delete'),
 ]

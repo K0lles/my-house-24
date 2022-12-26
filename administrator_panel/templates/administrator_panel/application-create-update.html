@@ -134,6 +134,10 @@
             format: 'HH:mm'
         });
 
+    $('#id_desired_date').datepicker({
+        format: 'dd.mm.yyyy'
+    });
+
     function changedOwner(element) {
         let owner_id = element.value;
         $('#id_flat').empty();

@@ -1,0 +1,54 @@
+{% extends 'main_page.html' %}
+{% load static %}
+
+{% block content_header %}
+    <h1>Перегляд квитанції: #{{ object.number }}</h1>
+{% endblock %}
+
+{% block main_content %}
+    <div class="card">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-sm-12 text-right">
+                    <button type="button" class="btn btn-info"><i class="fa fa-print"></i>  Роздрукувати</button>
+                </div>
+            </div>
+            <table class="table table-borderless">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Послуга</th>
+                        <th>Кількість споживання (розхід)</th>
+                        <th>Од. вим.</th>
+                        <th>Ціна за од., грн</th>
+                        <th>Вартість, грн</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for receipt_service in object.receiptservices.all %}
+                        <tr>
+                            <td>{{ forloop.counter }}</td>
+                            <td>{{ receipt_service.service.name }}</td>
+                            <td>{{ receipt_service.amount|floatformat:2 }}</td>
+                            <td>{{ receipt_service.service.measurement_unit.name }}</td>
+                            <td>{{ receipt_service.price|floatformat:2 }}</td>
+                            <td>{{ receipt_service.total_price|floatformat:2 }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="5"></td>
+                        <td><b>Разом: {{ object.summ|floatformat:2 }}</b></td>
+                    </tr>
+                </tfoot>
+            </table>
+            <div class="row" style="margin-top: 20px;">
+                <div class="col-sm-12 text-right">
+                    <button type="button" class="btn btn-warning" style="margin-right: 5px;"><i class="fa fa-file-pdf"></i>  Завантажити в PDF</button>
+                    <button type="button" class="btn btn-success"><i class="fa fa-credit-card"></i> Оплатити</button>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

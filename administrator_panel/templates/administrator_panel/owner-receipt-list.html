@@ -1,0 +1,80 @@
+{% extends 'main_page.html' %}
+{% load static %}
+
+{% block content_header %}
+    <h1>Квитанції на оплату</h1>
+{% endblock %}
+
+{% block main_content %}
+    <div class="card">
+        <div class="card-body">
+            <table id="receipt-owner-table" class="table table-hover table-borderless">
+                <thead>
+                    <tr>
+                        <th style="vertical-align: top;">№</th>
+                        <th>Дата<input type="text" class="form-control"></th>
+                        <th>Статус<input type="text" class="form-control"></th>
+                        <th style="vertical-align: top;">Сума</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for receipt in receipt_list %}
+                        <tr data-href="{% url 'owner-receipt-detail' receipt_pk=receipt.pk %}">
+                            <td>{{ receipt.number }}</td>
+                            <td>{{ receipt.created_at|date:'d.m.Y' }}</td>
+                            <td>
+                                {% if receipt.status == 'paid' %}<span class="badge badge-success">{{ receipt.get_status_display }}</span>
+                                {% elif receipt.status == 'not paid' %}<span class="badge badge-danger">{{ receipt.get_status_display }}</span>
+                                {% elif receipt.status == 'partly paid' %}<span class="badge badge-warning">{{ receipt.get_status_display }}</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ receipt.summ|floatformat:2 }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    $(document).ready(function () {
+        $('#receipt-owner-table').DataTable({
+            ordering: true,
+            dom: 'rtp',
+            language: {
+                paginate: {
+                    "previous": "<<",
+                    "next": ">>"
+                }
+            },
+            columns: [
+                {'data': '№'},
+                {'data': 'Дата'},
+                {'data': 'Статус'},
+                {'data': 'Сума'},
+            ],
+            columnDefs: [
+                {orderable: false, targets: 0},
+                {orderable: true, targets: 1},
+                {orderable: false, targets: 2},
+                {orderable: false, targets: 3},
+            ],
+            initComplete: function () {
+                this.api()
+                    .columns()
+                    .every(function () {
+                        let that = this;
+
+                        $('input[type="text"]', this.header()).on('keyup change clear', function () {
+                            if (that.search() !== this.value) {
+                                that.search(this.value).draw();
+                            }
+                        });
+                    });
+            },
+        });
+    })
+</script>
+{% endblock %}

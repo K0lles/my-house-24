@@ -136,6 +136,9 @@
 
 {% block scripts %}
 <script>
+    $('#id_created_at').datepicker({
+        format: 'dd.mm.yyyy'
+    });
     let create_new = {{ create_new|safe }};
     if (create_new['create'] === 'true') $('#id_number').val(generateNumber());
 

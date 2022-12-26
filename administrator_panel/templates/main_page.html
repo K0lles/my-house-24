@@ -63,7 +63,7 @@
         <a class="nav-link" data-widget="pushmenu" href="#" role="button"><i class="fas fa-bars"></i></a>
       </li>
       <li class="nav-item d-none d-sm-inline-block">
-        <a class="nav-link">Панель адміністратора</a>
+        <a class="nav-link">{% if request.user.role.role == 'owner' %}Особистий кабінет{% else %}Панель адміністратора{% endif %}</a>
       </li>
     </ul>
 
@@ -366,6 +366,47 @@
             </ul>
           </li>
         </ul>
+          {% elif request.user.is_authenticated and request.user.role.role == 'owner' %}
+          <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
+            <li class="nav-item">
+                <a href="#" class="nav-link">
+                  <i class="nav-icon fas fa-line-chart"></i>
+                  <p>
+                    Зведення
+                    <i class="right fas fa-angle-left"></i>
+                  </p>
+                </a>
+                {% if flat_list %}
+                <ul class="nav nav-treeview">
+                    {% for flat in flat_list %}
+                      <li class="nav-item">
+                        <a href="#" class="nav-link">
+                          <i class="fa fa-building"></i>
+                          <p>{{ flat.house.name }}, кв.{{ flat.number }}</p>
+                        </a>
+                      </li>
+                    {% endfor %}
+                </ul>
+                {% endif %}
+            </li>
+            <li class="nav-item">
+                <a href="#" class="nav-link">
+                  <i class="nav-icon fas fa-file"></i>
+                  <p>
+                    Квитанції
+                    <i class="right fas fa-angle-left"></i>
+                  </p>
+                </a>
+                <ul class="nav nav-treeview">
+                      <li class="nav-item">
+                        <a href="{% url 'owner-receipts' %}" class="nav-link">
+                          <i class="fa fa-building"></i>
+                          <p>Всі квитанції</p>
+                        </a>
+                      </li>
+                </ul>
+            </li>
+          </ul>
           {% endif %}
       </nav>
       <!-- /.sidebar-menu -->

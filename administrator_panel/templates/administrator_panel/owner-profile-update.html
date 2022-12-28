@@ -16,7 +16,7 @@
                             <img id="{{ form.logo.auto_id }}-display" {% if form.instance.logo %}src="{{ form.instance.logo.url }}"{% else %}src="{% static 'all_logos/empty-image.jpeg' %}"{% endif %} class="img-circle pull-left img-responsive" height="160" width="200" style="display: inline-block; margin-right: 15px;">
                             <div class="form-group" style="display: inline-block; vertical-align: top;">
                                 <label class="form-label" for="{{ form.logo.auto_id }}">Фото</label>
-                                <input class="form-control" type="file" accept="image/*" id="{{ form.logo.auto_id }}" name="{{ form.logo.html_name }}" onchange="loadFile(event, this.id)" {% if form.instance.logo %}value="{{ form.instance.logo }}">
+                                <input class="form-control" type="file" accept="image/*" id="{{ form.logo.auto_id }}" name="{{ form.logo.html_name }}" onchange="loadFile(event, this.id)" {% if form.instance.logo %}value="{{ form.instance.logo }}"{% endif %}>
                             </div>
                         </div>
                     </div>

@@ -113,12 +113,44 @@ class Application(models.Model):
     created_by_director = models.BooleanField(default=False)
 
 
+# TODO: Make "receiver" field many to many field relation
 class Message(models.Model):
     sender = models.ForeignKey(User, on_delete=models.SET_NULL, verbose_name='Відправник', related_name='sender', blank=True, null=True)
-    receiver = models.ForeignKey(User, on_delete=models.SET_NULL, verbose_name='Кому', related_name='receiver', blank=True, null=True)
+    receiver = models.ManyToManyField(User, related_name='receivers', blank=True)
+    house = models.ForeignKey(House, on_delete=models.CASCADE, blank=True, null=True)
+    section = models.ForeignKey(Section, on_delete=models.CASCADE, blank=True, null=True)
+    floor = models.ForeignKey(Floor, on_delete=models.CASCADE, blank=True, null=True)
+    flat = models.ForeignKey(Flat, on_delete=models.CASCADE, blank=True, null=True)
     theme = models.CharField(max_length=200, verbose_name='Тема')
     main_text = models.TextField(verbose_name='Повідомлення')
     created_at = models.DateTimeField(auto_now=True)
+
+    @property
+    def get_receiver_display(self) -> str:
+        """Property for correct display receiver in template"""
+        if self.house:
+            return self.house.name
+
+        if self.section and self.flat:
+            return f'{self.section.house.name}, {self.section.name}, {self.floor.name}'
+
+        if self.section:
+            return f'{self.section.house.name}, {self.section.name}'
+
+        if self.floor:
+            return f'{self.floor.house.name}, {self.floor.name}'
+
+        if self.flat:
+            return f'{self.flat.house.name}, {self.flat.section.name}, {self.flat.floor.name}, {self.flat.number}'
+
+        if self.receiver.all().count() == 1:
+            receiver = self.receiver.first()
+            string_to_return = f'{receiver.surname} {receiver.name}'
+            if receiver.father:
+                string_to_return += f' {receiver.father}'
+            return string_to_return
+
+        return 'Всім'
 
 
 class Template(models.Model):

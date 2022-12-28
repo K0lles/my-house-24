@@ -322,4 +322,21 @@ class ApplicationForm(ModelForm):
 
     class Meta:
         model = Application
-        fields = '__all__'
+        exclude = ['created_by_director']
+
+
+class ApplicationOwnerForm(ModelForm):
+    master_type = ChoiceField(choices=Application.MasterTypeChoices.choices, required=False)
+    desired_date = DateField(input_formats=['%d.%m.%Y'], initial=timezone.now())
+    status = ChoiceField(choices=Application.StatusChoices.choices, required=False)
+
+    class Meta:
+        model = Application
+        exclude = ['created_by_director']
+
+
+class OwnerProfileForm(ModelForm):
+
+    class Meta:
+        model = User
+        exclude = ['status', 'owner_id']

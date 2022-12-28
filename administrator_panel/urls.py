@@ -62,4 +62,9 @@ urlpatterns = [
 
     path('cabinet/receipt/', OwnerReceiptListView.as_view(), name='owner-receipts'),
     path('cabinet/receipt/<int:receipt_pk>/', OwnerReceiptDetailView.as_view(), name='owner-receipt-detail'),
+    path('cabinet/tariff/', OwnerTariffListView.as_view(), name='owner-tariffs'),
+    path('cabinet/application/', OwnerApplicationListView.as_view(), name='owner-applications'),
+    path('cabinet/application/create/', OwnerApplicationCreateView.as_view(), name='owner-application-create'),
+    path('cabinet/application/delete/<int:application_pk>/', OwnerApplicationDeleteView.as_view(), name='owner-application-delete'),
+    path('cabinet/user/view/', OwnerProfileDetailView.as_view(), name='owner-profile-detail'),
 ]

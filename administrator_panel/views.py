@@ -552,7 +552,7 @@ class PersonalAccountUpdateView(PermissionUpdateView):
             # add current flat to section's list of flats for displaying in frontend
             if context['section_flat'].get(self.object.flat.section.id):
                 if [self.object.flat.id, self.object.flat.number] not in context['section_flat'][
-                        self.object.flat.section.id]:
+                    self.object.flat.section.id]:
                     context['section_flat'][self.object.flat.section.id].append(
                         [self.object.flat.id, self.object.flat.number])
             else:
@@ -972,7 +972,8 @@ class ReceiptCreateView(PermissionCreateView):
         receipt_saved = form.save()
         for receipt_service_form in receipt_formset.forms:
             if receipt_service_form.cleaned_data.get('service') and receipt_service_form.cleaned_data.get('amount') \
-                    and receipt_service_form.cleaned_data.get('price') and receipt_service_form.cleaned_data.get('total_price'):
+                    and receipt_service_form.cleaned_data.get('price') and receipt_service_form.cleaned_data.get(
+                'total_price'):
                 form_saved = receipt_service_form.save(commit=False)
                 form_saved.receipt = receipt_saved
                 form_saved.save()
@@ -1049,7 +1050,8 @@ class ReceiptUpdateView(PermissionUpdateView):
         receipt_saved = form.save()
         for receipt_service_form in receipt_formset.forms:
             if receipt_service_form.cleaned_data.get('service') and receipt_service_form.cleaned_data.get('amount') \
-                    and receipt_service_form.cleaned_data.get('price') and receipt_service_form.cleaned_data.get('total_price'):
+                    and receipt_service_form.cleaned_data.get('price') and receipt_service_form.cleaned_data.get(
+                'total_price'):
                 form_saved = receipt_service_form.save(commit=False)
                 form_saved.receipt = receipt_saved
                 form_saved.save()
@@ -1380,8 +1382,8 @@ class NotorietyListTemplateDownload(View):
     def get(self, request, *args, **kwargs):
         if self.request.user.is_authenticated and self.request.user.role.checkout_access:
 
-            notorieties = Notoriety.objects\
-                .select_related('article', 'account', 'account__flat', 'account__flat__owner')\
+            notorieties = Notoriety.objects \
+                .select_related('article', 'account', 'account__flat', 'account__flat__owner') \
                 .all()
 
             wb = openpyxl.Workbook()
@@ -1398,7 +1400,8 @@ class NotorietyListTemplateDownload(View):
 
             for index, notoriety in enumerate(notorieties):
                 ws[f'A{index + 2}'].value = notoriety.number
-                ws[f'B{index + 2}'].value = f'{notoriety.created_at.day}.{notoriety.created_at.month}.{notoriety.created_at.year}'
+                ws[
+                    f'B{index + 2}'].value = f'{notoriety.created_at.day}.{notoriety.created_at.month}.{notoriety.created_at.year}'
                 ws[f'C{index + 2}'].value = notoriety.get_type_display()
                 ws[f'D{index + 2}'].value = 'Проведена' if notoriety.is_completed else 'Не проведена'
                 ws[f'E{index + 2}'].value = notoriety.article.name
@@ -1765,7 +1768,7 @@ class ApplicationListView(PermissionListView):
     model = Application
     template_name = 'administrator_panel/application-list.html'
     string_permission = 'master_apply_access'
-    queryset = Application.objects.select_related('flat', 'flat__house', 'flat__owner', 'master').all()
+    queryset = Application.objects.select_related('flat', 'flat__house', 'flat__owner', 'master').all().order_by('-id')
 
 
 class ApplicationCreateView(PermissionCreateView):
@@ -1790,7 +1793,9 @@ class ApplicationCreateView(PermissionCreateView):
         return self.render_to_response(context)
 
     def form_valid(self, form):
-        application = form.save()
+        application = form.save(commit=False)
+        application.created_by_director = True
+        application.save()
         return redirect('application-detail', application_pk=application.id)
 
 
@@ -1802,7 +1807,8 @@ class ApplicationDetailView(PermissionDetailView):
 
     def get_object(self, queryset=None):
         try:
-            return Application.objects.select_related('flat', 'flat__owner', 'flat__house').get(pk=self.kwargs.get('application_pk'))
+            return Application.objects.select_related('flat', 'flat__owner', 'flat__house').get(
+                pk=self.kwargs.get('application_pk'))
         except Application.DoesNotExist:
             raise Http404()
 
@@ -1836,7 +1842,8 @@ class ApplicationUpdateView(PermissionUpdateView):
         return self.render_to_response(context)
 
     def form_valid(self, form):
-        application = form.save()
+        application = form.save(commit=False)
+        application.save()
         return redirect('application-detail', application_pk=application.id)
 
 
@@ -1865,12 +1872,21 @@ class OwnerReceiptListView(OwnerPermissionListView):
     template_name = 'administrator_panel/owner-receipt-list.html'
 
     def get_queryset(self):
-        return None
+        filter_conditions = Q(account__flat__owner=self.request.user)
+        if self.request.GET.get('flat'):
+            filter_conditions.add(Q(account__flat__id=self.request.GET.get('flat')), Q.AND)
+
+        return Receipt.objects \
+            .select_related('account', 'account__flat', 'account__flat__owner') \
+            .prefetch_related('receiptservices') \
+            .filter(filter_conditions) \
+            .annotate(summ=Sum('receiptservices__total_price')) \
+            .order_by('-id')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context.update(owner_context_data(self.request.user))
-        context['receipt_list'] = context.get('receipt_list').annotate(summ=Sum('receiptservices__total_price'))
+        context['receipt_list'] = self.get_queryset()
         return context
 
 
@@ -1880,15 +1896,142 @@ class OwnerReceiptDetailView(OwnerPermissionDetailView):
     pk_url_kwarg = 'receipt_pk'
 
     def get_object(self, queryset=None):
-        return None
+        try:
+            return Receipt.objects \
+                .prefetch_related('receiptservices', 'receiptservices__service',
+                                  'receiptservices__service__measurement_unit') \
+                .filter(pk=self.kwargs.get('receipt_pk'), account__flat__owner=self.request.user) \
+                .annotate(summ=Sum('receiptservices__total_price'))[0]
+        except (Receipt.DoesNotExist, AttributeError):
+            raise Http404()
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context.update(owner_context_data(self.request.user))
-        try:
-            context['object'] = context.get('receipt_list')\
-                .filter(pk=self.kwargs.get('receipt_pk'))\
-                .annotate(summ=Sum('receiptservices__total_price'))[0]
-        except (Receipt.DoesNotExist, AttributeError):
+        return context
+
+
+class OwnerTariffListView(OwnerPermissionListView):
+    model = Tariff
+    template_name = 'administrator_panel/owner-tariff-list.html'
+
+    def get_queryset(self):
+        flat_id = self.request.GET.get('flat')
+        if not flat_id:
             raise Http404()
+
+        try:
+            return Flat.objects\
+                .select_related('house')\
+                .prefetch_related('tariff__tariffservice_set', 'tariff__service_tariff__measurement_unit')\
+                .get(pk=flat_id, owner=self.request.user)
+        except (Flat.DoesNotExist, AttributeError):
+            raise Http404()
+
+    def get_context_data(self, *, object_list=None, **kwargs):
+        context = super().get_context_data(object_list=object_list, **kwargs)
+        context.update(owner_context_data(self.request.user))
+        return context
+
+
+# TODO: Finish messages for owners
+class OwnerMessagesListView(OwnerPermissionListView):
+    model = Message
+    template_name = ''
+
+    def get_queryset(self):
+        return Message.objects.filter(receiver=self.request.user)
+
+
+class OwnerApplicationListView(OwnerPermissionListView):
+    model = Application
+    template_name = 'administrator_panel/owner-application-list.html'
+
+    def get_queryset(self):
+        return Application.objects\
+            .select_related('master', 'master__role')\
+            .filter(flat__owner=self.request.user)\
+            .order_by('-id')
+
+    def get_context_data(self, *, object_list=None, **kwargs):
+        context = super().get_context_data(object_list=object_list, **kwargs)
+        context.update(owner_context_data(self.request.user))
+        return context
+
+
+class OwnerApplicationCreateView(OwnerPermissionCreateView):
+    model = Application
+    template_name = 'administrator_panel/owner-application-create.html'
+    form_class = ApplicationOwnerForm
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context.update(owner_context_data(self.request.user))
+        return context
+
+    def post(self, request, *args, **kwargs):
+        form = self.get_form_class()(request.POST)
+        if form.is_valid():
+            return self.form_valid(form)
+        self.object = None
+        context = self.get_context_data()
+        return self.render_to_response(context)
+
+    def form_valid(self, form):
+        form.save()
+        return redirect('owner-applications')
+
+
+class OwnerApplicationDeleteView(SingleObjectMixin, View):
+    model = Application
+    pk_url_kwarg = 'application_pk'
+
+    def get_object(self, queryset=None):
+        try:
+            return Application.objects.get(pk=self.kwargs.get('application_pk'), flat__owner=self.request.user)
+        except (Application.DoesNotExist, AttributeError):
+            return None
+
+    def get(self, request, *args, **kwargs):
+        if self.request.user.role.role != 'owner':
+            return JsonResponse({'answer': 'У вас немає доступу до заявок'})
+
+        application = self.get_object()
+        try:
+            if application.created_by_director:
+                return JsonResponse({'answer': 'Вибрану заявку неможливо видалити'})
+
+            application.delete()
+            return JsonResponse({'answer': 'success'})
+        except (AttributeError, KeyError):
+            return JsonResponse({'answer': 'Виникли помилка під час видалення'})
+
+
+class OwnerProfileDetailView(OwnerPermissionDetailView):
+    model = User
+    template_name = 'administrator_panel/owner-profile-detail.html'
+
+    def get_object(self, queryset=None):
+        return self.request.user
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context.update(owner_context_data(self.request.user))
+        context['user_flats'] = Flat.objects\
+            .select_related('house', 'personalaccount', 'floor', 'section')\
+            .filter(owner=self.request.user)
+        return context
+
+
+class OwnerProfileUpdateView(OwnerPermissionUpdateView):
+    model = User
+    template_name = ''
+    form_class = OwnerProfileForm
+
+    def get_object(self, queryset=None):
+        return self.request.user
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context.update(owner_context_data(self.request.user))
         return context

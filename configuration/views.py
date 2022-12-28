@@ -481,7 +481,7 @@ class UserLoginView(CreateView):
                 login(request, user)
                 if request.POST.get('remember_me'):
                     self.request.session.set_expiry(0)
-                return redirect('flats')
+                return redirect('owner-receipts')
         self.object = None
         context = self.get_context_data()
         context['error'] = 'Неправильно введені дані'

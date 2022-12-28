@@ -1,6 +1,6 @@
 from django.db.models import Sum, Case, When, Value, FloatField, OuterRef, Subquery, Q, QuerySet
 
-from administrator_panel.models import Flat, Receipt, Notoriety
+from administrator_panel.models import Flat, Notoriety
 
 
 def calculate_notoriety_and_receipt_sum(personal_accounts: QuerySet):
@@ -67,10 +67,5 @@ def owner_context_data(owner):
         .select_related('house', 'tariff')\
         .prefetch_related('tariff__tariffservice_set')\
         .filter(owner=owner)
-    receipt_list = Receipt.objects\
-        .select_related('account', 'account__flat', 'account__flat__owner') \
-        .prefetch_related('receiptservices')\
-        .filter(account__flat__owner=owner)\
-        .order_by('-id')
 
-    return {'flat_list': flat_list, 'receipt_list': receipt_list}
+    return {'flat_list': flat_list}

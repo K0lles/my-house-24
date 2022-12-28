@@ -8,6 +8,11 @@
 {% block main_content %}
     <div class="card">
         <div class="card-body">
+            <div class="row">
+                <div class="col-sm-12 text-right">
+                    <a href="{{ request.get_full_path }}" class="btn btn-default">Очистити</a>
+                </div>
+            </div>
             <table id="receipt-owner-table" class="table table-hover table-borderless">
                 <thead>
                     <tr>

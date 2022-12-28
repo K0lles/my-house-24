@@ -400,11 +400,50 @@
                 <ul class="nav nav-treeview">
                       <li class="nav-item">
                         <a href="{% url 'owner-receipts' %}" class="nav-link">
-                          <i class="fa fa-building"></i>
+                          <i class="fa fa-file"></i>
                           <p>Всі квитанції</p>
                         </a>
                       </li>
+                        {% for flat in flat_list %}
+                      <li class="nav nav-item">
+                          <a href="{% url 'owner-receipts' %}?flat={{ flat.pk }}" class="nav-link">
+                              <i class="fa fa-file-text"></i>
+                              <p>{{ flat.house.name }}, кв.{{ flat.number }}</p>
+                          </a>
+                      </li>
+                        {% endfor %}
                 </ul>
+            </li>
+            <li class="nav-item">
+                <a href="#" class="nav-link">
+                  <i class="nav-icon fas fa-money-bill"></i>
+                  <p>
+                    Тарифи
+                    <i class="right fas fa-angle-left"></i>
+                  </p>
+                </a>
+                <ul class="nav nav-treeview">
+                        {% for flat in flat_list %}
+                      <li class="nav nav-item">
+                          <a href="{% url 'owner-tariffs' %}?flat={{ flat.pk }}" class="nav-link">
+                              <i class="fa fa-money-bill"></i>
+                              <p>{{ flat.house.name }}, кв.{{ flat.number }}</p>
+                          </a>
+                      </li>
+                        {% endfor %}
+                </ul>
+            </li>
+            <li class="nav nav-item">
+                <a href="{% url 'owner-applications' %}" class="nav-link">
+                    <i class="fa fa-wrench"></i>
+                    Виклик майстра
+                </a>
+            </li>
+            <li class="nav nav-item">
+                <a href="{% url 'owner-profile-detail' %}" class="nav-link">
+                    <i class="fa fa-user-circle"></i>
+                    Профіль
+                </a>
             </li>
           </ul>
           {% endif %}

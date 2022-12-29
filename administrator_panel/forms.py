@@ -309,6 +309,10 @@ class ReceiptTemplateForm(ModelForm):
 
 
 class MessageForm(ModelForm):
+    sender = ModelChoiceField(queryset=User.objects.all(), required=False)
+    section = ModelChoiceField(queryset=Section.objects.all(), required=False)
+    floor = ModelChoiceField(queryset=Floor.objects.all(), required=False)
+    flat = ModelChoiceField(queryset=Flat.objects.all(), required=False)
     send_all_debtors = BooleanField(required=False)
 
     class Meta:

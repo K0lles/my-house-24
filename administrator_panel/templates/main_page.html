@@ -135,7 +135,7 @@
         </a>
         <div class="dropdown-menu dropdown-menu-lg dropdown-menu-right">
             <div class="media">
-              <div class="user-header text-center" style="background-color: {% if request.user.role.role == 'director' %}#D8BE00;{% elif request.user.role.role == 'manager' %}#4B82FF;{% elif request.user.role.role == 'electrician' %}#CCCCFF;{% elif request.user.role.role == 'plumber' %}#9FE2BF;{% elif request.user.role.role == 'accountant' %}#FF7F50;{% endif %}">
+              <div class="user-header text-center" style="background-color: {% if request.user.role.role == 'director' %}#D8BE00;{% elif request.user.role.role == 'manager' %}#4B82FF;{% elif request.user.role.role == 'electrician' %}#CCCCFF;{% elif request.user.role.role == 'plumber' %}#9FE2BF;{% elif request.user.role.role == 'accountant' %}#FF7F50;{% elif request.user.role.role == 'owner' %}#2ECC71{% endif %}">
                 <img {% if not request.user.logo %}src="{% static 'all_logos/empty-image.jpeg' %}"{% else %}src="{{ request.user.logo.url }}"{% endif %} alt="{{ request.user.name }}" class="img-size-50 mr-3 img-circle" style="margin-top: 4%; height: 40px; width: 40px;" >
                 <p class="dropdown-item dropdown-item-title">{{ request.user.surname }} {{ request.user.name }} {% if request.user.father %}{{ request.user.father }}{% endif %} ({{ request.user.role.get_role_display }})</p>
               </div>

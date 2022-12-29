@@ -1761,6 +1761,8 @@ class MessageCreateView(PermissionCreateView):
 
     def post(self, request, *args, **kwargs):
         form = self.get_form_class()(request.POST)
+        print(form.errors)
+        print(form.cleaned_data)
         return redirect('message-create')
 
 

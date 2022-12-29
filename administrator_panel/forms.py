@@ -336,7 +336,30 @@ class ApplicationOwnerForm(ModelForm):
 
 
 class OwnerProfileForm(ModelForm):
+    birthday = DateField(input_formats=['%d.%m.%Y'], required=False)
+    phone = PhoneNumberField(required=False)
 
     class Meta:
         model = User
-        exclude = ['status', 'owner_id']
+        exclude = ['status', 'owner_id', 'role', 'is_active', 'is_admin', 'created_at']
+
+    def clean(self):
+        cleaned_data = super(OwnerProfileForm, self).clean()
+        self._errors = {}
+
+        if not cleaned_data.get('name'):
+            self._errors['name'] = 'Це поле не може бути пустим'
+
+        if not cleaned_data.get('surname'):
+            self._errors['surname'] = 'Це поле не може бути пустим'
+
+        if not cleaned_data.get('email'):
+            self._errors['email'] = 'Це поле не може бути пустим'
+
+        try:
+            if cleaned_data.get('email') != self.instance.email and User.objects.get(email=cleaned_data.get('email')):
+                self._errors['email'] = 'Власник з таким email вже існує'
+        except User.DoesNotExist:
+            return cleaned_data
+
+        return cleaned_data

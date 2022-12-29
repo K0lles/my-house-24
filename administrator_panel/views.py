@@ -1,4 +1,5 @@
 import openpyxl
+from django.contrib.auth import update_session_auth_hash
 from django.views.generic.base import ContextMixin
 from openpyxl.styles import Alignment
 from openpyxl.utils import get_column_letter
@@ -552,7 +553,7 @@ class PersonalAccountUpdateView(PermissionUpdateView):
             # add current flat to section's list of flats for displaying in frontend
             if context['section_flat'].get(self.object.flat.section.id):
                 if [self.object.flat.id, self.object.flat.number] not in context['section_flat'][
-                    self.object.flat.section.id]:
+                        self.object.flat.section.id]:
                     context['section_flat'][self.object.flat.section.id].append(
                         [self.object.flat.id, self.object.flat.number])
             else:
@@ -972,8 +973,7 @@ class ReceiptCreateView(PermissionCreateView):
         receipt_saved = form.save()
         for receipt_service_form in receipt_formset.forms:
             if receipt_service_form.cleaned_data.get('service') and receipt_service_form.cleaned_data.get('amount') \
-                    and receipt_service_form.cleaned_data.get('price') and receipt_service_form.cleaned_data.get(
-                'total_price'):
+                    and receipt_service_form.cleaned_data.get('price') and receipt_service_form.cleaned_data.get('total_price'):
                 form_saved = receipt_service_form.save(commit=False)
                 form_saved.receipt = receipt_saved
                 form_saved.save()
@@ -2025,7 +2025,7 @@ class OwnerProfileDetailView(OwnerPermissionDetailView):
 
 class OwnerProfileUpdateView(OwnerPermissionUpdateView):
     model = User
-    template_name = ''
+    template_name = 'administrator_panel/owner-profile-update.html'
     form_class = OwnerProfileForm
 
     def get_object(self, queryset=None):
@@ -2035,3 +2035,22 @@ class OwnerProfileUpdateView(OwnerPermissionUpdateView):
         context = super().get_context_data(**kwargs)
         context.update(owner_context_data(self.request.user))
         return context
+
+    def post(self, request, *args, **kwargs):
+        form = self.get_form_class()(request.POST, request.FILES, instance=self.request.user)
+        if form.is_valid():
+            return self.form_valid(form)
+        self.object = None
+        context = self.get_context_data()
+        return self.render_to_response(context)
+
+    def form_valid(self, form):
+        old_password = self.request.user.password
+        owner_saved = form.save()
+        if form.cleaned_data.get('password'):
+            owner_saved.set_password(form.cleaned_data.get('password'))
+            update_session_auth_hash(self.request, self.request.user)
+        else:
+            owner_saved.password = old_password
+        owner_saved.save()
+        return redirect('owner-profile-detail')

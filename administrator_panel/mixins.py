@@ -122,6 +122,8 @@ class OwnerPermissionDetailView(DetailView):
         return self.render_to_response(context)
 
     def dispatch(self, request, *args, **kwargs):
+        if self.request.user.is_anonymous:
+            return redirect('user-login')
         if not self.request.user.role.role == 'owner':
             return self.forbidden_page()
         return super().dispatch(request, *args, **kwargs)
@@ -136,6 +138,8 @@ class OwnerPermissionListView(ListView):
         return self.render_to_response(context)
 
     def dispatch(self, request, *args, **kwargs):
+        if self.request.user.is_anonymous:
+            return redirect('user-login')
         if not self.request.user.role.role == 'owner':
             return self.forbidden_page()
         return super().dispatch(request, *args, **kwargs)
@@ -150,6 +154,8 @@ class OwnerPermissionCreateView(CreateView):
         return self.render_to_response(context)
 
     def dispatch(self, request, *args, **kwargs):
+        if self.request.user.is_anonymous:
+            return redirect('user-login')
         if not self.request.user.role.role == 'owner':
             return self.forbidden_page()
         return super().dispatch(request, *args, **kwargs)
@@ -164,6 +170,8 @@ class OwnerPermissionUpdateView(UpdateView):
         return self.render_to_response(context)
 
     def dispatch(self, request, *args, **kwargs):
+        if self.request.user.is_anonymous:
+            return redirect('user-login')
         if not self.request.user.role.role == 'owner':
             return self.forbidden_page()
         return super().dispatch(request, *args, **kwargs)

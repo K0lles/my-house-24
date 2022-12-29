@@ -67,4 +67,5 @@ urlpatterns = [
     path('cabinet/application/create/', OwnerApplicationCreateView.as_view(), name='owner-application-create'),
     path('cabinet/application/delete/<int:application_pk>/', OwnerApplicationDeleteView.as_view(), name='owner-application-delete'),
     path('cabinet/user/view/', OwnerProfileDetailView.as_view(), name='owner-profile-detail'),
+    path('cabinet/user/update/', OwnerProfileUpdateView.as_view(), name='owner-profile-update'),
 ]

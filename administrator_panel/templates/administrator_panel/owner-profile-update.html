@@ -8,7 +8,7 @@
 {% block main_content %}
     <div class="card">
         <div class="card-body">
-            <form id="owner-form" method="post" action="{% url 'owner-profile-detail' %}" enctype="multipart/form-data">
+            <form id="owner-form" method="post" action="{% url 'owner-profile-update' %}" enctype="multipart/form-data">
                 {% csrf_token %}
                 <div class="row">
                     <div class="col-sm-12 col-lg-6">
@@ -120,4 +120,98 @@
             </form>
         </div>
     </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    $('#datepicker').datepicker({
+        format: 'dd.mm.yyyy'
+    });
+
+    function textAreaIsValid(element) {
+        if (element.value !== '') {
+            element.style = 'border: 1px solid #58c76d; height: 288px;';
+            $(`#${element.id}-errors`).text('');
+            return true;
+        }
+        else if (element.value === '') {
+            if (!($(`#${element.id}-errors`).text()).includes('Поле не може бути пустим')) {
+                $(`#${element.id}-errors`).text('Поле не може бути пустим');
+                element.style = 'border: 1px solid red; height: 288px;';
+                return false;
+            }
+        }
+    }
+
+    function generatePassword() {
+        let randomstring = Math.random().toString(36).slice(-8);
+        $('#id_password').val(randomstring);
+        $('#id_repeat-password').val(randomstring);
+    }
+
+    function showHidePassword() {
+        let type = $('#id_password').attr('type');
+        if (type === 'password') {
+            $('#id_password').attr('type', 'text');
+            $('#id_repeat-password').attr('type', 'text');
+            $('.fa-eye').attr('class', 'fa fa-eye-slash');
+        }
+        else {
+            $('#id_password').attr('type', 'password');
+            $('#id_repeat-password').attr('type', 'password');
+            $('.fa-eye-slash').attr('class', 'fa fa-eye');
+        }
+    }
+
+    function formIsValidCreate(e) {
+        e.preventDefault();
+
+        let isValid = true;
+        $(`#owner-form`).find(`input[type='text']`).each(function () {
+            $(this).css('border', '1px solid #58c76d');
+        })
+
+        $(`#owner-form`).find('textarea').css('border', '1px solid #58c76d');
+        $(`#owner-form`).find('select').css('border', '1px solid #58c76d');
+
+        $(`#owner-form`).find(`input[id$='id_name']`).each(function() {
+            if (!fieldIsValid(this)) {
+                isValid = false;
+            }
+        });
+
+        $(`#owner-form`).find(`input[id$='id_surname']`).each(function() {
+            if (!fieldIsValid(this)) {
+                isValid = false;
+            }
+        });
+
+        $(`#owner-form`).find(`input[id$='id_email']`).each(function() {
+            if (!fieldIsValid(this)) {
+                isValid = false;
+            }
+        });
+
+
+        $(`#owner-form`).find(`input[id$='id_password']`).each(function() {
+            if (!fieldIsValid(this)) {
+                isValid = false;
+            }
+        });
+
+        $(`#owner-form`).find(`input[id$='id_repeat-password']`).each(function() {
+            if (!fieldIsValid(this)) {
+                isValid = false;
+            }
+        });
+
+        if (isValid) {
+            $(`#owner-form`).submit();
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+</script>
 {% endblock %}

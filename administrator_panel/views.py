@@ -1050,8 +1050,7 @@ class ReceiptUpdateView(PermissionUpdateView):
         receipt_saved = form.save()
         for receipt_service_form in receipt_formset.forms:
             if receipt_service_form.cleaned_data.get('service') and receipt_service_form.cleaned_data.get('amount') \
-                    and receipt_service_form.cleaned_data.get('price') and receipt_service_form.cleaned_data.get(
-                'total_price'):
+                    and receipt_service_form.cleaned_data.get('price') and receipt_service_form.cleaned_data.get('total_price'):
                 form_saved = receipt_service_form.save(commit=False)
                 form_saved.receipt = receipt_saved
                 form_saved.save()
@@ -1728,6 +1727,13 @@ class BuildReceiptFileView(SingleObjectMixin, View):
             return JsonResponse({'answer': 'failed'})
 
 
+class MessageListView(PermissionListView):
+    model = Message
+    template_name = 'administrator_panel/message-list.html'
+    queryset = Message.objects.all().order_by('-id')
+    string_permission = 'message_access'
+
+
 class MessageCreateView(PermissionCreateView):
     model = Message
     template_name = 'administrator_panel/message-create.html'
@@ -1738,7 +1744,7 @@ class MessageCreateView(PermissionCreateView):
         context = super().get_context_data(**kwargs)
         context = personal_account_context(context,
                                            Flat.objects
-                                           .select_related('personalaccount', 'house', 'section', 'owner')
+                                           .select_related('personalaccount', 'house', 'section', 'owner', 'floor')
                                            .filter(owner__isnull=False))
 
         context['house_floor']: dict[int, list[list[int, str]]] = {}
@@ -1761,9 +1767,94 @@ class MessageCreateView(PermissionCreateView):
 
     def post(self, request, *args, **kwargs):
         form = self.get_form_class()(request.POST)
-        print(form.errors)
+        if form.is_valid():
+            return self.form_valid(form)
+        self.object = None
+        context = self.get_context_data()
+        context['form'] = form
+        return self.render_to_response(context)
+
+    def form_valid(self, form):
+        message = form.save(commit=False)
         print(form.cleaned_data)
-        return redirect('message-create')
+        message.sender = self.request.user
+
+        filtering_receivers = Q(role__role='owner')
+        filtering_debt_receivers = Q(subtraction__lt=0)     # Q for filtering in case to send only to debtors
+
+        if message.flat:
+            filtering_receivers.add(Q(flat=message.flat), Q.AND)
+            filtering_debt_receivers.add(Q(flat=message.flat), Q.AND)
+
+        if message.section and message.floor:
+            filtering_receivers.add(Q(flat__section=message.section, flat__floor=message.floor), Q.AND)
+            filtering_debt_receivers.add(Q(flat__section=message.section, flat__floor=message.floor), Q.AND)
+
+        if message.floor:
+            filtering_receivers.add(Q(flat__floor=message.floor), Q.AND)
+            filtering_debt_receivers.add(Q(flat__floor=message.floor), Q.AND)
+
+        if message.section:
+            filtering_receivers.add(Q(flat__section=message.section), Q.AND)
+            filtering_debt_receivers.add(Q(flat__section=message.section), Q.AND)
+
+        if message.house:
+            filtering_receivers.add(Q(flat__house=message.house), Q.AND)
+            filtering_debt_receivers.add(Q(flat__house=message.house), Q.AND)
+
+        receivers = User.objects.filter(filtering_receivers)
+
+        # filtering owners, which has negative value of sum on account
+        if form.cleaned_data.get('send_all_debtors'):
+            personal_accounts = PersonalAccount.objects.filter(flat__owner__in=receivers)
+            calculated_accounts = calculate_notoriety_and_receipt_sum(personal_accounts).get('personal_accounts')
+            debt_owners = set([account.flat.owner.pk for account in calculated_accounts.filter(filtering_debt_receivers)])
+            receivers = receivers.filter(pk__in=debt_owners)
+
+        message.save()
+        message.receiver.set(receivers)
+        message.save()
+
+        return redirect('messages')
+
+
+class MessageDetailView(PermissionDetailView):
+    model = Message
+    template_name = 'administrator_panel/message-detail.html'
+    pk_url_kwarg = 'message_pk'
+    string_permission = 'message_access'
+
+    def get_object(self, queryset=None):
+        try:
+            return Message.objects.select_related('sender').get(pk=self.kwargs.get('message_pk'))
+        except Message.DoesNotExist:
+            raise Http404()
+
+
+class MessageDeleteView(PermissionDeleteView):
+    model = Message
+    template_name = 'administrator_panel/message-list.html'
+    string_permission = 'message_access'
+
+    def get_object(self, queryset=None):
+        return None
+
+    def post(self, request, *args, **kwargs):
+        if self.request.POST.get('messages_to_delete'):
+            messages_pk = request.POST.get('messages_to_delete').split(',')[:-1]
+            try:
+                messages = Message.objects.filter(pk__in=messages_pk)
+                messages.delete()
+            finally:
+                return redirect('messages')
+
+        if request.POST.get('message_id'):
+            try:
+                message_to_delete = Message.objects.get(pk=self.request.POST.get('message_id'))
+                message_to_delete.delete()
+            finally:
+                return redirect('messages')
+        return redirect('messages')
 
 
 class ApplicationListView(PermissionListView):

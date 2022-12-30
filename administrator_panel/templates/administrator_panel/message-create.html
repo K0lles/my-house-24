@@ -28,6 +28,7 @@
                     </div>
                 </div>
                 <div id="editor" style="margin-top: 2%;"></div>
+                <p id="{{ form.main_text.auto_id }}-errors" style="color: red;"></p>
                 <div hidden="hidden">
                     {% autoescape off %}
                         <div id="insert-into"></div>
@@ -94,6 +95,16 @@
                 isValid = false;
             }
         })
+
+        if ($('.ck-editor__editable[role="textbox"]').html() === '<p><br data-cke-filler="true"></p>'){
+            if (!($(`#id_main_text-errors`).text()).includes('Поле не може бути пустим')) {
+                $(`#id_main_text-errors`).text('Поле не може бути пустим');
+            }
+            isValid = false;
+        }
+        else {
+            $(`#id_main_text-errors`).text('');
+        }
 
         if (isValid) {
             $('#insert-into').append(`<textarea id="{{ form.main_text.auto_id }}" name="{{ form.main_text.html_name }}">${$('.ck-editor__editable[role="textbox"]').html()}</textarea>`);

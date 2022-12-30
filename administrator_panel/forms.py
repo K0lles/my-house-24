@@ -319,6 +319,19 @@ class MessageForm(ModelForm):
         model = Message
         exclude = ('sender',)
 
+    def clean(self):
+        cleaned_data = super().clean()
+
+        self._errors = {}
+
+        if not cleaned_data.get('theme'):
+            self._errors['theme'] = 'Це поле не може бути пустим'
+
+        if not cleaned_data.get('main_text'):
+            self._errors['main_text'] = 'Це поле не може бути пустим'
+
+        return cleaned_data
+
 
 class ApplicationForm(ModelForm):
     master_type = ChoiceField(choices=Application.MasterTypeChoices.choices, required=False)

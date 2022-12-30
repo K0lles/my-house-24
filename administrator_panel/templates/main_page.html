@@ -243,7 +243,7 @@
             {% endif %}
             {% if request.user.role.message_access %}
           <li class="nav-item">
-            <a href="#" class="nav-link">
+            <a href="{% url 'messages' %}" class="nav-link">
               <i class="nav-icon fas fa-envelope"></i>
               <p>
                 Повідомлення

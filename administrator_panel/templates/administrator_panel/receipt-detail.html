@@ -71,7 +71,7 @@
                         </tr>
                         <tr>
                             <th>Власник</th>
-                            <td><a href="{% url 'owner-detail' owner_pk=object.account.flat.owner.pk %}">{{ object.account.flat.owner.surname }} {{ object.account.flat.owner.name }} {{ object.account.flat.owner.father }}</a></td>
+                            <td>{% if object.account.flat.owner %}<a href="{% url 'owner-detail' owner_pk=object.account.flat.owner.pk %}">{{ object.account.flat.owner.surname }} {{ object.account.flat.owner.name }} {{ object.account.flat.owner.father }}</a>{% else %}не указано{% endif %}</td>
                         </tr>
                         <tr>
                             <th>Особовий рахунок</th>
@@ -79,7 +79,7 @@
                         </tr>
                         <tr>
                             <th>Телефон</th>
-                            <td>{{ object.account.flat.owner.phone }}</td>
+                            <td>{% if object.account.flat.owner %}{{ object.account.flat.owner.phone }}{% else %}не указано{% endif %}</td>
                         </tr>
                         <tr>
                             <th>Будинок</th>

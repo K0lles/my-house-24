@@ -128,20 +128,21 @@ class Message(models.Model):
     @property
     def get_receiver_display(self) -> str:
         """Property for correct display receiver in template"""
-        if self.house:
-            return self.house.name
 
-        if self.section and self.flat:
+        if self.flat:
+            return f'{self.flat.house.name}, {self.flat.section.name}, {self.flat.floor.name}, {self.flat.number}'
+
+        if self.section and self.floor:
             return f'{self.section.house.name}, {self.section.name}, {self.floor.name}'
-
-        if self.section:
-            return f'{self.section.house.name}, {self.section.name}'
 
         if self.floor:
             return f'{self.floor.house.name}, {self.floor.name}'
 
-        if self.flat:
-            return f'{self.flat.house.name}, {self.flat.section.name}, {self.flat.floor.name}, {self.flat.number}'
+        if self.section:
+            return f'{self.section.house.name}, {self.section.name}'
+
+        if self.house:
+            return self.house.name
 
         if self.receiver.all().count() == 1:
             receiver = self.receiver.first()

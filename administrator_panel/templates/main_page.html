@@ -356,13 +356,13 @@
                   <p>Платіжні реквізити</p>
                 </a>
               </li>
-                {% endif %}
               <li class="nav-item">
                 <a href="{% url 'articles-payment' %}" class="nav-link">
                   <i class="fa fa-list-ol"></i>
                   <p>Статті платіжок</p>
                 </a>
               </li>
+                {% endif %}
             </ul>
           </li>
         </ul>
@@ -432,6 +432,14 @@
                       </li>
                         {% endfor %}
                 </ul>
+            </li>
+            <li class="nav nav-item">
+                <a href="{% url 'owner-messages' %}" class="nav-link">
+                    <i class="nav-icon fas fa-envelope"></i>
+                    <p>
+                        Повідомлення
+                    </p>
+                </a>
             </li>
             <li class="nav nav-item">
                 <a href="{% url 'owner-applications' %}" class="nav-link">

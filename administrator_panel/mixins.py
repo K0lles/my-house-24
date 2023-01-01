@@ -175,3 +175,19 @@ class OwnerPermissionUpdateView(UpdateView):
         if not self.request.user.role.role == 'owner':
             return self.forbidden_page()
         return super().dispatch(request, *args, **kwargs)
+
+
+class OwnerPermissionDeleteView(DeleteView):
+
+    def forbidden_page(self):
+        self.template_name = 'forbidden_page.html'
+        self.object = None
+        context = super().get_context_data()
+        return self.render_to_response(context)
+
+    def dispatch(self, request, *args, **kwargs):
+        if self.request.user.is_anonymous:
+            return redirect('user-login')
+        if not self.request.user.role.role == 'owner':
+            return self.forbidden_page()
+        return super().dispatch(request, *args, **kwargs)

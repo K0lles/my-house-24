@@ -1730,7 +1730,10 @@ class BuildReceiptFileView(SingleObjectMixin, View):
 class MessageListView(PermissionListView):
     model = Message
     template_name = 'administrator_panel/message-list.html'
-    queryset = Message.objects.all().order_by('-id')
+    queryset = Message.objects.prefetch_related('receiver__flat_set',
+                                                'receiver__flat_set__floor',
+                                                'receiver__flat_set__house',
+                                                'receiver__flat_set__section').all().order_by('-id')
     string_permission = 'message_access'
 
 
@@ -1776,7 +1779,6 @@ class MessageCreateView(PermissionCreateView):
 
     def form_valid(self, form):
         message = form.save(commit=False)
-        print(form.cleaned_data)
         message.sender = self.request.user
 
         filtering_receivers = Q(role__role='owner')
@@ -2027,13 +2029,56 @@ class OwnerTariffListView(OwnerPermissionListView):
         return context
 
 
-# TODO: Finish messages for owners
 class OwnerMessagesListView(OwnerPermissionListView):
     model = Message
-    template_name = ''
+    template_name = 'administrator_panel/owner-message-list.html'
 
     def get_queryset(self):
         return Message.objects.filter(receiver=self.request.user)
+
+
+class OwnerMessageDetailView(OwnerPermissionDetailView):
+    model = Message
+    template_name = 'administrator_panel/owner-message-detail.html'
+
+    def get_object(self, queryset=None):
+        try:
+            return Message.objects.get(pk=self.kwargs.get('message_pk'))
+        except (Message.DoesNotExist, AttributeError):
+            raise Http404()
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context.update(owner_context_data(self.request.user))
+        return context
+
+
+class OwnerMessageDeleteView(OwnerPermissionDeleteView):
+    model = Message
+    template_name = ''
+
+    def get_object(self, queryset=None):
+        return None
+
+    def post(self, request, *args, **kwargs):
+        if self.request.POST.get('messages_to_delete'):
+            messages_pk = request.POST.get('messages_to_delete').split(',')[:-1]
+            try:
+                messages = Message.objects.filter(pk__in=messages_pk)
+                for message in messages:
+                    if self.request.user in message.receiver.all():
+                        message.receiver.remove(self.request.user)
+            finally:
+                return redirect('owner-messages')
+
+        if request.POST.get('message_id'):
+            try:
+                message_to_delete = Message.objects.get(pk=self.request.POST.get('message_id'))
+                if self.request.user in message_to_delete.receiver.all():
+                    message_to_delete.receiver.remove(self.request.user)
+            finally:
+                return redirect('owner-messages')
+        return redirect('owner-messages')
 
 
 class OwnerApplicationListView(OwnerPermissionListView):

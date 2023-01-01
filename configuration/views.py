@@ -479,7 +479,7 @@ class UserLoginView(CreateView):
                                 password=password)
             if user and user.role.role == 'owner' and user.status != 'disconnected':
                 login(request, user)
-                if request.POST.get('remember_me'):
+                if not request.POST.get('remember_me'):
                     self.request.session.set_expiry(0)
                 return redirect('owner-receipts')
         self.object = None
@@ -508,7 +508,7 @@ class ManagementLoginView(CreateView):
                                 password=password)
             if user and user.role.role != 'owner' and user.status != 'disconnected':
                 login(request, user)
-                if request.POST.get('remember_me'):
+                if not request.POST.get('remember_me'):
                     self.request.session.set_expiry(0)
                 return redirect('flats')
         self.object = None

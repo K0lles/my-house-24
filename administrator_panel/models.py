@@ -113,7 +113,6 @@ class Application(models.Model):
     created_by_director = models.BooleanField(default=False)
 
 
-# TODO: Make "receiver" field many to many field relation
 class Message(models.Model):
     sender = models.ForeignKey(User, on_delete=models.SET_NULL, verbose_name='Відправник', related_name='sender', blank=True, null=True)
     receiver = models.ManyToManyField(User, related_name='receivers', blank=True)

@@ -63,6 +63,7 @@ urlpatterns = [
     path('application/update/<int:application_pk>/', ApplicationUpdateView.as_view(), name='application-update'),
     path('application/delete/<int:application_pk>/', ApplicationDeleteView.as_view(), name='application-delete'),
 
+    path('cabinet/', OwnerSummaryListView.as_view(), name='owner-summary'),
     path('cabinet/receipt/', OwnerReceiptListView.as_view(), name='owner-receipts'),
     path('cabinet/receipt/<int:receipt_pk>/', OwnerReceiptDetailView.as_view(), name='owner-receipt-detail'),
     path('cabinet/tariff/', OwnerTariffListView.as_view(), name='owner-tariffs'),

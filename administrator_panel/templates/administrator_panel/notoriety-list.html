@@ -86,7 +86,7 @@
                                 <td>{{ notoriety.created_at|date:'d.m.Y' }}</td>
                                 <td>{% if notoriety.is_completed %}Проведена{% else %}Не проведена{% endif %}</td>
                                 <td>{{ notoriety.article.name }}</td>
-                                <td>{% if notoriety.account %}{{ notoriety.account.flat.owner.surname }} {{ notoriety.account.flat.owner.name }} {% if notoriety.account.flat.owner.father %}{{ notoriety.account.flat.owner.father }}{% endif %}{% else %}(не указано){% endif %}</td>
+                                <td>{% if notoriety.account and notoriety.account.flat.owner %}{{ notoriety.account.flat.owner.surname }} {{ notoriety.account.flat.owner.name }} {% if notoriety.account.flat.owner.father %}{{ notoriety.account.flat.owner.father }}{% endif %}{% else %}(не указано){% endif %}</td>
                                 <td>{% if notoriety.account %}{{ notoriety.account.number }}{% else %}(не указано){% endif %}</td>
                                 <td>{% if notoriety.type == 'income' %}<span style="color: #388f1a;">Прихід</span>{% else %}<span style="color: #bb1642;">Розхід</span>{% endif %}</td>
                                 <td>{% if notoriety.type == 'income' %}<span style="color: #388f1a;">{{ notoriety.sum }}</span>{% else %}<span style="color: #bb1642;">-{{ notoriety.sum }}</span>{% endif %}</td>

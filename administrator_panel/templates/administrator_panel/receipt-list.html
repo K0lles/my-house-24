@@ -101,7 +101,7 @@
                                 <td>{{ receipt.account.flat.number }}, {{ receipt.account.flat.house.name }}</td>
                                 <td>{{ receipt.account.flat.owner.surname }} {{ receipt.account.flat.owner.name }} {{ receipt.account.flat.owner.father }}</td>
                                 <td>{% if receipt.is_completed %}Проведена{% else %}Не проведена{% endif %}</td>
-                                <td>{{ receipt.summ|floatformat:2 }}</td>
+                                <td>{% if receipt.summ %}{{ receipt.summ|floatformat:2 }}{% else %}0.00{% endif %}</td>
                                 <td class="text-right">
                                     <div class="btn-group pull-right">
                                         <a class="btn btn-default btn-sm" title="Копіювати" href="{% url 'receipt-create' %}?base_receipt={{ receipt.pk }}">

@@ -1,11 +1,10 @@
 import openpyxl
 from django.contrib.auth import update_session_auth_hash
-from django.views.generic.base import ContextMixin
 from openpyxl.styles import Alignment
 from openpyxl.utils import get_column_letter
 
-from django.db.models import Q, Sum, Value, Case, When, FloatField, Subquery, OuterRef, QuerySet
-from django.db.models.functions import Concat
+from django.db.models import Q, Sum, Value, Case, When, FloatField, Subquery, OuterRef, QuerySet, F
+from django.db.models.functions import Concat, TruncMonth
 from django.http import Http404, JsonResponse
 from django.shortcuts import redirect
 from django.urls import reverse
@@ -737,6 +736,7 @@ class OwnerUpdateView(PermissionUpdateView):
         return redirect('owners')
 
 
+# TODO: Get personal accounts and set in template whether owner has debt or no
 class OwnerListView(PermissionListView):
     model = User
     queryset = User.objects.prefetch_related('flat_set', 'flat_set__house').filter(role__role='owner').order_by('-id')
@@ -1962,6 +1962,81 @@ class ApplicationDeleteView(SingleObjectMixin, PermissionView):
         return JsonResponse({'answer': 'success'})
 
 
+class OwnerSummaryListView(OwnerPermissionListView):
+    model = Receipt
+    template_name = 'administrator_panel/owner-summary.html'
+
+    def get_queryset(self):
+        try:
+            if not self.request.GET.get('flat'):
+                raise Http404()
+            self.flat = Flat.objects.select_related('house', 'personalaccount').get(pk=self.request.GET.get('flat'))
+            return Receipt.objects\
+                .select_related('account__flat', 'account__flat__owner') \
+                .prefetch_related('receiptservices', 'receiptservices__service')\
+                .filter(account__flat=self.flat, account__flat__owner=self.request.user)
+        except (Flat.DoesNotExist, Receipt.DoesNotExist, AttributeError):
+            raise Http404()
+
+    def get_context_data(self, *, object_list=None, **kwargs):
+        context = super().get_context_data(object_list=object_list, **kwargs)
+        context.update(owner_context_data(self.request.user))
+        context['flat'] = self.flat     # passing to context requested flat
+
+        context['personal_account'] = calculate_notoriety_and_receipt_sum(
+            PersonalAccount.objects.select_related('flat', 'flat__owner')
+            .filter(flat=self.flat, flat__owner=self.request.user)
+        )['personal_accounts']
+
+        # making outcome diagram for whole year by months
+        outcome_diagram_queryset = context['object_list'] \
+            .filter(date_from__year=timezone.now().year - 1) \
+            .annotate(month=TruncMonth('date_from')) \
+            .values('month') \
+            .order_by('month') \
+            .annotate(sum=Sum('receiptservices__total_price'))
+        context['outcome_diagram'] = {}
+
+        import locale
+        locale.setlocale(locale.LC_ALL, 'uk_UA.utf8')
+        receipt_sum = 0.00     # variable for counting average monthly outcome of flat
+        for outcome in outcome_diagram_queryset:
+            if outcome.get('sum'):
+                context['outcome_diagram'][outcome.get('month').strftime('%B').title()] = outcome.get('sum')
+                receipt_sum += outcome.get('sum')
+
+        # average monthly outcome
+        context['average_outcome'] = receipt_sum / len(outcome_diagram_queryset) if len(outcome_diagram_queryset) > 0 else 0.00
+
+        first_day_of_current_month = datetime.date.today().replace(day=1)
+        last_day_of_previous_month = first_day_of_current_month - datetime.timedelta(days=1)
+        previous_month_diagram_queryset = context['object_list'] \
+            .filter(date_from__month=last_day_of_previous_month.month,
+                    date_from__year=timezone.now().year - 1)\
+            .annotate(service=F('receiptservices__service__name'))\
+            .values('service')\
+            .order_by('service')\
+            .annotate(sum=Sum('receiptservices__total_price'))
+
+        context['previous_month_diagram'] = {}
+        for outcome in previous_month_diagram_queryset:
+            if outcome.get('sum'):
+                context['previous_month_diagram'][outcome.get('service')] = outcome.get('sum')
+
+        current_year_diagram_queryset = context['object_list'] \
+            .filter(date_from__year=timezone.now().year - 1) \
+            .annotate(service=F('receiptservices__service__name')) \
+            .values('service') \
+            .order_by('service') \
+            .annotate(sum=Sum('receiptservices__total_price'))
+
+        context['current_year_diagram'] = {}
+        for outcome in current_year_diagram_queryset:
+            if outcome.get('sum'):
+                context['current_year_diagram'][outcome.get('service')] = outcome.get('sum')
+        return context
+
+
 class OwnerReceiptListView(OwnerPermissionListView):
     model = Receipt
     template_name = 'administrator_panel/owner-receipt-list.html'
@@ -2055,7 +2130,6 @@ class OwnerMessageDetailView(OwnerPermissionDetailView):
 
 class OwnerMessageDeleteView(OwnerPermissionDeleteView):
     model = Message
-    template_name = ''
 
     def get_object(self, queryset=None):
         return None

@@ -31,7 +31,11 @@ def calculate_notoriety_and_receipt_sum(personal_accounts: QuerySet):
 
 
 def calculate_totals(personal_accounts: QuerySet):
-    """Calculating sum of overall cash register, overall sum by all accounts and overall sum of debt by all accounts"""
+    """
+    Calculating sum of overall cash register, overall sum by all accounts and overall sum of debt by all accounts.
+    It cannot be used without 'calculate_notoriety_and_receipt_sum'!
+    """
+
     # count sum of all notorieties
     checkout_condition = Notoriety.objects.all().values('sum') \
         .aggregate(

@@ -1,0 +1,214 @@
+{% extends 'main_page.html' %}
+{% load static %}
+
+{% block content_header %}
+    <h1>Статистика</h1>
+{% endblock %}
+
+{% block main_content %}
+    <div class="content-header" style="margin-bottom: 5px;">
+        <h1 >У вашому обслуговуванні</h1>
+    </div>
+    <div class="row">
+        <div class="col-sm-12 col-md-6 col-lg-4">
+            <div class="small-box bg-blue overflow-hidden">
+                <div class="inner">
+                    <h3>{{ house_sum }}</h3>
+                    <p>Будинків</p>
+                </div>
+                <div class="icon">
+                    <i class="fa fa-building"></i>
+                </div>
+                <a class="small-box-footer" href="{% url 'houses' %}">
+                    Перейти до будинків
+                    <i class="fa fa-arrow-circle-right"></i>
+                </a>
+            </div>
+        </div>
+        <div class="col-sm-12 col-md-6 col-lg-4">
+            <div class="small-box bg-green overflow-hidden">
+                <div class="inner">
+                    <h3>{{ active_owner_sum }}</h3>
+                    <p>Активних власників</p>
+                </div>
+                <div class="icon">
+                    <i class="fa fa-users"></i>
+                </div>
+                <a class="small-box-footer" href="{% url 'owners' %}">
+                    Перейти до власників
+                    <i class="fa fa-arrow-circle-right"></i>
+                </a>
+            </div>
+        </div>
+        <div class="col-sm-12 col-md-6 col-lg-4">
+            <div class="small-box bg-yellow overflow-hidden">
+                <div class="inner">
+                    <h3>{{ application_in_work_sum }}</h3>
+                    <p>Заявок майстра у роботі</p>
+                </div>
+                <div class="icon">
+                    <i class="fa fa-wrench"></i>
+                </div>
+                <a class="small-box-footer" href="{% url 'applications' %}">
+                    Перейти до заявок
+                    <i class="fa fa-arrow-circle-right"></i>
+                </a>
+            </div>
+        </div>
+        <div class="col-sm-12 col-md-6 col-lg-4">
+            <div class="small-box bg-blue overflow-hidden">
+                <div class="inner">
+                    <h3>{{ flat_sum }}</h3>
+                    <p>Квартир</p>
+                </div>
+                <div class="icon">
+                    <i class="fa fa-key"></i>
+                </div>
+                <a class="small-box-footer" href="{% url 'flats' %}">
+                    Перейти до квартир
+                    <i class="fa fa-arrow-circle-right"></i>
+                </a>
+            </div>
+        </div>
+        <div class="col-sm-12 col-md-6 col-lg-4">
+            <div class="small-box bg-green overflow-hidden">
+                <div class="inner">
+                    <h3>{{ account_sum }}</h3>
+                    <p>Особових рахунків</p>
+                </div>
+                <div class="icon">
+                    <i class="fa fa-child"></i>
+                </div>
+                <a class="small-box-footer" href="{% url 'personal-accounts' %}">
+                    Перейти до особових рахунків
+                    <i class="fa fa-arrow-circle-right"></i>
+                </a>
+            </div>
+        </div>
+        <div class="col-sm-12 col-md-6 col-lg-4">
+            <div class="small-box bg-yellow overflow-hidden">
+                <div class="inner">
+                    <h3>{{ application_new_sum }}</h3>
+                    <p>Нових заявок майстра</p>
+                </div>
+                <div class="icon">
+                    <i class="fa fa-user-plus"></i>
+                </div>
+                <a class="small-box-footer" href="{% url 'applications' %}">
+                    Перейти до заявок
+                    <i class="fa fa-arrow-circle-right"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-sm-12 col-md-8 col-lg-7">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Графік погашення квитанцій, грн</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="first-diagram"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-12 col-md-4 col-lg-5">
+            <div class="small-box bg-green overflow-hidden">
+                <div class="inner">
+                    <h3>{% if totals.checkout_condition.sum and totals.checkout_condition.sum >= 0.00 %}{{ totals.checkout_condition.sum|floatformat:2 }}{% else %}0.00{% endif %} грн</h3>
+                    <p>Стан каси</p>
+                </div>
+                <div class="icon">
+                    <i class="fa fa-dollar"></i>
+                </div>
+            </div>
+            <div class="small-box bg-blue overflow-hidden">
+                <div class="inner">
+                    <h3>{% if totals.sum_by_account.sum %}{{ totals.sum_by_account.sum|floatformat:2 }}{% else %}0.00{% endif %} грн</h3>
+                    <p>Баланс по рахунках</p>
+                </div>
+                <div class="icon">
+                    <i class="fa fa-dollar"></i>
+                </div>
+            </div>
+            <div class="small-box bg-red overflow-hidden">
+                <div class="inner">
+                    <h3>{% if totals.debt_by_account.debt %}{{ totals.debt_by_account.debt|floatformat:2 }}{% else %}0.00{% endif %} грн</h3>
+                    <p>Заборгованість по рахунках</p>
+                </div>
+                <div class="icon">
+                    <i class="fa fa-dollar"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-sm-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Графік приходів і розходів по касі, грн</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="outcome-notorieties-chart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let outcome_sum = {{ outcome_sum|safe }};
+    let outcome_sum_labels = Object.keys(outcome_sum);
+    let outcome_sum_data = Object.values(outcome_sum);
+
+    let income_sum = {{ income_sum|safe }};
+    let income_sum_labels = Object.keys(income_sum);
+    let income_sum_data = Object.values(income_sum);
+
+    let outcome_notorieties_sum = {{ outcome_notorieties_sum|safe }};
+    let outcome_notorieties_sum_labels = Object.keys(outcome_notorieties_sum);
+    let outcome_notorieties_sum_data = Object.values(outcome_notorieties_sum);
+
+    let outcome_sum_chart = document.getElementById('first-diagram');
+    new Chart(outcome_sum_chart, {
+        type: 'bar',
+        data: {
+            labels: outcome_sum_labels,
+            datasets: [
+                {
+                    label: 'заборгованість',
+                    data: outcome_sum_data,
+                    backgroundColor: 'rgb(255, 99, 132)'
+                },
+                {
+                    label: 'погашення заборгованості',
+                    data: income_sum_data,
+                    backgroundColor: 'rgb(50,205,50)'
+                }
+            ]
+        }
+    })
+
+    let outcome_notorieties_chart = document.getElementById('outcome-notorieties-chart');
+    new Chart(outcome_notorieties_chart, {
+        type: 'bar',
+        data: {
+            labels: outcome_sum_labels,
+            datasets: [
+                {
+                    label: 'Прихід',
+                    data: income_sum_data,
+                    backgroundColor: 'rgb(50,205,50)'
+                },
+                {
+                    label: 'Розхід',
+                    data: outcome_notorieties_sum_data,
+                    backgroundColor: 'rgb(255, 99, 132)'
+                }
+            ]
+        }
+    })
+
+</script>
+{% endblock %}

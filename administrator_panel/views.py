@@ -1,3 +1,5 @@
+import locale
+
 import openpyxl
 from django.contrib.auth import update_session_auth_hash
 from openpyxl.styles import Alignment
@@ -16,9 +18,98 @@ from django.views.generic.list import MultipleObjectMixin
 from configuration.models import Role, Tariff, Service, MeasurementUnit, PaymentRequisite, ArticlePayment
 from .forms import *
 from .mixins import *
-from .functions import owner_context_data, calculate_notoriety_and_receipt_sum, count_all_totals
+from .functions import owner_context_data, calculate_notoriety_and_receipt_sum, count_all_totals, calculate_totals
 
 from my_house_24 import settings
+
+
+locale.setlocale(locale.LC_ALL, 'uk_UA.utf8')   # for using stringify('%B') with datetime objects
+
+
+class StatisticListView(PermissionListView):
+    model = Receipt
+    template_name = 'administrator_panel/statistics-list.html'
+    string_permission = 'statistic_access'
+
+    def get_queryset(self):
+        return None
+
+    def get_context_data(self, *, object_list=None, **kwargs):
+        context = super().get_context_data(object_list=object_list, **kwargs)
+        context['house_sum'] = House.objects.all().count()
+        context['active_owner_sum'] = User.objects.filter(role__role='owner').count()
+        context['application_in_work_sum'] = Application.objects.filter(status='in work').count()
+        context['flat_sum'] = Flat.objects.all().count()
+
+        personal_accounts = PersonalAccount.objects.all()
+        context['account_sum'] = personal_accounts.count()
+        context['application_new_sum'] = Application.objects.filter(status='new').count()
+
+        context['totals'] = count_all_totals(personal_accounts)
+        notorieties = Notoriety.objects.filter(created_at__year=timezone.now().year - 1)
+        receipts = Receipt.objects\
+            .prefetch_related('receiptservices')\
+            .filter(is_completed=True, created_at__year=timezone.now().year - 1)
+
+        grouped_income_notorieties_queryset = notorieties\
+            .filter(type='income')\
+            .annotate(month=TruncMonth('created_at'))\
+            .values('month')\
+            .annotate(sum=Sum('sum'))
+
+        grouped_outcome_notorieties_queryset = notorieties\
+            .filter(type='outcome') \
+            .annotate(month=TruncMonth('created_at')) \
+            .values('month') \
+            .annotate(sum=Sum('sum'))
+
+        grouped_receipts_queryset = receipts\
+            .annotate(month=TruncMonth('created_at'))\
+            .values('month')\
+            .annotate(sum=Sum('receiptservices__total_price'))
+
+        # forming dictionary with outcome through all year (it includes notorieties with 'outcome' status and completed receipts)
+        context['outcome_sum'] = {}
+        for obj in grouped_receipts_queryset:
+            if not context['outcome_sum'].get(obj.get('month').strftime('%B').title()):
+                context['outcome_sum'][obj.get('month').strftime('%B').title()] = obj.get('sum') if obj.get('sum') else 0.00
+            else:
+                context['outcome_sum'][obj.get('month').strftime('%B').title()] += obj.get('sum') if obj.get('sum') else 0.00
+
+        for obj in grouped_outcome_notorieties_queryset:
+            if not context['outcome_sum'].get(obj.get('month').strftime('%B').title()):
+                context['outcome_sum'][obj.get('month').strftime('%B').title()] = obj.get('sum') if obj.get('sum') else 0.00
+            else:
+                context['outcome_sum'][obj.get('month').strftime('%B').title()] += obj.get('sum') if obj.get('sum') else 0.00
+
+        # forming dictionary with income through all year (it includes only notorieties with 'income' status)
+        context['income_sum'] = {}
+        for obj in grouped_income_notorieties_queryset:
+            if not context['income_sum'].get(obj.get('month').strftime('%B').title()):
+                context['income_sum'][obj.get('month').strftime('%B').title()] = obj.get('sum') if obj.get('sum') else 0.00
+            else:
+                context['income_sum'][obj.get('month').strftime('%B').title()] += obj.get('sum') if obj.get('sum') else 0.00
+
+        # forming outcome only with notorieties
+        context['outcome_notorieties_sum'] = {}
+        for obj in grouped_outcome_notorieties_queryset:
+            if not context['outcome_notorieties_sum'].get(obj.get('month').strftime('%B').title()):
+                context['outcome_notorieties_sum'][obj.get('month').strftime('%B').title()] = obj.get('sum') if obj.get('sum') else 0.00
+            else:
+                context['outcome_notorieties_sum'][obj.get('month').strftime('%B').title()] += obj.get('sum') if obj.get('sum') else 0.00
+
+        # making keys of each dictionary equal in order to correct display datasets in chart
+        for obj in context['outcome_sum']:
+            if not context['income_sum'].get(obj):
+                context['income_sum'][obj] = 0.00
+
+        for obj in context['income_sum']:
+            if not context['outcome_sum'].get(obj):
+                context['outcome_sum'][obj] = 0.00
+            if not context['outcome_notorieties_sum'].get(obj):
+                context['outcome_notorieties_sum'][obj] = 0.00
+
+        return context
 
 
 class HouseCreateView(PermissionCreateView):
@@ -1134,8 +1225,6 @@ class EvidenceResponse(MultipleObjectMixin, View):
         evidences = self.get_queryset()
         for evidence in evidences:
             evidence['date_from_formatted'] = evidence['date_from'].strftime('%d.%m.%Y')
-            import locale
-            locale.setlocale(locale.LC_ALL, 'uk_UA.utf8')
             evidence['date_from_month'] = evidence['date_from'].strftime('%B').title()
         return JsonResponse({'evidences': evidences})
 
@@ -1591,9 +1680,6 @@ class BuildReceiptFileView(SingleObjectMixin, View):
             base_template = openpyxl.load_workbook(filename=template.path)
             base_sheet = base_template.active
 
-            import locale
-            locale.setlocale(locale.LC_ALL, 'uk_UA.utf8')
-
             reserved_words = {
                 '%payCompany%': payment_requisites.name if payment_requisites else 'N/A',
                 '%accountNumber%': receipt.account.number,
@@ -1974,7 +2060,7 @@ class OwnerSummaryListView(OwnerPermissionListView):
             return Receipt.objects\
                 .select_related('account__flat', 'account__flat__owner') \
                 .prefetch_related('receiptservices', 'receiptservices__service')\
-                .filter(account__flat=self.flat, account__flat__owner=self.request.user)
+                .filter(account__flat=self.flat, account__flat__owner=self.request.user, is_completed=True)
         except (Flat.DoesNotExist, Receipt.DoesNotExist, AttributeError):
             raise Http404()
 
@@ -1997,8 +2083,6 @@ class OwnerSummaryListView(OwnerPermissionListView):
             .annotate(sum=Sum('receiptservices__total_price'))
         context['outcome_diagram'] = {}
 
-        import locale
-        locale.setlocale(locale.LC_ALL, 'uk_UA.utf8')
         receipt_sum = 0.00     # variable for counting average monthly outcome of flat
         for outcome in outcome_diagram_queryset:
             if outcome.get('sum'):

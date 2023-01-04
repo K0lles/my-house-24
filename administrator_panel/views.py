@@ -1,4 +1,5 @@
 import locale
+from copy import deepcopy
 
 import openpyxl
 from django.contrib.auth import update_session_auth_hash
@@ -49,65 +50,88 @@ class StatisticListView(PermissionListView):
         notorieties = Notoriety.objects.filter(created_at__year=timezone.now().year - 1)
         receipts = Receipt.objects\
             .prefetch_related('receiptservices')\
-            .filter(is_completed=True, created_at__year=timezone.now().year - 1)
+            .filter(is_completed=True, date_from__year=timezone.now().year - 1)\
+            .order_by('date_from')
 
         grouped_income_notorieties_queryset = notorieties\
             .filter(type='income')\
             .annotate(month=TruncMonth('created_at'))\
             .values('month')\
             .annotate(sum=Sum('sum'))
-
         grouped_outcome_notorieties_queryset = notorieties\
             .filter(type='outcome') \
-            .annotate(month=TruncMonth('created_at')) \
-            .values('month') \
+            .annotate(month=TruncMonth('created_at'))\
+            .values('month')\
             .annotate(sum=Sum('sum'))
 
         grouped_receipts_queryset = receipts\
-            .annotate(month=TruncMonth('created_at'))\
+            .annotate(month=TruncMonth('date_from'))\
             .values('month')\
             .annotate(sum=Sum('receiptservices__total_price'))
 
         # forming dictionary with outcome through all year (it includes notorieties with 'outcome' status and completed receipts)
         context['outcome_sum'] = {}
         for obj in grouped_receipts_queryset:
-            if not context['outcome_sum'].get(obj.get('month').strftime('%B').title()):
-                context['outcome_sum'][obj.get('month').strftime('%B').title()] = obj.get('sum') if obj.get('sum') else 0.00
+            if not context['outcome_sum'].get(obj.get('month')):
+                context['outcome_sum'][obj.get('month')] = obj.get('sum') if obj.get('sum') else 0.00
             else:
-                context['outcome_sum'][obj.get('month').strftime('%B').title()] += obj.get('sum') if obj.get('sum') else 0.00
-
-        for obj in grouped_outcome_notorieties_queryset:
-            if not context['outcome_sum'].get(obj.get('month').strftime('%B').title()):
-                context['outcome_sum'][obj.get('month').strftime('%B').title()] = obj.get('sum') if obj.get('sum') else 0.00
-            else:
-                context['outcome_sum'][obj.get('month').strftime('%B').title()] += obj.get('sum') if obj.get('sum') else 0.00
+                context['outcome_sum'][obj.get('month')] += obj.get('sum') if obj.get('sum') else 0.00
 
         # forming dictionary with income through all year (it includes only notorieties with 'income' status)
         context['income_sum'] = {}
         for obj in grouped_income_notorieties_queryset:
-            if not context['income_sum'].get(obj.get('month').strftime('%B').title()):
-                context['income_sum'][obj.get('month').strftime('%B').title()] = obj.get('sum') if obj.get('sum') else 0.00
+            if not context['income_sum'].get(obj.get('month')):
+                context['income_sum'][obj.get('month')] = obj.get('sum') if obj.get('sum') else 0.00
             else:
-                context['income_sum'][obj.get('month').strftime('%B').title()] += obj.get('sum') if obj.get('sum') else 0.00
+                context['income_sum'][obj.get('month')] += obj.get('sum') if obj.get('sum') else 0.00
 
-        # forming outcome only with notorieties
-        context['outcome_notorieties_sum'] = {}
-        for obj in grouped_outcome_notorieties_queryset:
-            if not context['outcome_notorieties_sum'].get(obj.get('month').strftime('%B').title()):
-                context['outcome_notorieties_sum'][obj.get('month').strftime('%B').title()] = obj.get('sum') if obj.get('sum') else 0.00
-            else:
-                context['outcome_notorieties_sum'][obj.get('month').strftime('%B').title()] += obj.get('sum') if obj.get('sum') else 0.00
+        context['income_sum_for_notorieties'] = deepcopy(context['income_sum'])     # copy other one income sum for display in chart with notorieties
 
         # making keys of each dictionary equal in order to correct display datasets in chart
+        for obj in context['income_sum']:
+            if not context['outcome_sum'].get(obj):
+                context['outcome_sum'][obj] = 0.00
+
         for obj in context['outcome_sum']:
             if not context['income_sum'].get(obj):
                 context['income_sum'][obj] = 0.00
 
-        for obj in context['income_sum']:
-            if not context['outcome_sum'].get(obj):
-                context['outcome_sum'][obj] = 0.00
+        context['income_sum'] = dict(sorted(context['income_sum'].items()))
+        context['outcome_sum'] = dict(sorted(context['outcome_sum'].items()))
+
+        # replacing datetime objects to their month display
+        for key, value in list(context['income_sum'].items()):
+            context['income_sum'][key.strftime('%B').title()] = context['income_sum'].pop(key)
+
+        for key, value in list(context['outcome_sum'].items()):
+            context['outcome_sum'][key.strftime('%B').title()] = context['outcome_sum'].pop(key)
+
+        # forming outcome only with notorieties
+        context['outcome_notorieties_sum'] = {}
+        for obj in grouped_outcome_notorieties_queryset:
+            if not context['outcome_notorieties_sum'].get(obj.get('month')):
+                context['outcome_notorieties_sum'][obj.get('month')] = obj.get('sum') if obj.get('sum') else 0.00
+            else:
+                context['outcome_notorieties_sum'][obj.get('month')] += obj.get('sum') if obj.get('sum') else 0.00
+
+        # making keys of each dictionary equal in order to correct display datasets in chart
+        for obj in context['income_sum_for_notorieties']:
             if not context['outcome_notorieties_sum'].get(obj):
                 context['outcome_notorieties_sum'][obj] = 0.00
+
+        for obj in context['outcome_notorieties_sum']:
+            if not context['income_sum_for_notorieties'].get(obj):
+                context['income_sum_for_notorieties'][obj] = 0.00
+
+        context['income_sum_for_notorieties'] = dict(sorted(context['income_sum_for_notorieties'].items()))
+        context['outcome_notorieties_sum'] = dict(sorted(context['outcome_notorieties_sum'].items()))
+
+        # replacing datetime objects to their month display
+        for key, value in list(context['income_sum_for_notorieties'].items()):
+            context['income_sum_for_notorieties'][key.strftime('%B').title()] = context['income_sum_for_notorieties'].pop(key)
+
+        for key, value in list(context['outcome_notorieties_sum'].items()):
+            context['outcome_notorieties_sum'][key.strftime('%B').title()] = context['outcome_notorieties_sum'].pop(key)
 
         return context
 

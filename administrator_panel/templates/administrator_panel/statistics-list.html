@@ -161,6 +161,7 @@
     let outcome_sum = {{ outcome_sum|safe }};
     let outcome_sum_labels = Object.keys(outcome_sum);
     let outcome_sum_data = Object.values(outcome_sum);
+    console.log(outcome_sum_labels);
 
     let income_sum = {{ income_sum|safe }};
     let income_sum_labels = Object.keys(income_sum);
@@ -169,6 +170,10 @@
     let outcome_notorieties_sum = {{ outcome_notorieties_sum|safe }};
     let outcome_notorieties_sum_labels = Object.keys(outcome_notorieties_sum);
     let outcome_notorieties_sum_data = Object.values(outcome_notorieties_sum);
+
+    let income_sum_for_notorieties = {{ income_sum_for_notorieties|safe }};
+    let income_sum_for_notorieties_labels = Object.keys(income_sum_for_notorieties);
+    let income_sum_for_notorieties_data = Object.values(income_sum_for_notorieties);
 
     let outcome_sum_chart = document.getElementById('first-diagram');
     new Chart(outcome_sum_chart, {
@@ -194,11 +199,11 @@
     new Chart(outcome_notorieties_chart, {
         type: 'bar',
         data: {
-            labels: outcome_sum_labels,
+            labels: income_sum_for_notorieties_labels,
             datasets: [
                 {
                     label: 'Прихід',
-                    data: income_sum_data,
+                    data: income_sum_for_notorieties_data,
                     backgroundColor: 'rgb(50,205,50)'
                 },
                 {

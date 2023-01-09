@@ -4,6 +4,8 @@ from django.shortcuts import redirect
 from django.views import View
 from django.views.generic import ListView, CreateView, UpdateView, DetailView, DeleteView
 
+from administrator_panel.functions import owner_context_data
+
 
 class DirectorUserPassesTestMixin(UserPassesTestMixin):
 
@@ -128,6 +130,11 @@ class OwnerPermissionDetailView(DetailView):
             return self.forbidden_page()
         return super().dispatch(request, *args, **kwargs)
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context.update(owner_context_data(self.request.user))
+        return context
+
 
 class OwnerPermissionListView(ListView):
 
@@ -143,6 +150,11 @@ class OwnerPermissionListView(ListView):
         if not self.request.user.role.role == 'owner':
             return self.forbidden_page()
         return super().dispatch(request, *args, **kwargs)
+
+    def get_context_data(self, *, object_list=None, **kwargs):
+        context = super().get_context_data(object_list=object_list, **kwargs)
+        context.update(owner_context_data(self.request.user))
+        return context
 
 
 class OwnerPermissionCreateView(CreateView):
@@ -160,6 +172,11 @@ class OwnerPermissionCreateView(CreateView):
             return self.forbidden_page()
         return super().dispatch(request, *args, **kwargs)
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context.update(owner_context_data(self.request.user))
+        return context
+
 
 class OwnerPermissionUpdateView(UpdateView):
 
@@ -176,6 +193,11 @@ class OwnerPermissionUpdateView(UpdateView):
             return self.forbidden_page()
         return super().dispatch(request, *args, **kwargs)
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context.update(owner_context_data(self.request.user))
+        return context
+
 
 class OwnerPermissionDeleteView(DeleteView):
 
@@ -191,3 +213,8 @@ class OwnerPermissionDeleteView(DeleteView):
         if not self.request.user.role.role == 'owner':
             return self.forbidden_page()
         return super().dispatch(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context.update(owner_context_data(self.request.user))
+        return context

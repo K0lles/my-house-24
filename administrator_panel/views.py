@@ -1,8 +1,11 @@
 import locale
 from copy import deepcopy
+import pandas as pd
+import pdfkit
 
 import openpyxl
 from django.contrib.auth import update_session_auth_hash
+from django.views.generic.base import ContextMixin
 from openpyxl.styles import Alignment
 from openpyxl.utils import get_column_letter
 
@@ -858,6 +861,24 @@ class OwnerListView(PermissionListView):
     template_name = 'administrator_panel/owner-list.html'
     string_permission = 'owner_access'
 
+    def get_context_data(self, *, object_list=None, **kwargs):
+        context = super().get_context_data(object_list=object_list, **kwargs)
+        personal_accounts = calculate_notoriety_and_receipt_sum(PersonalAccount.objects
+                                                                .select_related('flat', 'flat__section', 'flat__house',
+                                                                                'flat__owner')
+                                                                .prefetch_related('notoriety_set', 'receipt_set',
+                                                                                  'receipt_set__receiptservices')
+                                                                .filter(flat__owner__isnull=False))['personal_accounts']
+
+        # dictionary with debt information about each owner
+        context['debts'] = {}
+        for owner in context['object_list']:
+            context['debts'][owner.pk] = True
+            for account in personal_accounts:
+                if account.flat.owner.pk == owner.pk and account.subtraction < 0:
+                    context['debts'][owner.pk] = False
+        return context
+
 
 class OwnerDetailView(PermissionDetailView):
     model = User
@@ -1667,13 +1688,16 @@ class BuildReceiptFileView(SingleObjectMixin, View):
     model = Receipt
 
     def dispatch(self, request, *args, **kwargs):
-        if request.user.is_anonymous or not request.user.role.receipt_access:
+        if request.user.is_anonymous or (not request.user.role.receipt_access and request.user.role.role != 'owner'):
             return JsonResponse({'answer': 'Ви не маєте доступу'})
         return super().dispatch(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
         try:
-            template = Template.objects.get(pk=request.GET.get('template')).file
+            if request.GET.get('template'):
+                template = Template.objects.get(pk=request.GET.get('template')).file
+            else:
+                template = Template.objects.get(is_default=True).file
 
             receipt = Receipt.objects.select_related('account',
                                                      'account__flat',
@@ -1832,7 +1856,7 @@ class BuildReceiptFileView(SingleObjectMixin, View):
             file_name = f'receipt_{receipt.number}_{receipt.created_at.day}.{receipt.created_at.month}.{receipt.created_at.year}.xlsx'
             file_path = f'{settings.MEDIA_ROOT}/receipts/{file_name}'
             wb.save(file_path)
-            return JsonResponse({'answer': 'success', 'file_path': f'{settings.MEDIA_URL}receipts/{file_name}'})
+            return JsonResponse({'answer': 'success', 'file_path': f'{settings.MEDIA_URL}receipts/{file_name}', 'full_path': file_path, 'file_name': file_name})
         except (Template.DoesNotExist, Receipt.DoesNotExist, PersonalAccount.DoesNotExist):
             return JsonResponse({'answer': 'failed'})
 
@@ -1859,7 +1883,8 @@ class MessageCreateView(PermissionCreateView):
                                            Flat.objects
                                            .select_related('personalaccount', 'house', 'section', 'owner', 'floor')
                                            .filter(owner__isnull=False))
-
+        if self.request.GET.get('to_debtors'):
+            context['to_debtors'] = True
         context['house_floor']: dict[int, list[list[int, str]]] = {}
         context['floor_flat']: dict[int, list[list[int, str]]] = {}
 
@@ -1928,6 +1953,49 @@ class MessageCreateView(PermissionCreateView):
         message.save()
 
         return redirect('messages')
+
+
+class MessageToOwnerCreateView(PermissionCreateView):
+    model = Message
+    template_name = 'administrator_panel/message-to-owner-create.html'
+    form_class = MessageToOwnerForm
+    string_permission = 'message_access'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        if self.request.GET.get('owner'):
+            try:
+                context['base_owner'] = User.objects.select_related('role').get(pk=self.request.GET.get('owner'), role__role='owner')
+            except User.DoesNotExist:
+                pass
+        context['owners'] = User.objects.select_related('role').filter(role__role='owner')
+        return context
+
+    def post(self, request, *args, **kwargs):
+        form = self.get_form_class()(request.POST)
+        if form.is_valid():
+            return self.form_valid(form)
+        return self.form_invalid(form)
+
+    def form_valid(self, form):
+        message = form.save(commit=False)
+        message.to_specific_owner = True
+
+        try:
+            message.save()
+            message.receiver.add(form.cleaned_data.get('owner_receiver'))
+            message.save()
+        except:
+            message.delete()
+            return self.form_invalid(form)
+        finally:
+            return redirect('messages')
+
+    def form_invalid(self, form):
+        self.object = None
+        context = self.get_context_data()
+        context['form'] = form
+        return self.render_to_response(context)
 
 
 class MessageDetailView(PermissionDetailView):
@@ -2090,7 +2158,6 @@ class OwnerSummaryListView(OwnerPermissionListView):
 
     def get_context_data(self, *, object_list=None, **kwargs):
         context = super().get_context_data(object_list=object_list, **kwargs)
-        context.update(owner_context_data(self.request.user))
         context['flat'] = self.flat     # passing to context requested flat
 
         context['personal_account'] = calculate_notoriety_and_receipt_sum(
@@ -2163,7 +2230,6 @@ class OwnerReceiptListView(OwnerPermissionListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context.update(owner_context_data(self.request.user))
         context['receipt_list'] = self.get_queryset()
         return context
 
@@ -2183,11 +2249,6 @@ class OwnerReceiptDetailView(OwnerPermissionDetailView):
         except (Receipt.DoesNotExist, AttributeError):
             raise Http404()
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context.update(owner_context_data(self.request.user))
-        return context
-
 
 class OwnerTariffListView(OwnerPermissionListView):
     model = Tariff
@@ -2206,18 +2267,13 @@ class OwnerTariffListView(OwnerPermissionListView):
         except (Flat.DoesNotExist, AttributeError):
             raise Http404()
 
-    def get_context_data(self, *, object_list=None, **kwargs):
-        context = super().get_context_data(object_list=object_list, **kwargs)
-        context.update(owner_context_data(self.request.user))
-        return context
-
 
 class OwnerMessagesListView(OwnerPermissionListView):
     model = Message
     template_name = 'administrator_panel/owner-message-list.html'
 
     def get_queryset(self):
-        return Message.objects.filter(receiver=self.request.user)
+        return Message.objects.filter(receiver=self.request.user).order_by('-created_at')
 
 
 class OwnerMessageDetailView(OwnerPermissionDetailView):
@@ -2229,11 +2285,6 @@ class OwnerMessageDetailView(OwnerPermissionDetailView):
             return Message.objects.get(pk=self.kwargs.get('message_pk'))
         except (Message.DoesNotExist, AttributeError):
             raise Http404()
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context.update(owner_context_data(self.request.user))
-        return context
 
 
 class OwnerMessageDeleteView(OwnerPermissionDeleteView):
@@ -2248,7 +2299,9 @@ class OwnerMessageDeleteView(OwnerPermissionDeleteView):
             try:
                 messages = Message.objects.filter(pk__in=messages_pk)
                 for message in messages:
-                    if self.request.user in message.receiver.all():
+                    if message.to_specific_owner:
+                        message.delete()
+                    elif self.request.user in message.receiver.all():
                         message.receiver.remove(self.request.user)
             finally:
                 return redirect('owner-messages')
@@ -2256,7 +2309,9 @@ class OwnerMessageDeleteView(OwnerPermissionDeleteView):
         if request.POST.get('message_id'):
             try:
                 message_to_delete = Message.objects.get(pk=self.request.POST.get('message_id'))
-                if self.request.user in message_to_delete.receiver.all():
+                if message_to_delete.to_specific_owner:
+                    message_to_delete.delete()
+                elif self.request.user in message_to_delete.receiver.all():
                     message_to_delete.receiver.remove(self.request.user)
             finally:
                 return redirect('owner-messages')
@@ -2275,7 +2330,7 @@ class OwnerApplicationListView(OwnerPermissionListView):
 
     def get_context_data(self, *, object_list=None, **kwargs):
         context = super().get_context_data(object_list=object_list, **kwargs)
-        context.update(owner_context_data(self.request.user))
+
         return context
 
 
@@ -2283,11 +2338,6 @@ class OwnerApplicationCreateView(OwnerPermissionCreateView):
     model = Application
     template_name = 'administrator_panel/owner-application-create.html'
     form_class = ApplicationOwnerForm
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context.update(owner_context_data(self.request.user))
-        return context
 
     def post(self, request, *args, **kwargs):
         form = self.get_form_class()(request.POST)
@@ -2336,7 +2386,6 @@ class OwnerProfileDetailView(OwnerPermissionDetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context.update(owner_context_data(self.request.user))
         context['user_flats'] = Flat.objects\
             .select_related('house', 'personalaccount', 'floor', 'section')\
             .filter(owner=self.request.user)
@@ -2347,14 +2396,6 @@ class OwnerProfileUpdateView(OwnerPermissionUpdateView):
     model = User
     template_name = 'administrator_panel/owner-profile-update.html'
     form_class = OwnerProfileForm
-
-    def get_object(self, queryset=None):
-        return self.request.user
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context.update(owner_context_data(self.request.user))
-        return context
 
     def post(self, request, *args, **kwargs):
         form = self.get_form_class()(request.POST, request.FILES, instance=self.request.user)
@@ -2374,3 +2415,47 @@ class OwnerProfileUpdateView(OwnerPermissionUpdateView):
             owner_saved.password = old_password
         owner_saved.save()
         return redirect('owner-profile-detail')
+
+
+class OwnerReceiptToPrint(OwnerPermissionDetailView):
+    model = Receipt
+    template_name = 'administrator_panel/owner-receipt-print.html'
+    pk_url_kwarg = 'receipt_pk'
+
+    def get_object(self, queryset=None):
+        try:
+            return Receipt.objects \
+                .select_related('account__flat', 'account__flat__owner', 'account__flat__house') \
+                .prefetch_related('receiptservices', 'receiptservices__service', 'receiptservices__service__measurement_unit') \
+                .annotate(sum=Sum('receiptservices__total_price')) \
+                .get(pk=self.kwargs.get('receipt_pk'))
+        except Receipt.DoesNotExist:
+            raise Http404()
+
+
+class ReceiptToPDFDetailView(OwnerPermissionDetailView):
+    model = Receipt
+
+    def get_object(self, queryset=None):
+        return None
+
+    def get(self, request, *args, **kwargs):
+        try:
+            excel_file_path: str = self.request.GET.get('file_path')
+            file_name = self.request.GET.get('file_name')
+
+            from os import path, mkdir
+            if not path.exists(f'{settings.MEDIA_ROOT}/receipts'):
+                mkdir(f'{settings.MEDIA_ROOT}/receipts')
+
+            html_file_path = excel_file_path.replace('.xlsx', '.html')
+
+            pd_receipt = pd.read_excel(excel_file_path)
+            pd_receipt = pd_receipt.rename(columns=lambda x: x if not 'Unnamed' in str(x) else '')  # replace 'Unnamed' as empty string
+
+            pd_receipt.to_html(html_file_path, na_rep='', index=False, border=0)
+            pdfkit.from_file(html_file_path, html_file_path.replace('.html', '.pdf'), options={'encoding': 'UTF-8'})
+
+            return JsonResponse({'answer': 'success', 'file_path': f'{settings.MEDIA_URL}receipts/{file_name.replace(".xlsx", ".pdf")}'})
+        except:
+            return JsonResponse({'answer': 'Щось пішло не так!'})

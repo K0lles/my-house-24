@@ -510,7 +510,7 @@ class ManagementLoginView(CreateView):
                 login(request, user)
                 if not request.POST.get('remember_me'):
                     self.request.session.set_expiry(0)
-                return redirect('flats')
+                return redirect('statistics')
         self.object = None
         context = self.get_context_data()
         context['error'] = 'Неправильно введені дані'

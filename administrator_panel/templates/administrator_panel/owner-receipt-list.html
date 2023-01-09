@@ -33,7 +33,7 @@
                                 {% elif receipt.status == 'partly paid' %}<span class="badge badge-warning">{{ receipt.get_status_display }}</span>
                                 {% endif %}
                             </td>
-                            <td>{{ receipt.summ|floatformat:2 }}</td>
+                            <td>{% if receipt.summ %}{{ receipt.summ|floatformat:2 }}{% else %}0.00{% endif %}</td>
                         </tr>
                     {% endfor %}
                 </tbody>

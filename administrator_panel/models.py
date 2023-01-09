@@ -120,6 +120,7 @@ class Message(models.Model):
     section = models.ForeignKey(Section, on_delete=models.CASCADE, blank=True, null=True)
     floor = models.ForeignKey(Floor, on_delete=models.CASCADE, blank=True, null=True)
     flat = models.ForeignKey(Flat, on_delete=models.CASCADE, blank=True, null=True)
+    to_specific_owner = models.BooleanField(default=False)
     theme = models.CharField(max_length=200, verbose_name='Тема')
     main_text = models.TextField(verbose_name='Повідомлення')
     created_at = models.DateTimeField(auto_now=True)
@@ -127,6 +128,13 @@ class Message(models.Model):
     @property
     def get_receiver_display(self) -> str:
         """Property for correct display receiver in template"""
+
+        if self.to_specific_owner:
+            owner_return = self.receiver.first()
+            returning = f'{owner_return.surname} {owner_return.name}'
+            if owner_return.father:
+                returning += f' {owner_return.father}'
+            return returning
 
         if self.flat:
             return f'{self.flat.house.name}, {self.flat.section.name}, {self.flat.floor.name}, {self.flat.number}'

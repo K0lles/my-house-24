@@ -1,13 +1,16 @@
+from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
+from django.contrib.sites.shortcuts import get_current_site
+from django.core.mail import EmailMessage, send_mail
 from django.db.models import ProtectedError
-from django.http import JsonResponse, Http404
-from django.shortcuts import render, redirect
-from django.views import View
-from django.views.generic import CreateView, DeleteView, ListView, DetailView, UpdateView
-from administrator_panel.mixins import *
+from django.http import Http404
+from django.template.loader import render_to_string
+from django.utils.encoding import force_bytes, force_str
+from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 
-from .models import *
+from administrator_panel.mixins import *
 from .forms import *
+from .tokens import *
 
 
 class MeasurementUnitListView(PermissionCreateView):
@@ -462,11 +465,13 @@ def delete_article(request, pk):
 class UserLoginView(CreateView):
     model = User
     template_name = 'configuration/user-login.html'
-    form_class = UserRegistrationForm
+    form_class = UserLoginForm
 
     def get(self, request, *args, **kwargs):
         if request.user.is_authenticated:
-            return redirect('flats')
+            if request.user.role.role == 'owner':
+                return redirect('owner-receipts')
+            return redirect('statistics')
         self.object = None
         context = self.get_context_data()
         return self.render_to_response(context)
@@ -478,6 +483,9 @@ class UserLoginView(CreateView):
             user = authenticate(username=email,
                                 password=password)
             if user and user.role.role == 'owner' and user.status != 'disconnected':
+                if not user.is_active:
+                    messages.error(request, 'Ваш обліковий запис не підтверджений! Перегляньте ваші листи на пошті та підтвердіть його.')
+                    return redirect('user-login')
                 login(request, user)
                 if not request.POST.get('remember_me'):
                     self.request.session.set_expiry(0)
@@ -491,11 +499,13 @@ class UserLoginView(CreateView):
 class ManagementLoginView(CreateView):
     model = User
     template_name = 'configuration/user-staff-login.html'
-    form_class = UserRegistrationForm
+    form_class = UserLoginForm
 
     def get(self, request, *args, **kwargs):
         if self.request.user.is_authenticated:
-            return redirect('flats')
+            if request.user.role.role == 'owner':
+                return redirect('owner-receipts')
+            return redirect('statistics')
         self.object = None
         context = self.get_context_data()
         return self.render_to_response(context)
@@ -522,3 +532,75 @@ class UserLogoutView(View):
         if request.user.is_authenticated:
             logout(request)
         return redirect('user-login')
+
+
+def send_activation_mail(request, user, to_mail):
+    message_subject = 'Підтвердіть ваш обліковий запис.'
+    message_with_template = render_to_string("email-activation-template.html", {
+        'user': user.email,
+        'domain': get_current_site(request).domain,
+        'uid': urlsafe_base64_encode(force_bytes(user.pk)),
+        'token': account_activation_token.make_token(user),
+        "protocol": 'https' if request.is_secure() else 'http'
+    })
+
+    email = EmailMessage(message_subject, message_with_template, to=[to_mail])
+    email.content_subtype = 'html'
+    if email.send(fail_silently=True):
+        messages.success(request, 'Користувач зареєстрований. Підтвердіть із вказаної пошти ваш обліковий запис для закінчення реєстрації')
+    else:
+        messages.error(request, 'Не вдалося відправити підтвердження на пошту. Перевірте правильність введення email')
+
+
+class UserActivation(View):
+
+    def get(self, request, *args, **kwargs):
+        try:
+            uid = force_str(urlsafe_base64_decode(self.kwargs.get('uidb64')))
+            user = User.objects.get(pk=uid)
+        except:
+            user = None
+
+        if user is not None and account_activation_token.check_token(user, self.kwargs.get('token')):
+            user.is_active = True
+            user.save()
+            messages.success(self.request, 'Ваш облікований запис підтверджено. Ввійдіть у свій обліковий запис знову.')
+            return redirect('user-login')
+        else:
+            messages.error(self.request, 'Підтвердження облікового запису не відбулося.')
+        return redirect('user-login')
+
+
+class UserRegistrationView(CreateView):
+    model = User
+    template_name = 'configuration/user-registration.html'
+    form_class = UserSelfRegistrationForm
+
+    def get(self, request, *args, **kwargs):
+        if self.request.user.is_authenticated:
+            if self.request.user.role.role == 'owner':
+                return redirect('owner-receipts')
+            return redirect('statistics')
+        return super().get(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        form = self.get_form_class()(request.POST)
+        if form.is_valid():
+            return self.form_valid(form)
+        return self.form_invalid(form)
+
+    def form_valid(self, form):
+        user = User.objects.create_user(email=form.cleaned_data.get('email'),
+                                        name=form.cleaned_data.get('name'),
+                                        surname=form.cleaned_data.get('surname'),
+                                        password=form.cleaned_data.get('password'),
+                                        is_active=False,
+                                        role=Role.objects.get(role='owner'),)
+        send_activation_mail(self.request, user, user.email)
+        return redirect('user-registration')
+
+    def form_invalid(self, form):
+        messages.error(self.request, 'Щось пішло не так. Перевірте правильність вводу даних')
+        self.object = None
+        context = self.get_context_data()
+        return self.render_to_response(context)

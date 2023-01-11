@@ -17,12 +17,14 @@ function fieldIsValid(element) {
 
 function textTypeValidation(element) {
     if (element.value !== '') {
-        element.style = 'border: 1px solid #58c76d';
+        $(`#${element.id}`).css('border', '1px solid #58c76d');
+        //element.style = 'border: 1px solid #58c76d';
         $(`#${element.id}-errors`).text('');
         return true;
     }
     else if (element.value === '') {
-        element.style = 'border: 1px solid red';
+        $(`#${element.id}`).css('border', '1px solid red');
+        //element.style = 'border: 1px solid red';
         if (!($(`#${element.id}-errors`).text()).includes('Поле не може бути пустим')) {
             $(`#${element.id}-errors`).text('Поле не може бути пустим');
             return false;
@@ -36,11 +38,13 @@ function selectElementValidation(element) {
         if (!$(`${element.id}-errors`).text().includes('Виберіть елемент') || !$(`${element.id}-errors`).text().includes('Виберіть...')) {
             $(`#${element.id}-errors`).text('Виберіть елемент');
         }
-        element.style = 'border: 1px solid red';
+        $(`#${element.id}`).css('border', '1px solid red');
+        //element.style = 'border: 1px solid red';
         return false;
     }
     else {
-        element.style = 'border: 1px solid #58c76d';
+        $(`#${element.id}`).css('border', '1px solid #58c76d');
+        //element.style = 'border: 1px solid #58c76d';
         $(`#${element.id}-errors`).text('');
         return true;
     }
@@ -49,19 +53,22 @@ function selectElementValidation(element) {
 function numberTypeValidation(element) {
 
     if (element.value !== '' && element.value > 0.00) {
-        element.style = 'border: 1px solid #58c76d';
+        $(`#${element.id}`).css('border', '1px solid #58c76d');
+        //element.style = 'border: 1px solid #58c76d';
         $(`#${element.id}-errors`).text('');
         return true;
     }
     else if (element.value === '') {
-        element.style = 'border: 1px solid red';
+        $(`#${element.id}`).css('border', '1px solid red');
+        //element.style = 'border: 1px solid red';
         if (!($(`#${element.id}-errors`).text()).includes('Поле не може бути пустим')) {
             $(`#${element.id}-errors`).text('Поле не може бути пустим');
             return false;
         }
     }
     else if (element.value <= 0.00) {
-        element.style = 'border: 1px solid red';
+        $(`#${element.id}`).css('border', '1px solid red');
+        //element.style = 'border: 1px solid red';
         if (!($(`#${element.id}-errors`).text()).includes('Цифра у полі не може бути меншою 0')) {
             $(`#${element.id}-errors`).text('Цифра у полі не може бути меншою 0');
             return false;
@@ -76,12 +83,14 @@ function emailTypeValidation(element) {
     if (!emailValid) return emailValid;
     if (!(element.value).match(/^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/)) {
         $(`#${element.id}-errors`).text('Неправильно введений email');
-        element.style = 'border: 1px solid red';
+        $(`#${element.id}`).css('border', '1px solid red');
+        //element.style = 'border: 1px solid red';
         return false;
     }
 
     else {
-        element.style = 'border: 1px solid #58c76d';
+        $(`#${element.id}`).css('border', '1px solid #58c76d');
+        //element.style = 'border: 1px solid #58c76d';
         $(`#${element.id}-errors`).text('');
         return true;
     }
@@ -105,17 +114,20 @@ function passwordTypeValidation(element) {
     }
     else {
         if (element.value !== '' && $('id_repeat-password').val() !== '' && $('#id_repeat-password').val() === element.value) {
-            element.style = 'border: 1px solid #58c76d';
+            $(`#${element.id}`).css('border', '1px solid #58c76d');
+            //element.style = 'border: 1px solid #58c76d';
             $(`#${element.id}-errors`).text('');
             return true;
         } else if (element.value === '') {
             if (!($(`#${element.id}-errors`).text()).includes('Поле не може бути пустим')) {
                 $(`#${element.id}-errors`).text('Поле не може бути пустим');
-                element.style = 'border: 1px solid red';
+                $(`#${element.id}`).css('border', '1px solid red');
+                //element.style = 'border: 1px solid red';
             }
             return false;
         } else if ($('#id_repeat-password').val() !== element.value) {
-            element.style = 'border: 1px solid red';
+            $(`#${element.id}`).css('border', '1px solid red');
+            //element.style = 'border: 1px solid red';
             if (!($(`#${element.id}-errors`).text()).includes('Паролі повинні співпадати')) {
                 $(`#${element.id}-errors`).text('Паролі повинні співпадати');
             }
@@ -139,7 +151,8 @@ function validatePasswordUpdate(element) {
         if ($('#id_repeat-password').val() !== element.value) {
             if (!($(`#${element.id}-errors`).text()).includes('Паролі повинні співпадати')) {
                 $(`#${element.id}-errors`).text('Паролі повинні співпадати');
-                element.style = 'border: 1px solid red';
+                $(`#${element.id}`).css('border', '1px solid red');
+                //element.style = 'border: 1px solid red';
             }
             return false;
         }
@@ -150,7 +163,8 @@ function validatePasswordUpdate(element) {
 }
 
 function alwaysIsValid(element) {
-    element.style = 'border: 1px solid #58c76d';
+    $(`#${element.id}`).css('border', '1px solid #58c76d');
+    //element.style = 'border: 1px solid #58c76d';
 }
 
 

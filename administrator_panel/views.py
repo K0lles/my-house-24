@@ -854,7 +854,6 @@ class OwnerUpdateView(PermissionUpdateView):
         return redirect('owners')
 
 
-# TODO: Get personal accounts and set in template whether owner has debt or no
 class OwnerListView(PermissionListView):
     model = User
     queryset = User.objects.prefetch_related('flat_set', 'flat_set__house').filter(role__role='owner').order_by('-id')

@@ -1,5 +1,5 @@
 from django.forms import ModelForm, modelformset_factory, ModelChoiceField, CharField, DateField, BooleanField, \
-    ChoiceField, Select
+    ChoiceField, EmailField, Select, Form
 from django.utils import timezone
 import datetime
 
@@ -406,3 +406,8 @@ class OwnerProfileForm(ModelForm):
             return cleaned_data
 
         return cleaned_data
+
+
+class SendInvitationForm(Form):
+    email = EmailField()
+    phone = CharField()

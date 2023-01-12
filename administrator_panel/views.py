@@ -4,8 +4,10 @@ import pandas as pd
 import pdfkit
 
 import openpyxl
+from django.contrib import messages
 from django.contrib.auth import update_session_auth_hash
-from django.views.generic.base import ContextMixin
+from django.core.mail import EmailMessage
+from django.views.generic.base import ContextMixin, TemplateResponseMixin
 from openpyxl.styles import Alignment
 from openpyxl.utils import get_column_letter
 
@@ -16,6 +18,7 @@ from django.shortcuts import redirect
 from django.urls import reverse
 from django.views import View
 from django.db.models.deletion import ProtectedError
+from django.views.generic.edit import FormMixin
 from django.views.generic.detail import SingleObjectMixin
 from django.views.generic.list import MultipleObjectMixin
 
@@ -903,6 +906,37 @@ def delete_owner(request, owner_pk):
         return JsonResponse({'answer': 'failed'})
     except User.DoesNotExist:
         return JsonResponse({'answer': 'failed'})
+
+
+class SendInvitationByEmailView(TemplateResponseMixin, FormMixin, PermissionView):
+    string_permission = 'owner_access'
+    template_name = 'administrator_panel/send-invitation.html'
+    form_class = SendInvitationForm
+
+    def get(self, request, *args, **kwargs):
+        context = self.get_context_data()
+        return self.render_to_response(context)
+
+    def post(self, request, *args, **kwargs):
+        form = self.get_form_class()(request.POST)
+        if form.is_valid():
+            return self.form_valid(form)
+        return self.form_invalid(form)
+
+    def form_valid(self, form):
+        email_to_send = form.cleaned_data.get('email')
+        subject = 'Запрошення в Мой Дом 24'
+        main_text = 'Вас запрошують приєднатися до системи "Мой Дом 24".\n\nДля подальшої інформації зв`яжіться із адміністратором.'
+        email = EmailMessage(subject, main_text, to=[email_to_send])
+        if email.send(fail_silently=True):
+            messages.success(self.request, 'Запрошення успішно надіслано.')
+        else:
+            messages.error(self.request, 'Повідомлення не було відправленим. Перевірте правильність вводу.')
+        return redirect('send-owner-invitation')
+
+    def form_invalid(self, form):
+        messages.error(self.request, 'Щось пішло не так. Перевірте правильність вводу.')
+        return redirect('send-owner-invitation')
 
 
 class EvidenceCreateView(PermissionCreateView):

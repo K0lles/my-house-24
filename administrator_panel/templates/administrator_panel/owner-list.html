@@ -15,7 +15,7 @@
                 <div class="dropdown-menu dropdown-menu-right">
                     <a class="dropdown-item" href="{% url 'owner-create' %}">Створити власника</a>
                     <a class="dropdown-item" href="{% url 'message-create' %}?to_debtors=True">Надіслати повідомлення боржникам</a>
-                    <a class="dropdown-item" href="#">Надіслати запрошення</a>
+                    <a class="dropdown-item" href="{% url 'send-owner-invitation' %}">Надіслати запрошення</a>
               </div>
             </div>
         </div>

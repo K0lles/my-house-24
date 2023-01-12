@@ -29,6 +29,7 @@ urlpatterns = [
     path('owner/<int:owner_pk>/', OwnerDetailView.as_view(), name='owner-detail'),
     path('owner/update/<int:owner_pk>/', OwnerUpdateView.as_view(), name='owner-update'),
     path('owner/delete/<int:owner_pk>/', delete_owner, name='owner-delete'),
+    path('owner/invite/', SendInvitationByEmailView.as_view(), name='send-owner-invitation'),
     path('evidence/', GroupedEvidenceListView.as_view(), name='evidences-grouped'),
     path('evidence/counter/', ServiceEvidenceListView.as_view(), name='evidence-counter'),
     path('evidence/<int:evidence_pk>/', EvidenceDetailView.as_view(), name='evidence-detail'),

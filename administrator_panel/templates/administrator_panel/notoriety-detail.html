@@ -1,6 +1,10 @@
 {% extends 'main_page.html' %}
 {% load static %}
 
+{% block title %}
+    <title>Каса</title>
+{% endblock %}
+
 {% block content_header %}
     <h1>{% if object.type == 'income' %}Прихідна{% else %}Розхідна{% endif %} відомість</h1>
 {% endblock %}

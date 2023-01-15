@@ -1,6 +1,10 @@
 {% extends 'main_page.html' %}
 {% load static %}
 
+{% block title %}
+    <title>Тарифи</title>
+{% endblock %}
+
 {% block content_header %}
     <h1>Тарифи - {{ object_list.house.name }}, кв.{{ object_list.number }}</h1>
 {% endblock %}

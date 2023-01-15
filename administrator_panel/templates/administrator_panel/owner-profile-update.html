@@ -1,6 +1,10 @@
 {% extends 'main_page.html' %}
 {% load static %}
 
+{% block title %}
+    <title>Користувач</title>
+{% endblock %}
+
 {% block content_header %}
     <h1>Профіль</h1>
 {% endblock %}
@@ -95,7 +99,7 @@
                         <div class="form-group">
                             <label for="{{ form.password.auto_id }}">Пароль</label>
                             <div class="input-group">
-                                <input class="form-control" type="password" id="{{ form.password.auto_id }}" name="{{ form.password.html_name }}" {% if not form.instance.id %}onchange="fieldIsValid(this)"{% else %}onchange="validatePasswordUpdate(this)"{% endif %} {% if form.password.errors %}style="border: 1px solid red;" {% endif %}>
+                                <input class="form-control" type="password" id="{{ form.password.auto_id }}" name="{{ form.password.html_name }}" onchange="validatePasswordUpdate(this)" {% if form.password.errors %}style="border: 1px solid red;" {% endif %}>
                                 <span class="input-group-append">
                                     <button type="button" class="btn btn-default" onclick='generatePassword()'>Згенерувати</button>
                                     <button type="button" class="btn btn-primary" onclick="showHidePassword()">
@@ -107,14 +111,14 @@
                         </div>
                         <div class="form-group">
                             <label for="id_repeat-password">Повторіть пароль</label>
-                            <input class="form-control" type="password" id="id_repeat-password" name="repeat-password" {% if not form.instance.id %}onchange="fieldIsValid(this)"{% else %}onchange="validatePasswordUpdate(this)"{% endif %}>
+                            <input class="form-control" type="password" id="id_repeat-password" name="repeat-password" onchange="validatePasswordUpdate(this)">
                         </div>
                     </div>
                 </div>
                 <div class="row">
                     <div class="col-sm-12 text-right">
                         <button type="reset" class="btn btn-default">Відмінити</button>
-                        <button type="submit" class="btn btn-success" {% if not form.instance.pk %}onclick="formIsValidCreate(event)"{% else %}onclick="formIsValidUpdate(event)"{% endif %}>{% if not form.instance.pk %}Створити{% else %}Зберегти{% endif %}</button>
+                        <button type="submit" class="btn btn-success" onclick="formIsValid()">Зберегти</button>
                     </div>
                 </div>
             </form>
@@ -163,9 +167,8 @@
         }
     }
 
-    function formIsValidCreate(e) {
-        e.preventDefault();
-
+    function formIsValid() {
+        event.preventDefault();
         let isValid = true;
         $(`#owner-form`).find(`input[type='text']`).each(function () {
             $(this).css('border', '1px solid #58c76d');
@@ -194,13 +197,13 @@
 
 
         $(`#owner-form`).find(`input[id$='id_password']`).each(function() {
-            if (!fieldIsValid(this)) {
+            if (!validatePasswordUpdate(this)) {
                 isValid = false;
             }
         });
 
         $(`#owner-form`).find(`input[id$='id_repeat-password']`).each(function() {
-            if (!fieldIsValid(this)) {
+            if (!validatePasswordUpdate(this)) {
                 isValid = false;
             }
         });

@@ -1,6 +1,10 @@
 {% extends 'main_page.html' %}
 {% load static %}
 
+{% block title %}
+    <title>Квартира</title>
+{% endblock %}
+
 {% block content_header %}
     <h1>{% if form.instance.pk %}Квартира {{ form.instance.number }}{% else %}Нова квартира{% endif %}</h1>
 {% endblock %}

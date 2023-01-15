@@ -1,6 +1,10 @@
 {% extends 'main_page.html' %}
 {% load static %}
 
+{% block title %}
+    <title>Власник квартири</title>
+{% endblock %}
+
 {% block content_header %}
     <h1>{{ object.name }} {{ object.surname }}</h1>
 {% endblock %}

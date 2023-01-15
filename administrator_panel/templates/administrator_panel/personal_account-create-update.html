@@ -1,6 +1,11 @@
 {% extends 'main_page.html' %}
 {% load static %}
 
+{% block title %}
+    <title>Особовий рахунок</title>
+{% endblock %}
+
+
 {% block content_header %}
     <h1>{% if form.instance.pk %}Особовий рахунок: {{ form.instance.number }}{% else %}Новий особовий рахунок{% endif %}</h1>
 {% endblock %}

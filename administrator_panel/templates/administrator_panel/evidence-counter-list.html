@@ -1,6 +1,10 @@
 {% extends 'main_page.html' %}
 {% load static %}
 
+{% block title %}
+    <title>Показання лічильників</title>
+{% endblock %}
+
 {% block content_header %}
     <h1>Показання, кв. {{ object_list.0.flat.number }}</h1>
 {% endblock %}

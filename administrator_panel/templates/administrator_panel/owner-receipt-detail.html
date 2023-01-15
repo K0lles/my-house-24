@@ -1,6 +1,10 @@
 {% extends 'main_page.html' %}
 {% load static %}
 
+{% block title %}
+    <title>Квитанція</title>
+{% endblock %}
+
 {% block content_header %}
     <h1>Перегляд квитанції: #{{ object.number }}</h1>
 {% endblock %}

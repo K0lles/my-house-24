@@ -55,6 +55,7 @@ urlpatterns = [
     path('receipt/template/delete/<int:template_pk>/', TemplateDeleteView.as_view(), name='template-delete'),
     path('receipt/template/choose/', TemplateChooseView.as_view(), name='template-choose'),
     path('receipt/template/download/', BuildReceiptFileView.as_view(), name='build-receipt-file'),
+    path('receipt/send/', ReceiptToEmailSend.as_view(), name='send-receipt-to-email'),
     path('message/', MessageListView.as_view(), name='messages'),
     path('message/create/', MessageCreateView.as_view(), name='message-create'),
     path('message/create/owner/', MessageToOwnerCreateView.as_view(), name='message-to-owner-create'),
@@ -65,6 +66,7 @@ urlpatterns = [
     path('application/<int:application_pk>/', ApplicationDetailView.as_view(), name='application-detail'),
     path('application/update/<int:application_pk>/', ApplicationUpdateView.as_view(), name='application-update'),
     path('application/delete/<int:application_pk>/', ApplicationDeleteView.as_view(), name='application-delete'),
+    path('profile/update/', AdministrationProfileViewUpdate.as_view(), name='administration-profile-update'),
 
     path('cabinet/', OwnerSummaryListView.as_view(), name='owner-summary'),
     path('cabinet/receipt/', OwnerReceiptListView.as_view(), name='owner-receipts'),

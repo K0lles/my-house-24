@@ -195,3 +195,23 @@ function generateNumber() {
 
     return result;
 }
+
+function generatePassword() {
+        let randomstring = Math.random().toString(36).slice(-8);
+        $('#id_password').val(randomstring);
+        $('#id_repeat-password').val(randomstring);
+    }
+
+function showHidePassword() {
+    let type = $('#id_password').attr('type');
+    if (type === 'password') {
+        $('#id_password').attr('type', 'text');
+        $('#id_repeat-password').attr('type', 'text');
+        $('.fa-eye').attr('class', 'fa fa-eye-slash');
+    }
+    else {
+        $('#id_password').attr('type', 'password');
+        $('#id_repeat-password').attr('type', 'password');
+        $('.fa-eye-slash').attr('class', 'fa fa-eye');
+    }
+}

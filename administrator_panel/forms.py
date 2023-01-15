@@ -411,3 +411,22 @@ class OwnerProfileForm(ModelForm):
 class SendInvitationForm(Form):
     email = EmailField()
     phone = CharField()
+
+
+class AdministrationProfileForm(ModelForm):
+
+    class Meta:
+        model = User
+        fields = ['surname', 'name', 'phone', 'email', 'password']
+
+    def clean(self):
+        cleaned_data = super().clean()
+        if self._errors.get('password'):
+            del self._errors['password']
+        return cleaned_data
+
+    def clean_email(self):
+        obj = User.objects.filter(email=self.cleaned_data.get('email')).exclude(id=self.instance.id)
+        if obj:
+            self._errors['email'] = 'E-mail повинен бути унікальним'
+        return self.cleaned_data.get('email')

@@ -4,7 +4,9 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  {% block title %}
   <title>AdminLTE 3 | Dashboard</title>
+  {% endblock %}
   <link rel="icon" type="image/png" href="{% static 'all_logos/header-icon-myhouse.png' %}">
 
   <!-- Bootstrap 5 -->
@@ -70,8 +72,8 @@
       <!-- Messages Dropdown Menu -->
       <li class="nav-item dropdown">
         <a class="nav-link" data-toggle="dropdown" href="#">
-          <i class="far fa-comments"></i>
-          <span class="badge badge-danger navbar-badge">3</span>
+          <i class="fa fa-person"></i>
+          <span class="badge badge-warning navbar-badge">3</span>
         </a>
         <div class="dropdown-menu dropdown-menu-lg dropdown-menu-right">
           <a href="#" class="dropdown-item">
@@ -140,7 +142,7 @@
             </div>
             <div>
                   <div style="display: inline; float: left; margin-left: 3px; margin-bottom: 3px; margin-top: 10px;">
-                      <a href="#" class="btn btn-default">Профіль</a>
+                      <a {% if request.user.role.role == 'owner' %}href="{% url 'owner-profile-detail' %}"{% else %}href="{% url 'administration-profile-update' %}"{% endif %} class="btn btn-default">Профіль</a>
                   </div>
                   <div style="display: inline; float: right; margin-right: 3px; margin-bottom: 3px; margin-top: 10px;">
                       <button type="button" id="logout-button" href="{% url 'user-logout' %}" class="btn btn-default">Вийти</button>

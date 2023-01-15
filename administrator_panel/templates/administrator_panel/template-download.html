@@ -1,6 +1,10 @@
 {% extends 'main_page.html' %}
 {% load static %}
 
+{% block title %}
+    <title>Шаблони</title>
+{% endblock %}
+
 {% block content_header %}
     <h1>Друкована форма документа</h1>
 {% endblock %}
@@ -32,7 +36,7 @@
             <div class="row">
                 <div class="col-sm-12 text-right add-href">
                     <button type="button" class="btn btn-success" style="margin-right: 1%;" onclick="fetchForTemplate()">Завантажити</button>
-                    <button type="button" class="btn btn-default">Відправити на e-mail</button>
+                    <button type="button" class="btn btn-default" onclick="sendToEmail()">Відправити на e-mail</button>
                 </div>
             </div>
         </div>
@@ -55,6 +59,59 @@
                         position: 'top-end',
                         icon: 'success',
                         title: 'Очікуйте файл до завантаження!',
+                        showConfirmButton: false,
+                        timer: 1200,
+                    })
+                }
+                else {
+                    Swal.fire({
+                        position: 'top-end',
+                        icon: 'error',
+                        title: 'Щось пішло не так!',
+                        showConfirmButton: false,
+                        timer: 1200
+                    });
+                }
+            }
+        })
+    }
+
+    function sendToEmail() {
+        let template = $('input[type="radio"]:checked').val();
+        $.ajax({
+            url: `{% url 'build-receipt-file' %}?receipt={{ receipt }}&template=${template}`,
+            type: 'POST',
+            headers: {
+                'X-CSRFToken': $("input[name=csrfmiddlewaretoken]").val()
+            },
+            success: function(data) {
+                if (data['answer'] === 'success') {
+                    let full_path = data['full_path'];
+                    fetchToSendEmail(full_path);
+                }
+                else {
+                    Swal.fire({
+                        position: 'top-end',
+                        icon: 'error',
+                        title: 'Щось пішло не так!',
+                        showConfirmButton: false,
+                        timer: 1200
+                    });
+                }
+            }
+        })
+    }
+
+    function fetchToSendEmail(full_path) {
+        $.ajax({
+            type: 'GET',
+            url: `{% url 'send-receipt-to-email' %}?full_path=${full_path}`,
+            success: function(data) {
+                if (data['answer'] === 'success') {
+                    Swal.fire({
+                        position: 'top-end',
+                        icon: 'success',
+                        title: 'Успішно надіслано!',
                         showConfirmButton: false,
                         timer: 1200,
                     })

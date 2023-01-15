@@ -2430,6 +2430,9 @@ class OwnerProfileUpdateView(OwnerPermissionUpdateView):
     template_name = 'administrator_panel/owner-profile-update.html'
     form_class = OwnerProfileForm
 
+    def get_object(self, queryset=None):
+        return self.request.user
+
     def post(self, request, *args, **kwargs):
         form = self.get_form_class()(request.POST, request.FILES, instance=self.request.user)
         if form.is_valid():
@@ -2491,4 +2494,54 @@ class ReceiptToPDFDetailView(OwnerPermissionDetailView):
 
             return JsonResponse({'answer': 'success', 'file_path': f'{settings.MEDIA_URL}receipts/{file_name.replace(".xlsx", ".pdf")}'})
         except:
+            return JsonResponse({'answer': 'Щось пішло не так!'})
+
+
+class AdministrationProfileViewUpdate(UpdateView):
+    model = User
+    template_name = 'administrator_panel/administration-profile-update.html'
+    form_class = AdministrationProfileForm
+
+    def dispatch(self, request, *args, **kwargs):
+        if self.request.user.is_anonymous:
+            self.template_name = 'forbidden_page.html'
+            return self.render_to_response({})
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_object(self, queryset=None):
+        return self.request.user
+
+    def post(self, request, *args, **kwargs):
+        form = self.get_form_class()(request.POST, instance=self.request.user)
+        if form.is_valid():
+            return self.form_valid(form)
+        return self.form_invalid(form)
+
+    def form_valid(self, form):
+        old_password = self.request.user.password
+        administrator_saved = form.save()
+        if form.cleaned_data.get('password'):
+            administrator_saved.set_password(form.cleaned_data.get('password'))
+            update_session_auth_hash(self.request, self.request.user)
+        else:
+            administrator_saved.password = old_password
+        administrator_saved.save()
+        messages.success(self.request, 'Дані успішно зміненою')
+        return redirect('administration-profile-update')
+
+    def form_invalid(self, form):
+        messages.error(self.request, 'Виявлено помилки. Перевірте правильність наборую')
+        return redirect('administration-profile-update')
+
+
+class ReceiptToEmailSend(PermissionView):
+    string_permission = 'receipt_access'
+
+    def get(self, request, *args, **kwargs):
+        file_path = self.request.GET.get('full_path')
+        email = EmailMessage('Квитанція', to=[self.request.user.email])
+        email.attach_file(file_path)
+        if email.send():
+            return JsonResponse({'answer': 'success'})
+        else:
             return JsonResponse({'answer': 'Щось пішло не так!'})

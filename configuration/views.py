@@ -480,8 +480,14 @@ class UserLoginView(CreateView):
         email = request.POST.get('email')
         password = request.POST.get('password')
         if email and password:
-            user = authenticate(username=email,
-                                password=password)
+            try:
+                user = User.objects.get(email=email)
+            except User.DoesNotExist:
+                return self.errors_occurred()
+
+            if not user.check_password(password):
+                user = None
+
             if user and user.role.role == 'owner' and user.status != 'disconnected':
                 if not user.is_active:
                     messages.error(request, 'Ваш обліковий запис не підтверджений! Перегляньте ваші листи на пошті та підтвердіть його.')
@@ -490,6 +496,12 @@ class UserLoginView(CreateView):
                 if not request.POST.get('remember_me'):
                     self.request.session.set_expiry(0)
                 return redirect('owner-receipts')
+        self.object = None
+        context = self.get_context_data()
+        context['error'] = 'Неправильно введені дані'
+        return self.render_to_response(context=context)
+
+    def errors_occurred(self):
         self.object = None
         context = self.get_context_data()
         context['error'] = 'Неправильно введені дані'

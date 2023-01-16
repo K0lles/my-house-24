@@ -1,0 +1,58 @@
+{% extends 'main_page.html' %}
+{% load static %}
+
+{% block title %}
+    <title>Повідомлення</title>
+{% endblock %}
+
+{% block content_header %}
+    <h1>Повідомлення</h1>
+{% endblock %}
+
+{% block main_content %}
+    <div class="card">
+        <div class="card-body">
+            <div class="row">
+                <h5><b>{{ object.theme }}</b></h5>
+            </div>
+            <div class="row">
+                <div class="col-sm-12">
+                    <p class="float-left">Від: {{ object.sender.surname }} {{ object.sender.name }} {% if object.sender.father %}{{ object.sender.father }}{% endif %}</p>
+                    <p class="float-right">{{ object.created_at|date:'d.m.Y - H:i' }}</p>
+                </div>
+            </div>
+            <div class="row" style="margin-top: 40px;">
+                {{ object.main_text|safe }}
+            </div>
+            <div class="row" style="margin-top: 40px;">
+                <form id="delete-message-form" method="post" action="{% url 'owner-message-delete' %}">
+                    {% csrf_token %}
+                    <input type="hidden" id="id_message_id" name="message_id" value="{{ object.pk }}">
+                    <button type="submit" class="btn btn-default" onclick="submitDeletion()"><i class="fa fa-trash"></i> Видалити</button>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function submitDeletion() {
+        event.preventDefault();
+        Swal.fire({
+            title: 'Ви впевнені?',
+            text: "Після видалення повідомлення неможливо буде повернути!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#A9A9A9',
+            cancelButtonText: 'Скасувати',
+            confirmButtonText: 'Видалити'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $('#delete-message-form').submit();
+                }
+            })
+    }
+</script>
+{% endblock %}

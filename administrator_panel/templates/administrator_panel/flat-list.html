@@ -1,6 +1,10 @@
 {% extends 'main_page.html' %}
 {% load static %}
 
+{% block title %}
+    <title>Квартири</title>
+{% endblock %}
+
 {% block content_header %}
     <h1>Квартири</h1>
 {% endblock %}
@@ -14,7 +18,8 @@
     <div class="card">
         <div class="card-body">
             <div class="row">
-                <table id="flat-table" class="table table-borderless table-responsive table-hover">
+                <div class="table-responsive">
+                    <table id="flat-table" class="table table-borderless table-hover">
                     <thead>
                         <tr>
                             <th>№ квартири <input type="text" class="form-control"></th>
@@ -34,7 +39,7 @@
                                 <td>{{ flat.section.name }}</td>
                                 <td>{{ flat.floor.name }}</td>
                                 <td>{% if not flat.owner %}(не задано){% else %}{{ flat.owner.name }} {{ flat.owner.surname }}{% endif %}</td>
-                                <td>{% if not flat.personalaccount %}(не задано){% else %}0.00{% endif %}</td>
+                                <td {% if flat.subtraction > 0 %}style="color: #109302;" {% elif flat.subtraction < 0 %}style="color: #a20000;"{% endif %}>{% if flat.personalaccount %}{{ flat.subtraction|floatformat:2 }} грн{% else %}(немає рахунку){% endif %}</td>
                                 <td class="text-right">
                                     <div class="btn-group">
                                         <a href="{% url 'flat-update' flat_pk=flat.pk %}" class="btn btn-default">
@@ -49,6 +54,7 @@
                         {% endfor %}
                     </tbody>
                 </table>
+                </div>
             </div>
         </div>
     </div>
@@ -83,7 +89,7 @@
                                         timer: 1200,
                                     })
                                 }
-                                else if (response['answer'] === 'failed') {
+                                else {
                                     Swal.fire({
                                         position: 'top-end',
                                         icon: 'error',

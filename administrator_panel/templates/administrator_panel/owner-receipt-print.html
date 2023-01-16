@@ -1,0 +1,63 @@
+<html>
+<head>
+    <style>
+    html {
+        font-family: Arial;
+        font-size: 1.3em;
+    }
+    h4 {
+        margin: 0.5em 0;
+    }
+    table {
+        font-size: 1.3em;
+    }
+    .pagebreak { page-break-before: always; }
+    @page { margin: 0; }
+    @media print {
+        @page { margin: 0; }
+        body { margin: 1.6cm; }
+    }
+</style>
+
+</head>
+    <body>
+        <div class="box pagebreak">
+            <h4>Квитанція: #{{ object.number }}</h4>
+            <h4>Дата: {{ object.created_at|date:'d.m.Y' }}</h4>
+            <h4>Квартира: {{ object.account.flat.number }}, {{ object.account.flat.house.address }}</h4>
+            <h4>Отримувач: {{ object.account.flat.owner.surname }} {{ object.account.flat.owner.name }} {% if object.account.flat.owner.father %}{{ object.account.flat.owner.father }}{% endif %}</h4>
+            <table class="table table-hover table-striped">
+                <thead>
+                    <tr>
+                        <th style="width: 40px; min-width: 40px;">#</th>
+                        <th>Послуга</th>
+                        <th>Кількість споживання (розхід)</th>
+                        <th style="width: 80px; min-width: 80px;">Од. вим.</th>
+                        <th>Ціна за од., грн</th>
+                        <th>Вартість, грн</th>
+                    </tr>
+                </thead>
+                <tfoot>
+                    <tr>
+                        <td colspan="5"></td>
+                        <td colspan="2"><b>Разом: {{ object.sum|floatformat:2 }}</b></td>
+                    </tr>
+                </tfoot>
+                <tbody>
+                    {% for receipt_service in object.receiptservices.all %}
+                        <tr>
+                            <td>{{ forloop.counter }}</td>
+                            <td>{{ receipt_service.service.name }}</td>
+                            <td>{{ receipt_service.amount }}</td>
+                            <td>{{ receipt_service.service.measurement_unit.name }}</td>
+                            <td>{{ receipt_service.price|floatformat:2 }}</td>
+                            <td>{{ receipt_service.total_price|floatformat:2 }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <script>window.print();</script>
+    </body>
+</html>

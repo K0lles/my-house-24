@@ -24,7 +24,7 @@
                         </div>
                         <div class="form-group">
                             <label for="{{ form.phone.auto_id }}">Телефон</label>
-                            <input class="form-control" type="text" id="{{ form.phone.auto_id }}" name="{{ form.phone.html_name }}" value="{{ form.instance.phone }}" onchange="fieldIsValid(this)">
+                            <input class="form-control" type="text" id="{{ form.phone.auto_id }}" name="{{ form.phone.html_name }}" {% if form.instance.pk %}value="{{ form.instance.phone }}"{% endif %} onchange="fieldIsValid(this)">
                             <p id="{{ form.phone.auto_id }}-errors" style="color: red;"></p>
                         </div>
                         <div class="form-group">

@@ -32,7 +32,7 @@
                                 <td>{{ forloop.counter }}</td>
                                 <td>{{ object.name }} {{ object.surname }}</td>
                                 <td>{{ object.role.get_role_display }}</td>
-                                <td>{{ object.phone }}</td>
+                                <td>{% if object.phone %}{{ object.phone }}{% else %}не указано{% endif %}</td>
                                 <td>{{ object.email }}</td>
                                 <td>{% if object.status == 'new' %}<span class="badge badge-warning">{{ object.get_status_display }}</span>
                                     {% elif object.status == 'active' %}<span class="badge badge-success">{{ object.get_status_display }}</span>
@@ -85,7 +85,7 @@
                                         timer: 1200,
                                     })
                                 }
-                                else if (response['answer'] === 'failed') {
+                                else {
                                     Swal.fire({
                                         position: 'top-end',
                                         icon: 'error',

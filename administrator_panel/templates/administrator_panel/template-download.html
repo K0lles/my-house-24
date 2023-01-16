@@ -1,0 +1,132 @@
+{% extends 'main_page.html' %}
+{% load static %}
+
+{% block title %}
+    <title>Шаблони</title>
+{% endblock %}
+
+{% block content_header %}
+    <h1>Друкована форма документа</h1>
+{% endblock %}
+
+{% block main_content %}
+    <div class="card">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-sm-12 col-lg-6">
+                    <h5 style="font-size: 18px; color: grey">Список шаблонів</h5>
+                </div>
+                <div class="col-sm-12 col-lg-6 text-right">
+                    <a class="btn btn-default" href="{% url 'template-create' %}">Налаштування шаблонів</a>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-xs-12 col-sm-7 col-lg-4">
+                    {% csrf_token %}
+                    {% for object in object_list %}
+                        <div class="form-group" style="margin-left: 2%; margin-top: 2%;">
+                            <label for="receipt-template-{{ object.pk }}">
+                                <input type="radio" id="receipt-template-{{ object.pk }}" value="{{ object.pk }}" class="form-check-input" id="receipt-template-{{ object.pk }}" name="templates" {% if object.is_default %}checked{% endif %}>
+                                {{ object.name }}
+                            </label>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-sm-12 text-right add-href">
+                    <button type="button" class="btn btn-success" style="margin-right: 1%;" onclick="fetchForTemplate()">Завантажити</button>
+                    <button type="button" class="btn btn-default" onclick="sendToEmail()">Відправити на e-mail</button>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+{% block scripts %}
+<script>
+    function fetchForTemplate() {
+        let template = $('input[type="radio"]:checked').val();
+        $.ajax({
+            url: `{% url 'build-receipt-file' %}?receipt={{ receipt }}&template=${template}`,
+            type: 'POST',
+            headers: {
+                'X-CSRFToken': $("input[name=csrfmiddlewaretoken]").val()
+            },
+            success: function(data) {
+                if (data['answer'] === 'success') {
+                    window.location = data['file_path'];
+                    Swal.fire({
+                        position: 'top-end',
+                        icon: 'success',
+                        title: 'Очікуйте файл до завантаження!',
+                        showConfirmButton: false,
+                        timer: 1200,
+                    })
+                }
+                else {
+                    Swal.fire({
+                        position: 'top-end',
+                        icon: 'error',
+                        title: 'Щось пішло не так!',
+                        showConfirmButton: false,
+                        timer: 1200
+                    });
+                }
+            }
+        })
+    }
+
+    function sendToEmail() {
+        let template = $('input[type="radio"]:checked').val();
+        $.ajax({
+            url: `{% url 'build-receipt-file' %}?receipt={{ receipt }}&template=${template}`,
+            type: 'POST',
+            headers: {
+                'X-CSRFToken': $("input[name=csrfmiddlewaretoken]").val()
+            },
+            success: function(data) {
+                if (data['answer'] === 'success') {
+                    let full_path = data['full_path'];
+                    fetchToSendEmail(full_path);
+                }
+                else {
+                    Swal.fire({
+                        position: 'top-end',
+                        icon: 'error',
+                        title: 'Щось пішло не так!',
+                        showConfirmButton: false,
+                        timer: 1200
+                    });
+                }
+            }
+        })
+    }
+
+    function fetchToSendEmail(full_path) {
+        $.ajax({
+            type: 'GET',
+            url: `{% url 'send-receipt-to-email' %}?full_path=${full_path}`,
+            success: function(data) {
+                if (data['answer'] === 'success') {
+                    Swal.fire({
+                        position: 'top-end',
+                        icon: 'success',
+                        title: 'Успішно надіслано!',
+                        showConfirmButton: false,
+                        timer: 1200,
+                    })
+                }
+                else {
+                    Swal.fire({
+                        position: 'top-end',
+                        icon: 'error',
+                        title: 'Щось пішло не так!',
+                        showConfirmButton: false,
+                        timer: 1200
+                    });
+                }
+            }
+        })
+    }
+</script>
+{% endblock %}

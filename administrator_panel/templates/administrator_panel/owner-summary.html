@@ -1,0 +1,122 @@
+{% extends 'main_page.html' %}
+{% load static %}
+
+{% block title %}
+    <title>Зведення</title>
+{% endblock %}
+
+{% block content_header %}
+    <h1>Зведення - {{ flat.house.name }}, кв.{{ flat.number }}</h1>
+{% endblock %}
+
+{% block main_content %}
+    <div class="row">
+        <div class="col-xs-12 col-md-4">
+            <div class="small-box bg-green overflow-hidden">
+                <div class="inner">
+                    <h3>{% if personal_account and personal_account.0.subtraction >= 0.00 %}{{ personal_account.0.subtraction|floatformat:2 }}{% else %}0.00{% endif %} грн</h3>
+                    <p>Баланс квартири</p>
+                </div>
+                <div class="icon">
+                    <i class="fa fa-money"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-xs-12 col-md-4">
+            <div class="small-box bg-blue overflow-hidden">
+                <div class="inner">
+                    <h3>{% if personal_account %}{{ personal_account.0.number }}{% else %}Не створений{% endif %} </h3>
+                    <p>Особовий рахунок</p>
+                </div>
+                <div class="icon">
+                    <i class="fa fa-user"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-xs-12 col-md-4">
+            <div class="small-box bg-red overflow-hidden">
+                <div class="inner">
+                    <h3>{{ average_outcome|floatformat:2 }} грн</h3>
+                    <p>Середній розхід за місяць</p>
+                </div>
+                <div class="icon">
+                    <i class="fa fa-pie-chart"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-body">
+            <div class="row">
+                <h5>Діаграма розходів</h5>
+                <div class="col-sm-12 col-lg-6">
+                    <h5 class="text-center">за попередній місяць</h5>
+                    <canvas id="previous-month-diagram"></canvas>
+                </div>
+                <div class="col-sm-12 col-lg-6">
+                    <h5 class="text-center">за теперішній рік</h5>
+                    <canvas id="current-year-diagram"></canvas>
+                </div>
+            </div>
+            <div class="row" style="margin-top: 25px;">
+                <h5>Діаграма розходів по місяцях за рік</h5>
+                <div class="col-sm-12">
+                    <canvas id="outcome-diagram"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let previous_month_diagram = {{ previous_month_diagram|safe }};
+    let previous_month_labels = Object.keys(previous_month_diagram);
+    let previous_month_data = Object.values(previous_month_diagram);
+
+    let current_year_diagram = {{ current_year_diagram|safe }};
+    let current_year_labels = Object.keys(current_year_diagram);
+    let current_year_data = Object.values(current_year_diagram);
+
+    let outcome_diagram = {{ outcome_diagram|safe }};
+    let outcome_labels = Object.keys(outcome_diagram);
+    let outcome_data = Object.values(outcome_diagram);
+
+
+    let previous_month_chart = document.getElementById('previous-month-diagram');
+    new Chart(previous_month_chart, {
+        type: 'pie',
+        data: {
+            labels: previous_month_labels,
+            datasets: [{
+                label: 'за попередній місяць',
+                data: previous_month_data
+            }]
+        }
+    })
+
+    let current_year_chart = document.getElementById('current-year-diagram');
+    new Chart(current_year_chart, {
+        type: 'pie',
+        data: {
+            labels: current_year_labels,
+            datasets: [{
+                label: 'за теперішній рік',
+                data: current_year_data
+            }]
+        }
+    })
+
+    let outcome_diagram_chart = document.getElementById('outcome-diagram');
+    new Chart(outcome_diagram_chart, {
+        type: 'bar',
+        data: {
+            labels: outcome_labels,
+            datasets: [{
+                label: 'за рік по місяцях',
+                data: outcome_data
+            }]
+        }
+    })
+</script>
+{% endblock %}

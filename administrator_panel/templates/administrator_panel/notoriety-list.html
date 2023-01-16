@@ -1,0 +1,248 @@
+{% extends 'main_page.html' %}
+{% load static %}
+
+{% block title %}
+    <title>Каса</title>
+{% endblock %}
+
+{% block content_header %}
+    <h1>Каса</h1>
+{% endblock %}
+
+{% block main_content %}
+    <div class="row">
+        <div class="col-sm-12 col-lg-9">
+            <div class="row">
+                <div class="col-xs-12 col-md-4">
+                    <div class="small-box bg-green overflow-hidden">
+                        <div class="inner">
+                            <h3>{% if checkout_condition.sum and checkout_condition.sum >= 0.00 %}{{ checkout_condition.sum|floatformat:2 }}{% else %}0.00{% endif %} грн</h3>
+                            <p>Стан каси</p>
+                        </div>
+                        <div class="icon">
+                            <i class="fa fa-dollar"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-xs-12 col-md-4">
+                    <div class="small-box bg-blue overflow-hidden">
+                        <div class="inner">
+                            <h3>{% if sum_by_account.sum %}{{ sum_by_account.sum|floatformat:2 }}{% else %}0.00{% endif %} грн</h3>
+                            <p>Баланс по рахунках</p>
+                        </div>
+                        <div class="icon">
+                            <i class="fa fa-dollar"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-xs-12 col-md-4">
+                    <div class="small-box bg-red overflow-hidden">
+                        <div class="inner">
+                            <h3>{% if debt_by_account.debt %}{{ debt_by_account.debt|floatformat:2 }}{% else %}0.00{% endif %} грн</h3>
+                            <p>Заборгованість по рахунках</p>
+                        </div>
+                        <div class="icon">
+                            <i class="fa fa-dollar"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xs-12 col-lg-3 text-right">
+            <div class="btn-group">
+                <button type="button" class="btn btn-success dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    Виберіть дію
+                </button>
+                <div class="dropdown-menu dropdown-menu-right">
+                    <a class="dropdown-item" href="{% url 'notoriety-create' %}?type=income">Створити прихід</a>
+                    <a class="dropdown-item" href="{% url 'notoriety-create' %}?type=outcome">Створити розхід</a>
+                    <button type="button" onclick="downloadNotorietiesTemplate()" class="dropdown-item">Вивантажити в Excel</button>
+              </div>
+            </div>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-body">
+            <div class="row" style="margin-bottom: 25px;">
+                <div class="col-sm-12 text-right">
+                    <a href="{% url 'notorieties' %}" class="btn btn-default">Очистити</a>
+                </div>
+            </div>
+            <div class="row">
+                <div class="table-responsive">
+                    <table id="notoriety-table" class="table table-hover table-borderless">
+                    <thead>
+                        <tr>
+                            <th>№<input type="text" class="form-control"></th>
+                            <th>Дата<input type="text" class="form-control"></th>
+                            <th>Статус<input type="text" class="form-control"></th>
+                            <th>Тип платіжки<input type="text" class="form-control"></th>
+                            <th>Власник<input type="text" class="form-control"></th>
+                            <th>Особовий рахунок<input type="text" class="form-control"></th>
+                            <th>Прихід/розхід<input type="text" class="form-control"></th>
+                            <th style="vertical-align: top;">Сума (грн)</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for notoriety in object_list %}
+                            <tr role="button" data-href="{% url 'notoriety-detail' notoriety_pk=notoriety.pk %}">
+                                <td>{{ notoriety.number }}</td>
+                                <td>{{ notoriety.created_at|date:'d.m.Y' }}</td>
+                                <td>{% if notoriety.is_completed %}Проведена{% else %}Не проведена{% endif %}</td>
+                                <td>{{ notoriety.article.name }}</td>
+                                <td>{% if notoriety.account and notoriety.account.flat.owner %}{{ notoriety.account.flat.owner.surname }} {{ notoriety.account.flat.owner.name }} {% if notoriety.account.flat.owner.father %}{{ notoriety.account.flat.owner.father }}{% endif %}{% else %}(не указано){% endif %}</td>
+                                <td>{% if notoriety.account %}{{ notoriety.account.number }}{% else %}(не указано){% endif %}</td>
+                                <td>{% if notoriety.type == 'income' %}<span style="color: #388f1a;">Прихід</span>{% else %}<span style="color: #bb1642;">Розхід</span>{% endif %}</td>
+                                <td>{% if notoriety.type == 'income' %}<span style="color: #388f1a;">{{ notoriety.sum }}</span>{% else %}<span style="color: #bb1642;">-{{ notoriety.sum }}</span>{% endif %}</td>
+                                <td class="text-right">
+                                    <div class="btn-group pull-right">
+                                        <a class="btn btn-default btn-sm" title="Редагувати" href="{% url 'notoriety-update' notoriety_pk=notoriety.pk %}">
+                                            <i class="fa fa-pencil"></i>
+                                        </a>
+                                        <button id="{{ notoriety.pk }}" type="button" class="btn btn-default btn-sm delete-notoriety" title="Видалити">
+                                            <i class="fa fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    $(document).ready(function () {
+        $('#notoriety-table').DataTable({
+            ordering: true,
+            dom: 'rtp',
+            language: {
+                paginate: {
+                    "previous": "<<",
+                    "next": ">>"
+                }
+            },
+            columns: [
+                {'data': '№'},
+                {'data': 'Дата'},
+                {'data': 'Статус'},
+                {'data': 'Тип платіжки'},
+                {'data': 'Власник'},
+                {'data': 'Особовий рахунок'},
+                {'data': 'Прихід/Розхід'},
+                {'data': 'Сума (грн)'},
+                null
+            ],
+            columnDefs: [
+                {orderable: false, targets: 0},
+                {orderable: true, targets: 1},
+                {orderable: false, targets: 2},
+                {orderable: false, targets: 3},
+                {orderable: false, targets: 4},
+                {orderable: false, targets: 5},
+                {orderable: false, targets: 6},
+                {orderable: false, targets: 7},
+                {orderable: false, targets: 8},
+            ],
+            initComplete: function () {
+                this.api()
+                    .columns()
+                    .every(function () {
+                        let that = this;
+
+                        $('input[type="text"]', this.header()).on('keyup change clear', function () {
+                            if (that.search() !== this.value) {
+                                that.search(this.value).draw();
+                            }
+                        });
+                    });
+            },
+        });
+    })
+
+    function downloadNotorietiesTemplate() {
+        $.ajax({
+            url: `{% url 'notoriety-all-template-download' %}`,
+            type: 'GET',
+            success: function(data) {
+                if (data['answer'] === 'success') {
+                    window.location = data['file_path'];
+                    Swal.fire({
+                        position: 'top-end',
+                        icon: 'success',
+                        title: 'Очікуйте файл до завантаження!',
+                        showConfirmButton: false,
+                        timer: 1200,
+                    })
+                }
+                else {
+                    Swal.fire({
+                        position: 'top-end',
+                        icon: 'error',
+                        title: 'Щось пішло не так!',
+                        showConfirmButton: false,
+                        timer: 1200
+                    });
+                }
+            },
+            error: function (xhr, ajaxOptions, thrownError) {
+                Swal.fire({
+                    position: 'top-end',
+                    icon: 'error',
+                    title: 'Щось пішло не так!',
+                    showConfirmButton: false,
+                    timer: 1200
+                });
+            }
+        })
+    }
+
+    $('.delete-notoriety').on('click', function(event) {
+        event.preventDefault();
+        event.stopPropagation();
+        Swal.fire({
+            title: 'Ви впевнені?',
+            text: "Після видалення відомість неможливо буде повернути!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#A9A9A9',
+            cancelButtonText: 'Скасувати',
+            confirmButtonText: 'Видалити'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.ajax({
+                        type: 'get',
+                        url: `/administrator-panel/notoriety/delete/${$(this).attr('id')}/`,
+                        success: function (data) {
+                            if (data['answer'] === 'success') {
+                                $(event.target).closest('tr').remove();
+                                Swal.fire({
+                                        position: 'top-end',
+                                        icon: 'success',
+                                        title: 'Успішно видалено!',
+                                        showConfirmButton: false,
+                                        timer: 1200,
+                                    })
+                            }
+                            else {
+                                Swal.fire({
+                                    position: 'top-end',
+                                    icon: 'error',
+                                    title: 'Щось пішло не так!',
+                                    showConfirmButton: false,
+                                    timer: 1200
+                                });
+                            }
+                        }
+                    })
+                }
+            })
+    })
+</script>
+{% endblock %}

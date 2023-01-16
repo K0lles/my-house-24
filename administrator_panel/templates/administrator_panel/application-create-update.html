@@ -1,0 +1,228 @@
+{% extends 'main_page.html' %}
+{% load static %}
+
+{% block title %}
+    <title>Заявка</title>
+{% endblock %}
+
+{% block styles %}
+<style>
+
+        .ck-editor__editable[role="textbox"] {
+            /* editing area */
+            min-height: 200px;
+            min-width: 100%;
+            width:auto;
+        }
+</style>
+{% endblock %}
+
+{% block content_header %}
+    <h1>{% if not form.instance.pk %}Нова заявка{% else %}Заявка №{{ form.instance.pk }}{% endif %}</h1>
+{% endblock %}
+
+{% block main_content %}
+    <form id="application-form" method="post" {% if not form.instance.pk %}action="{% url 'application-create' %}"{% else %}action="{% url 'application-update' application_pk=form.instance.pk %}"{% endif %}>
+    {% csrf_token %}
+        <div class="row">
+            <div class="col-sm-12 col-md-7 col-lg-6" style="display: flex; justify-content: flex-start;">
+                <div class="form-group">
+                    <div class="input-group date" id="datepicker">
+                        <span class="input-group-append">
+                            <button type="button" class="btn btn-default" >
+                                <i class="fa fa-calendar"></i>
+                            </button>
+                        </span>
+                        <input type="text" class="form-control" id="{{ form.desired_date.auto_id }}" name="{{ form.desired_date.html_name }}" {% if not form.insance.pk %}value="{{ form.desired_date.value|date:'d.m.Y' }}"{% elif form.instance.pk %}value="{{ form.instance.desired_date|date:'d.m.Y' }}"{% endif %}>
+                    </div>
+                    <p id="{{ form.desired_date.auto_id }}-errors" style="color: red;">{{ form.desired_date.errors }}</p>
+                </div>
+                <span style="margin: 8px 15px 0 15px;">
+                    від
+                </span>
+                <div class="form-group">
+                    <div class="input-group date" id="datepicker">
+                        <span class="input-group-append">
+                            <button type="button" class="btn btn-default" >
+                                <i class="fa fa-clock"></i>
+                            </button>
+                        </span>
+                        <input type="text" class="form-control" id="{{ form.desired_time.auto_id }}" name="{{ form.desired_time.html_name }}" {% if not form.insance.pk %}value="{{ form.desired_time.value|date:'H:i' }}"{% elif form.instance.pk %}value="{{ form.instance.desired_time|date:'H:i' }}"{% endif %}>
+                    </div>
+                    <p id="{{ form.desired_time.auto_id }}-errors" style="color: red;">{{ form.desired_time.errors }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-sm-12 col-md-6 col-lg-6">
+                        <div class="form-group">
+                            <label class="form-label" for="id_owner">Власник квартири</label>
+                            {% if form.instance.pk %}<a href="{% url 'owner-detail' owner_pk=form.instance.flat.owner.pk %}" target="_blank"><i class="fa fa-external-link"></i></a>{% endif %}
+                            <select class="form-select" id="id_owner" name="owner" onchange="changedOwner(this)">
+                                <option>Вибрати...</option>
+                                {% for owner in owners %}
+                                    <option value="{{ owner.id }}" {% if form.instance.pk and form.instance.flat.owner.pk == owner.pk %}selected{% endif %}>{% if owner.surname %}{{ owner.surname }}{% endif %} {% if owner.name %}{{ owner.name }}{% endif %} {% if owner.father %}{{ owner.father }}{% endif %}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        {% if form.instance.pk and form.instance.flat.owner and form.instance.flat.owner.phone %}<div class="form-group"><span><b>Телефон:</b> <a href="tel:{{ form.instance.flat.owner.phone }}">{{ form.instance.flat.owner.phone }}</a></span></div>{% endif %}
+                        <div class="form-group">
+                            <label class="form-label" for="{{ form.description.auto_id }}">Опис</label>
+                            <textarea class="form-control" id="{{ form.description.auto_id }}" name="{{ form.description.html_name }}" rows="8" onchange="fieldIsValid(this)">{% if form.instance.pk %}{{ form.instance.description }}{% endif %}</textarea>
+                            <p id="{{ form.description.auto_id }}-errors" style="color: red;"></p>
+                        </div>
+                    </div>
+                    <div class="col-sm-12 col-md-6 col-lg-6">
+                        <div class="form-group">
+                            <label class="form-label" for="{{ form.flat.auto_id }}">Квартира</label>
+                            <select class="form-select" id="{{ form.flat.auto_id }}" name="{{ form.flat.html_name }}" onchange="changedFlat(this)">
+                                <option>Вибрати...</option>
+                                {% for flat in flats %}
+                                    <option value="{{ flat.pk }}" data-owner="{{ flat.owner.pk }}" {% if form.instance.pk and form.instance.flat.pk == flat.pk %}selected{% endif %}>{{ flat.number }}</option>
+                                {% endfor %}
+                            </select>
+                            <p id="{{ form.flat.auto_id }}-errors" style="color: red;"></p>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="{{ form.master_type.auto_id }}">Тип майстера</label>
+                            <select class="form-select" id="{{ form.master_type.auto_id }}" name="{{ form.master_type.html_name }}" onchange="changedMasterType(this)">
+                                {% for value, text in form.master_type.field.choices %}
+                                    <option value="{{ value }}" {% if not form.instance.pk and forloop.counter0 == 0 %}selected{% endif %} {% if form.instance.pk and not form.instance.master_type %}selected{% endif %}>{{ text }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="{{ form.status.auto_id }}">Статус</label>
+                            <select class="form-select" id="{{ form.status.auto_id }}" name="{{ form.status.html_name }}" onchange="alwaysIsValid(this)">
+                                {% for value, text in form.status.field.choices %}
+                                    <option value="{{ value }}" {% if form.instance.pk and form.instance.type == value %}selected{% endif %}>{{ text }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="{{ form.master.auto_id }}">Майстер</label>
+                            <select class="form-select" id="{{ form.master.auto_id }}" name="{{ form.master.html_name }}" onchange="fieldIsValid(this)">
+                                <option>Вибрати...</option>
+                                {% for worker in workers %}
+                                    <option value="{{ worker.id }}" data-master-type="{{ worker.role.role }}" {% if form.instance.pk and form.instance.master.pk == worker.pk %}selected{% endif %}>{{ worker.role.get_role_display }} - {% if worker.surname %}{{ worker.surname }}{% endif %} {% if worker.name %}{{ worker.name }}{% endif %}</option>
+                                {% endfor %}
+                            </select>
+                            <p id="{{ form.master.auto_id }}-errors" style="color: red;"></p>
+                        </div>
+                    </div>
+                </div>
+                <label style="margin-top: 30px;" class="form-label">Коментар</label>
+                <div id="editor" style="margin-top: 2%;">{% if form.instance.pk %}{{ form.instance.comment|safe }}{% endif %}</div>
+                <div hidden="hidden">
+                    <div id="insert-into"></div>
+                </div>
+                <div class="row" style="margin-top: 20px;">
+                    <div class="col-sm-12 text-right">
+                        <button type="reset" class="btn btn-default" style="margin-right: 2%;">Скасувати</button>
+                        <button type="submit" class="btn btn-success" onclick="formIsValid()">{% if not form.instance.pk %}Створити{% else %}Зберегти{% endif %}</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    ClassicEditor
+        .create( document.querySelector( '#editor' ) )
+
+    $('#id_desired_time').datetimepicker({
+            format: 'HH:mm'
+        });
+
+    $('#id_desired_date').datepicker({
+        format: 'dd.mm.yyyy'
+    });
+
+    function changedOwner(element) {
+        let owner_id = element.value;
+        $('#id_flat').empty();
+        $('#id_flat').append(`<option>Вибрати...</option>`);
+        if (owner_id === 'Вибрати...') {
+            {% for flat in flats %}
+                $('#id_flat').append(`<option value="{{ flat.pk }}" {% if flat.owner %} data-owner="{{ flat.owner.pk }}"{% endif %}>{{ flat.number }}</option>`);
+            {% endfor %}
+            element.style = 'border: 1px solid #58c76d';
+            return;
+        }
+
+        {% for flat in flats %}
+            {% if flat.owner %}
+                if (parseInt(owner_id) === {{ flat.owner.pk }}) {
+                    $('#id_flat').append(`<option value="{{ flat.pk }}" data-owner="${owner_id}">{{ flat.number }}</option>`);
+                }
+            {% endif %}
+        {% endfor %}
+
+        element.style = 'border: 1px solid #58c76d';
+    }
+
+    function changedFlat(element) {
+        if (!$(`#id_flat :selected`).attr('data-owner')) {
+            $('#id_owner').val('Вибрати...');
+            fieldIsValid(element);
+            return;
+        }
+
+        $('#id_owner').val($(`#id_flat :selected`).attr('data-owner'));
+        if (!$(`#id_flat :selected`).attr('data-owner')) {
+            $('#id_flat').change();
+        }
+
+        fieldIsValid(element);
+    }
+
+    function changedMasterType(element) {
+        let master_type = element.value;
+
+        $('#id_master').empty();
+        $('#id_master').append(`<option>Вибрати...</option>`);
+        if (!master_type || master_type === 'Будь-який спеціаліст' || master_type === '') {
+            {% for worker in workers %}
+                $('#id_master').append(`<option value="{{ worker.pk }}" data-master-type="{{ worker.role.role }}">{{ worker.role.get_role_display }} - {% if worker.surname %}{{ worker.surname }}{% endif %} {% if worker.surname %}{{ worker.name }}{% endif %}</option>`);
+            {% endfor %}
+            element.style = 'border: 1px solid #58c76d';
+            return;
+        }
+
+        {% for worker in workers %}
+            if (master_type === "{{ worker.role.role }}") {
+                $('#id_master').append(`<option value="{{ worker.pk }}" data-master-type="{{ worker.role.role }}">{{ worker.role.get_role_display }} - {% if worker.surname %}{{ worker.surname }}{% endif %} {% if worker.surname %}{{ worker.name }}{% endif %}</option>`);
+            }
+        {% endfor %}
+
+        element.style = 'border: 1px solid #58c76d';
+    }
+
+    function formIsValid() {
+        event.preventDefault();
+        $('#insert-into').empty();
+        $('#insert-into').append(`<textarea id="{{ form.comment.auto_id }}" name="{{ form.comment.html_name }}">${$('.ck-editor__editable[role="textbox"]').html()}</textarea>`);
+        let isValid = true;
+
+        $(`#application-form`).find(`select`).each(function () {
+            if ($(this).attr('id') !== 'id_owner' && $(this).attr('id') !== 'id_master_type' && !fieldIsValid(this)) {
+                isValid = false;
+            }
+        })
+
+        if (!fieldIsValid(document.getElementById('id_description'))) isValid = false;
+
+        if (isValid) {
+            $(`#application-form`).submit();
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+</script>
+{% endblock %}

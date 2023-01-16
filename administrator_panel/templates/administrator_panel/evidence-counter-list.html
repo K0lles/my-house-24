@@ -1,6 +1,10 @@
 {% extends 'main_page.html' %}
 {% load static %}
 
+{% block title %}
+    <title>Показання лічильників</title>
+{% endblock %}
+
 {% block content_header %}
     <h1>Показання, кв. {{ object_list.0.flat.number }}</h1>
 {% endblock %}
@@ -18,7 +22,8 @@
                     <a href="{% url 'evidences-grouped' %}" class="btn btn-default">Очистити</a>
                 </div>
             </div>
-            <table id="evidence-table" class="table table-responsive table-hover table-borderless">
+            <div class="table-responsive">
+                <table id="evidence-table" class="table table-hover table-borderless">
                 <thead>
                     <tr>
                         <th>№<input type="text" class="form-control"></th>
@@ -64,6 +69,7 @@
                     {% endfor %}
                 </tbody>
             </table>
+            </div>
         </div>
     </div>
 {% endblock %}
@@ -145,7 +151,7 @@
                                         timer: 1200,
                                     })
                                 }
-                                else if (response['answer'] === 'failed') {
+                                else {
                                     Swal.fire({
                                         position: 'top-end',
                                         icon: 'error',

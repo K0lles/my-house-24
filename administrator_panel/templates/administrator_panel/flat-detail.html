@@ -1,8 +1,12 @@
 {% extends 'main_page.html' %}
 {% load static %}
 
+{% block title %}
+    <title>Квартира</title>
+{% endblock %}
+
 {% block content_header %}
-    <h1>Квартира №{{ object.number }}</h1>
+    <h1>Квартира №{{ object.number }}, {{ object.house.name }}</h1>
 {% endblock %}
 
 {% block main_content %}
@@ -14,8 +18,8 @@
                 </div>
                 <div class="col-sm-12 col-lg-6 text-right">
                     <div class="btn-group">
-                        <button class="btn btn-default" type="button" {% if not object.personalaccount %}disabled{% endif %} style="margin-right: 10px;"><i class="fa fa-dollar"></i> Прийняти платіж</button>
-                        <button class="btn btn-default" type="button" {% if not object.personalaccount %}disabled{% endif %} style="margin-right: 10px;"><i class="fa fa-clone"></i> Оформити квитанцію</button>
+                        <a class="btn btn-default {% if not object.personalaccount %}disabled{% endif %}" {% if object.personalaccount %}href="{% url 'notoriety-create' %}?type=income&account={{ object.personalaccount.pk }}"{% endif %} style="margin-right: 10px;"><i class="fa fa-dollar"></i> Прийняти платіж</a>
+                        <a class="btn btn-default {% if not object.personalaccount %}disabled{% endif %}" {% if object.personalaccount %}href="{% url 'receipt-create' %}?flat_id={{ object.pk }}"{% endif %} style="margin-right: 10px;"><i class="fa fa-clone"></i> Оформити квитанцію</a>
                         <a class="btn btn-info" href="{% url 'flat-update' flat_pk=object.pk %}">Редагувати квартиру</a>
                     </div>
                 </div>

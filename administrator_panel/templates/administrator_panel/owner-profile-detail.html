@@ -1,0 +1,134 @@
+{% extends 'main_page.html' %}
+{% load static %}
+
+{% block title %}
+    <title>Користувач</title>
+{% endblock %}
+
+{% block content_header %}
+    <h1>Профіль</h1>
+{% endblock %}
+
+{% block main_content %}
+    <div class="row">
+        <div class="col-lg-3">
+            <div class="row">
+                <div class="col-md-6 col-lg-12">
+                    <div class="card">
+                        <div class="card-body">
+                            <img class="img-circle profile-user-img" src="{% if object.logo %}{{ object.logo.url }}{% else %}{% static 'all_logos/empty-image.jpeg' %}{% endif %}" alt="user-photo" style="display: block; margin: auto; margin-bottom: 10px;">
+                            <h3 class="profile-username text-center">{{ object.surname }} {{ object.name }} {% if object.father %}{{ object.father }}{% endif %}</h3>
+                            <p class="text-muted text-center">Власник квартири</p>
+                            <ul class="list-group list-group-unbordered">
+                                <li class="list-group-item">
+                                    <span>Телефон</span>
+                                    <span class="float-right">{% if object.phone %}{{ object.phone }}{% endif %}</span>
+                                </li>
+                                <li class="list-group-item">
+                                    <span>Viber</span>
+                                    <span class="float-right">{% if object.viber %}{{ object.viber }}{% endif %}</span>
+                                </li>
+                                <li class="list-group-item">
+                                    <span>Telegram</span>
+                                    <span class="float-right">{% if object.telegram %}{{ object.telegram }}{% endif %}</span>
+                                </li>
+                                <li class="list-group-item">
+                                    <span>Email</span>
+                                    <span class="float-right">{{ object.email }}</span>
+                                </li>
+                            </ul>
+                            <a href="{% url 'owner-profile-update' %}" class="btn btn-info btn-block" style="margin-top: 20px;">Змінити</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-12">
+                    <div class="content-header" style="margin-bottom: 25px;">
+                        <h1>Про мене (Нотатки)</h1>
+                    </div>
+                    <div class="card">
+                        <div class="card-body">
+                            <p>{% if object.notes %}{{ object.notes }}{% endif %}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-9">
+            <div class="content-header" style="margin-bottom: 25px;">
+                <h1>Квартири</h1>
+            </div>
+            {% for flat in user_flats %}
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Опис квартири</h3>
+                </div>
+                <div class="card-body">
+                    <p>{{ flat.house.name }}, {{ flat.house.address }}, кв.{{ flat.number }}</p>
+                    <div class="row">
+                        <div class="col-sm-12 col-md-6" style="margin-bottom: 10px;">
+                            <img {% if flat.house.photo_1 %}src="{{ flat.house.photo_1.url }}" {% else %} src="{% static 'all_logos/empty-photo.png' %}"{% endif %} width="100%" height="350px">
+                        </div>
+                        <div class="col-sm-12 col-md-6">
+                            <div class="row">
+                                <div class="col-sm-6 col-md-6">
+                                    <img {% if flat.house.photo_2 %}src="{{ flat.house.photo_2.url }}" {% else %}src="{% static 'all_logos/empty-photo.png' %}"{% endif %} width="100%" height="170px">
+                                </div>
+                                <div class="col-sm-6 col-md-6">
+                                    <img {% if flat.house.photo_3 %}src="{{ flat.house.photo_3.url }}" {% else %}src="{% static 'all_logos/empty-photo.png' %}"{% endif %} width="100%" height="170px">
+                                </div>
+                            </div>
+                            <div class="row" style="margin-top: 10px;">
+                                <div class="col-sm-6 col-md-6">
+                                    <img {% if flat.house.photo_4 %}src="{{ flat.house.photo_4.url }}" {% else %}src="{% static 'all_logos/empty-photo.png' %}"{% endif %} width="100%" height="170px">
+                                </div>
+                                <div class="col-sm-6 col-md-6">
+                                    <img {% if flat.house.photo_5 %}src="{{ flat.house.photo_5.url }}" {% else %}src="{% static 'all_logos/empty-photo.png' %}"{% endif %} width="100%" height="170px">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-borderless">
+                            <thead>
+                                <tr>
+                                    <th colspan="2">Опис</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Назва будинку</td>
+                                    <td>{{ flat.house.name }}</td>
+                                </tr>
+                                <tr>
+                                    <td>Адреса</td>
+                                    <td>{{ flat.house.address }}</td>
+                                </tr>
+                                <tr>
+                                    <td>№ квартири</td>
+                                    <td>{{ flat.number }}</td>
+                                </tr>
+                                <tr>
+                                    <td>Площа</td>
+                                    <td>{{ flat.square }}</td>
+                                </tr>
+                                <tr>
+                                    <td>Поверх</td>
+                                    <td>{{ flat.floor.name }}</td>
+                                </tr>
+                                <tr>
+                                    <td>Секція</td>
+                                    <td>{{ flat.section.name }}</td>
+                                </tr>
+                                <tr>
+                                    <td>Особовий рахунок</td>
+                                    <td>{% if flat.personalaccount %}{{ flat.personalaccount.number }}{% endif %}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+{% endblock %}

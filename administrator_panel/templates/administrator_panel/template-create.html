@@ -1,0 +1,99 @@
+{% extends 'main_page.html' %}
+{% load static %}
+
+{% block title %}
+    <title>Налаштування шаблонів</title>
+{% endblock %}
+
+{% block content_header %}
+    <h1>Налаштування шаблонів</h1>
+{% endblock %}
+
+{% block main_content %}
+    <div class="card">
+        <div class="card-body">
+            <h5 style="font-size: 18px; color: grey">Список шаблонів</h5>
+            {% for object in object_list %}
+                <div class="template" style="margin-top: 20px;">
+                    <p>{{ object.name }} {% if object.is_default %}<b>(за замовчування)</b>{% endif %}</p>
+                    <a href="{{ object.file.url }}" download style="display: inline-block; margin-right: 10px;""><i class="fa fa-download"></i>Скачати шаблон</a>
+                    <a href="{% url 'template-default' template_pk=object.pk %}" style="display: inline-block; color: #2AA514F2; margin-right: 10px;">• Назначити шаблоном за замовчуванням</a>
+                    <a class="delete-template" role="button" id="{{ object.pk }}" style="display: inline-block; color: rgba(213,24,24,0.95); margin-right: 10px;""><i class="fa fa-trash"></i>Видалити шаблон</a>
+                </div>
+            {% endfor %}
+            <div class="row">
+                <div class="col-sm-12 col-lg-6">
+                    <form id="template-form" method="post" action="{% url 'template-create' %}" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <div class="form-group" style="margin-top: 25px;">
+                            <label for="{{ form.name.auto_id }}">Назва</label>
+                            <input type="text" id="{{ form.name.auto_id }}" name="{{ form.name.html_name }}" class="form-control" style="margin-bottom: 25px;">
+                            <input type="file" accept=".xlsx" id="{{ form.file.auto_id }}" name="{{ form.file.html_name }}">
+                        </div>
+                        <div class="row">
+                            <div class="col-sm-12 text-right">
+                                <button type="reset" class="btn btn-default" style="margin-right: 10px;">Скасувати</button>
+                                <button type="submit" class="btn btn-success">Зберегти</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+{% block scripts %}
+<script>
+    $('a.delete-template').on('click', function (event) {
+        event.preventDefault();
+        let template_pk = $(this).attr('id');
+        Swal.fire({
+            title: 'Ви впевнені?',
+            text: "Після видалення шаблон неможливо буде повернути!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#A9A9A9',
+            cancelButtonText: 'Скасувати',
+            confirmButtonText: 'Видалити'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.ajax({
+                            url: `delete/${template_pk}/`,
+                            type: 'GET',
+                            success: function (response) {
+                                if (response['answer'] === 'success') {
+                                    $(event.target).closest('div').remove();
+                                    Swal.fire({
+                                        position: 'top-end',
+                                        icon: 'success',
+                                        title: 'Успішно видалено!',
+                                        showConfirmButton: false,
+                                        timer: 1200,
+                                    })
+                                }
+                                else if (response['answer'] === 'template is default') {
+                                    Swal.fire({
+                                        position: 'top-end',
+                                        icon: 'error',
+                                        title: 'Шаблон за замовчуванням не можна видаляти!',
+                                        showConfirmButton: false,
+                                        timer: 1200
+                                    });
+                                }
+                                else {
+                                    Swal.fire({
+                                        position: 'top-end',
+                                        icon: 'error',
+                                        title: 'Щось пішло не так!',
+                                        showConfirmButton: false,
+                                        timer: 1200
+                                    });
+                                }
+                            }
+                        })
+                }
+            })
+    })
+</script>
+{% endblock %}

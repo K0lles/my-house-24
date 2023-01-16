@@ -1,0 +1,191 @@
+{% extends 'main_page.html' %}
+{% load static %}
+
+{% block title %}
+    <title>Повідомлення</title>
+{% endblock %}
+
+{% block styles %}
+<style>
+
+        .ck-editor__editable[role="textbox"] {
+            /* editing area */
+            min-height: 200px;
+            min-width: 100%;
+        }
+</style>
+{% endblock %}
+
+{% block content_header %}
+    <h1>Нове повідомлення</h1>
+{% endblock %}
+
+{% block main_content %}
+    <div class="card">
+        <div class="card-body">
+            <form id="message-form" action="{% url 'message-create' %}" method="post">
+                {% csrf_token %}
+                <div class="row">
+                    <div class="form-group">
+                        <input type="text" class="form-control" id="{{ form.theme.auto_id }}" name="{{ form.theme.html_name }}" placeholder="Тема повідомлення:" onchange="fieldIsValid(this)">
+                        <p id="{{ form.theme.auto_id }}-errors" style="color: red;"></p>
+                    </div>
+                </div>
+                <div id="editor" style="margin-top: 2%;"></div>
+                <p id="{{ form.main_text.auto_id }}-errors" style="color: red;"></p>
+                <div hidden="hidden">
+                    {% autoescape off %}
+                        <div id="insert-into"></div>
+                    {% endautoescape %}
+                </div>
+                <div class="row" style="margin-top: 3%;">
+                    <div class="col-sm-12 col-md-6">
+                        <h5>Кому надіслати:</h5>
+                        <div class="form-check-inline">
+                            <input id="{{ form.send_all_debtors.auto_id }}" name="{{ form.send_all_debtors.html_name }}" {% if to_debtors %}checked{% endif %} type="checkbox" class="form-check-input">
+                            <label class="form-check-label" for="{{ form.send_all_debtors.auto_id }}"><b>Власникам із заборгованостями</b></label>
+                        </div>
+                        <div class="form-group" style="margin-top: 3%;">
+                            <label class="form-label" for="id_house">ЖК</label>
+                            <select class="form-select" id="id_house" name="house" onchange="changedHouse(this)">
+                                <option>Всім</option>
+                                {% for house in houses %}
+                                    <option value="{{ house.pk }}">{{ house.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="id_section">Секція</label>
+                            <select class="form-select" id="id_section" name="section" onchange="changedSection(this)">
+                                <option>Всім</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="id_floor">Поверх</label>
+                            <select class="form-select" id="id_floor" name="floor" onchange="changedFloor(this)">
+                                <option>Всім</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="id_flat">Квартира</label>
+                            <select class="form-select" id="id_flat" name="flat">
+                                <option>Всім</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-sm-12 text-right">
+                        <button type="submit" class="btn btn-success" onclick="formIsValidUpdate(event)"><i class="fa fa-envelope"></i>  Надіслати</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    ClassicEditor
+        .create( document.querySelector( '#editor' ) )
+        .catch( error => {} );
+
+    function formIsValidUpdate(e) {
+        e.preventDefault();
+        let isValid = true;
+
+        $(`#message-form`).find(`input[id='id_theme']`).each(function () {
+            if (!fieldIsValid(this)) {
+                isValid = false;
+            }
+        })
+
+        if ($('.ck-editor__editable[role="textbox"]').html() === '<p><br data-cke-filler="true"></p>'){
+            if (!($(`#id_main_text-errors`).text()).includes('Поле не може бути пустим')) {
+                $(`#id_main_text-errors`).text('Поле не може бути пустим');
+            }
+            isValid = false;
+        }
+        else {
+            $(`#id_main_text-errors`).text('');
+        }
+
+        if (isValid) {
+            $('#insert-into').append(`<textarea id="{{ form.main_text.auto_id }}" name="{{ form.main_text.html_name }}">${$('.ck-editor__editable[role="textbox"]').html()}</textarea>`);
+            $(`#message-form`).submit();
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+
+    let house_section = {{ house_section|safe }};
+    let house_floor = {{ house_floor|safe }};
+    let section_flat = {{ section_flat|safe }};
+    let floor_flat = {{ floor_flat|safe }};
+
+
+    function changedHouse(element) {
+        let selectedId = $(element).children("option:selected").val();
+        $('#id_section').find('option').remove().end().append('<option>Всім</option>');
+        $('#id-floor').find('option').remove().end().append('<option>Всім</option>');
+        $('#id_flat').find('option').remove().end().append('<option>Всім</option>');
+
+        if (house_section[selectedId]){
+            for (let key_array in house_section[selectedId]) {
+                let option_to_append = `<option value="${house_section[selectedId][key_array][0]}">${house_section[selectedId][key_array][1]}</option>`
+                $('#id_section').append(option_to_append);
+            }
+        }
+
+        if (house_floor[selectedId]) {
+            for (let key_array in house_floor[selectedId]) {
+                let option_to_append = `<option value="${house_floor[selectedId][key_array][0]}">${house_floor[selectedId][key_array][1]}</option>`
+                $('#id_floor').append(option_to_append);
+            }
+        }
+        element.style = 'border: 1px solid #58c76d';
+    }
+
+    function changedSection(element) {
+        let selectedId = $(element).children("option:selected").val();
+        $('#id_flat').find('option').remove().end().append('<option>Всім</option>');
+
+        if (selectedId === 'Всім') {
+            for (let outer_key in section_flat) {
+                for (let key_array in section_flat[selectedId]) {
+                    let option_to_append = `<option value="${section_flat[outer_key][key_array][0]}">${section_flat[outer_key][key_array][1]}</option>`
+                    $('#id_flat').append(option_to_append);
+                }
+            }
+        }
+
+        if (section_flat[selectedId]){
+            for (let key_array in section_flat[selectedId]) {
+                let option_to_append = `<option value="${section_flat[selectedId][key_array][0]}">${section_flat[selectedId][key_array][1]}</option>`
+                $('#id_flat').append(option_to_append);
+            }
+        }
+
+        element.style = 'border: 1px solid #58c76d';
+    }
+
+    function changedFloor(element) {
+        let selectedId = $(element).children("option:selected").val();
+        $('#id_flat').find('option').remove().end().append('<option>Всім</option>');
+        if (selectedId === 'Всім') {
+            changedSection($('#id-section'));
+            return;
+        }
+        if (floor_flat[selectedId]){
+            for (let key_array in floor_flat[selectedId]) {
+                let option_to_append = `<option value="${floor_flat[selectedId][key_array][0]}">${floor_flat[selectedId][key_array][1]}</option>`
+                $('#id_flat').append(option_to_append);
+            }
+        }
+        element.style = 'border: 1px solid #58c76d';
+    }
+
+</script>
+{% endblock %}

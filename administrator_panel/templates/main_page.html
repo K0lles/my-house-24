@@ -4,12 +4,14 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  {% block title %}
   <title>AdminLTE 3 | Dashboard</title>
+  {% endblock %}
   <link rel="icon" type="image/png" href="{% static 'all_logos/header-icon-myhouse.png' %}">
 
   <!-- Bootstrap 5 -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
-  <!-- Google Font: Source Sans Pro -->
+    <!-- Google Font: Source Sans Pro -->
   <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback">
   <!-- Font Awesome -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css" integrity="sha512-xh6O/CkQoPOWDdYTDqeRdPCVd1SpvCA9XXcUnZS2FmJNp1coAFzvtCN9BmamE+4aHK8yyUHUSCcJHgXloTyT2A==" crossorigin="anonymous" referrerpolicy="no-referrer">
@@ -34,6 +36,8 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.21/css/dataTables.jqueryui.min.css" integrity="sha512-x2AeaPQ8YOMtmWeicVYULhggwMf73vuodGL7GwzRyrPDjOUSABKU7Rw9c3WNFRua9/BvX/ED1IK3VTSsISF6TQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
   <!-- Datepicker -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/css/bootstrap-datepicker.min.css" integrity="sha512-mSYUmp1HYZDFaVKK//63EcZq4iFWFjxSL+Z3T/aCt4IO9Cejm03q3NKKYN6pFQzY0SBOr8h+eCIAZHPXcpZaNw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <!-- Include Bootstrap DateTimePicker CDN -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.17.37/css/bootstrap-datetimepicker.min.css" rel="stylesheet">
     {% block styles %}
     {% endblock styles %}
   <style>
@@ -59,72 +63,37 @@
         <a class="nav-link" data-widget="pushmenu" href="#" role="button"><i class="fas fa-bars"></i></a>
       </li>
       <li class="nav-item d-none d-sm-inline-block">
-        <a class="nav-link">Панель адміністратора</a>
+        <a class="nav-link">{% if request.user.role.role == 'owner' %}Особистий кабінет{% else %}Панель адміністратора{% endif %}</a>
       </li>
     </ul>
 
     <!-- Right navbar links -->
     <ul class="navbar-nav ml-auto">
-      <!-- Navbar Search -->
       <!-- Messages Dropdown Menu -->
+    {% if request.user.is_authenticated %}
       <li class="nav-item dropdown">
         <a class="nav-link" data-toggle="dropdown" href="#">
-          <i class="far fa-comments"></i>
-          <span class="badge badge-danger navbar-badge">3</span>
+          <img class="user-image img-circle" {% if not request.user.logo %}src="{% static 'all_logos/empty-image.jpeg' %}"{% else %}src="{{ request.user.logo.url }}"{% endif %} alt="user-logo" width="25px" height="25px">
+          <span>{{ request.user.surname }} {{ request.user.name }} {% if request.user.father %}{{ request.user.father }}{% endif %}</span>
         </a>
         <div class="dropdown-menu dropdown-menu-lg dropdown-menu-right">
-          <a href="#" class="dropdown-item">
-            <!-- Message Start -->
             <div class="media">
-              <img src="#" alt="User Avatar" class="img-size-50 mr-3 img-circle">
-              <div class="media-body">
-                <h3 class="dropdown-item-title">
-                  Brad Diesel
-                  <span class="float-right text-sm text-danger"><i class="fas fa-star"></i></span>
-                </h3>
-                <p class="text-sm">Call me whenever you can...</p>
-                <p class="text-sm text-muted"><i class="far fa-clock mr-1"></i> 4 Hours Ago</p>
+              <div class="user-header text-center" style="background-color: {% if request.user.role.role == 'director' %}#D8BE00;{% elif request.user.role.role == 'manager' %}#4B82FF;{% elif request.user.role.role == 'electrician' %}#CCCCFF;{% elif request.user.role.role == 'plumber' %}#9FE2BF;{% elif request.user.role.role == 'accountant' %}#FF7F50;{% elif request.user.role.role == 'owner' %}#2ECC71{% endif %}">
+                <img {% if not request.user.logo %}src="{% static 'all_logos/empty-image.jpeg' %}"{% else %}src="{{ request.user.logo.url }}"{% endif %} alt="{{ request.user.name }}" class="img-size-50 mr-3 img-circle" style="margin-top: 4%; height: 40px; width: 40px;" >
+                <p class="dropdown-item dropdown-item-title">{{ request.user.surname }} {{ request.user.name }} {% if request.user.father %}{{ request.user.father }}{% endif %} ({{ request.user.role.get_role_display }})</p>
               </div>
             </div>
-            <!-- Message End -->
-          </a>
-          <div class="dropdown-divider"></div>
-          <a href="#" class="dropdown-item">
-            <!-- Message Start -->
-            <div class="media">
-              <img src="#" alt="User Avatar" class="img-size-50 img-circle mr-3">
-              <div class="media-body">
-                <h3 class="dropdown-item-title">
-                  John Pierce
-                  <span class="float-right text-sm text-muted"><i class="fas fa-star"></i></span>
-                </h3>
-                <p class="text-sm">I got your message bro</p>
-                <p class="text-sm text-muted"><i class="far fa-clock mr-1"></i> 4 Hours Ago</p>
-              </div>
+            <div>
+                  <div style="display: inline; float: left; margin-left: 3px; margin-bottom: 3px; margin-top: 10px;">
+                      <a {% if request.user.role.role == 'owner' %}href="{% url 'owner-profile-detail' %}"{% else %}href="{% url 'administration-profile-update' %}"{% endif %} class="btn btn-default">Профіль</a>
+                  </div>
+                  <div style="display: inline; float: right; margin-right: 3px; margin-bottom: 3px; margin-top: 10px;">
+                      <button type="button" id="logout-button" href="{% url 'user-logout' %}" class="btn btn-default">Вийти</button>
+                  </div>
             </div>
-            <!-- Message End -->
-          </a>
-          <div class="dropdown-divider"></div>
-          <a href="#" class="dropdown-item">
-            <!-- Message Start -->
-            <div class="media">
-              <img src="#" alt="User Avatar" class="img-size-50 img-circle mr-3">
-              <div class="media-body">
-                <h3 class="dropdown-item-title">
-                  Nora Silvester
-                  <span class="float-right text-sm text-warning"><i class="fas fa-star"></i></span>
-                </h3>
-                <p class="text-sm">The subject goes here</p>
-                <p class="text-sm text-muted"><i class="far fa-clock mr-1"></i> 4 Hours Ago</p>
-              </div>
-            </div>
-            <!-- Message End -->
-          </a>
-          <div class="dropdown-divider"></div>
-          <a href="#" class="dropdown-item dropdown-footer">See All Messages</a>
         </div>
       </li>
-      <!-- Notifications Dropdown Menu -->
+    {% endif %}
     </ul>
   </nav>
   <!-- /.navbar -->
@@ -132,7 +101,7 @@
   <!-- Main Sidebar Container -->
   <aside class="main-sidebar sidebar-light-primary elevation-4">
     <!-- Brand Logo -->
-    <a href="#" class="brand-link" style="padding: 8px 2px 8px 2px;">
+    <a {% if request.user.role.role != 'owner' %}href="{% url 'statistics' %}"{% else %}href="{% url 'owner-receipts' %}"{% endif %} class="brand-link" style="padding: 8px 2px 8px 2px;">
       <img src="{% static 'all_logos/logo-my-house-24.svg' %}" alt="MyHouse24" width="240px" height="40px">
     </a>
 
@@ -141,33 +110,41 @@
 
       <!-- Sidebar Menu -->
       <nav class="mt-2">
+          {% if request.user.is_authenticated and request.user.role.role != 'owner' %}
         <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
           <!-- Add icons to the links using the .nav-icon class
                with font-awesome or any other icon font library -->
+            {% if request.user.role.statistic_access %}
           <li class="nav-item">
-            <a href="#" class="nav-link">
+            <a href="{% url 'statistics' %}" class="nav-link">
               <i class="nav-icon fas fa-line-chart"></i>
               <p>
                 Статистика
               </p>
             </a>
           </li>
+            {% endif %}
+            {% if request.user.role.checkout_access %}
           <li class="nav-item">
-            <a href="#" class="nav-link">
+            <a href="{% url 'notorieties' %}" class="nav-link">
               <i class="nav-icon fas fa-dollar"></i>
               <p>
                 Каса
               </p>
             </a>
           </li>
+            {% endif %}
+            {% if request.user.role.receipt_access %}
           <li class="nav-item">
-            <a href="#" class="nav-link">
+            <a href="{% url 'receipts' %}" class="nav-link">
               <i class="nav-icon fas fa-file"></i>
               <p>
                 Квитанції на оплату
               </p>
             </a>
           </li>
+            {% endif %}
+            {% if request.user.role.bill_access %}
           <li class="nav-item">
             <a href="{% url 'personal-accounts' %}" class="nav-link">
               <i class="nav-icon fas fa-credit-card"></i>
@@ -176,6 +153,8 @@
               </p>
             </a>
           </li>
+            {% endif %}
+            {% if request.user.role.flat_access %}
           <li class="nav-item">
             <a href="{% url 'flats' %}" class="nav-link">
               <i class="nav-icon fas fa-key"></i>
@@ -184,6 +163,8 @@
               </p>
             </a>
           </li>
+            {% endif %}
+            {% if request.user.role.owner_access %}
           <li class="nav-item">
             <a href="{% url 'owners' %}" class="nav-link">
               <i class="nav-icon fas fa-users"></i>
@@ -192,6 +173,8 @@
               </p>
             </a>
           </li>
+            {% endif %}
+            {% if request.user.role.building_access %}
           <li class="nav-item">
             <a href="{% url 'houses' %}" class="nav-link">
               <i class="nav-icon fas fa-building"></i>
@@ -200,22 +183,28 @@
               </p>
             </a>
           </li>
+            {% endif %}
+            {% if request.user.role.message_access %}
           <li class="nav-item">
-            <a href="#" class="nav-link">
+            <a href="{% url 'messages' %}" class="nav-link">
               <i class="nav-icon fas fa-envelope"></i>
               <p>
                 Повідомлення
               </p>
             </a>
           </li>
+            {% endif %}
+            {% if request.user.role.master_apply_access %}
           <li class="nav-item">
-            <a href="#" class="nav-link">
+            <a href="{% url 'applications' %}" class="nav-link">
               <i class="nav-icon fas fa-wrench"></i>
               <p>
                 Заявки виклика майстрів
               </p>
             </a>
           </li>
+            {% endif %}
+            {% if request.user.role.counter_access %}
           <li class="nav-item">
             <a href="{% url 'evidences-grouped' %}" class="nav-link">
               <i class="nav-icon fas fa-dashboard"></i>
@@ -224,6 +213,8 @@
               </p>
             </a>
           </li>
+            {% endif %}
+            {% if request.user.role.site_management_access %}
           <li class="nav-item">
             <a href="#" class="nav-link">
               <i class="nav-icon fas fa-desktop"></i>
@@ -259,6 +250,7 @@
               </li>
             </ul>
           </li>
+            {% endif %}
           <li class="nav-item">
             <a href="#" class="nav-link">
               <i class="nav-icon fas fa-cogs"></i>
@@ -268,30 +260,39 @@
               </p>
             </a>
             <ul class="nav nav-treeview">
+                {% if request.user.role.service_access %}
               <li class="nav-item">
                 <a href="{% url 'services' %}" class="nav-link">
                   <i class="fa fa-briefcase"></i>
                   <p>Послуги</p>
                 </a>
               </li>
+                {% endif %}
+                {% if request.user.role.tariff_access %}
               <li class="nav-item">
                 <a href="{% url 'tariffs' %}" class="nav-link">
                   <i class="fa fa-money-bill"></i>
                   <p>Тарифи</p>
                 </a>
               </li>
+                {% endif %}
+                {% if request.user.role.role_access %}
               <li class="nav-item">
                 <a href="{% url 'roles' %}" class="nav-link">
                   <i class="fa fa-user"></i>
                   <p>Ролі</p>
                 </a>
               </li>
+                {% endif %}
+                {% if request.user.role.user_access %}
               <li class="nav-item">
                 <a href="{% url 'users' %}" class="nav-link">
                   <i class="fa fa-user-plus"></i>
                   <p>Користувачі</p>
                 </a>
               </li>
+                {% endif %}
+                {% if request.user.role.payment_requisite_access %}
               <li class="nav-item">
                 <a href="{% url 'requisites' %}" class="nav-link">
                   <i class="fa fa-credit-card"></i>
@@ -304,9 +305,103 @@
                   <p>Статті платіжок</p>
                 </a>
               </li>
+                {% endif %}
             </ul>
           </li>
         </ul>
+          {% elif request.user.is_authenticated and request.user.role.role == 'owner' %}
+          <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
+            <li class="nav-item">
+                <a href="#" class="nav-link">
+                  <i class="nav-icon fas fa-line-chart"></i>
+                  <p>
+                    Зведення
+                    <i class="right fas fa-angle-left"></i>
+                  </p>
+                </a>
+                {% if flat_list %}
+                <ul class="nav nav-treeview">
+                    {% for flat in flat_list %}
+                      <li class="nav-item">
+                        <a href="{% url 'owner-summary' %}?flat={{ flat.pk }}" class="nav-link">
+                          <i class="fa fa-building"></i>
+                          <p>{{ flat.house.name }}, кв.{{ flat.number }}</p>
+                        </a>
+                      </li>
+                    {% endfor %}
+                </ul>
+                {% endif %}
+            </li>
+            <li class="nav-item">
+                <a href="#" class="nav-link">
+                  <i class="nav-icon fas fa-file"></i>
+                  <p>
+                    Квитанції
+                    <i class="right fas fa-angle-left"></i>
+                  </p>
+                </a>
+                <ul class="nav nav-treeview">
+                      <li class="nav-item">
+                        <a href="{% url 'owner-receipts' %}" class="nav-link">
+                          <i class="fa fa-file"></i>
+                          <p>Всі квитанції</p>
+                        </a>
+                      </li>
+                        {% for flat in flat_list %}
+                      <li class="nav nav-item">
+                          <a href="{% url 'owner-receipts' %}?flat={{ flat.pk }}" class="nav-link">
+                              <i class="fa fa-file-text"></i>
+                              <p>{{ flat.house.name }}, кв.{{ flat.number }}</p>
+                          </a>
+                      </li>
+                        {% endfor %}
+                </ul>
+            </li>
+            <li class="nav-item">
+                <a href="#" class="nav-link">
+                  <i class="nav-icon fas fa-money-bill"></i>
+                  <p>
+                    Тарифи
+                    <i class="right fas fa-angle-left"></i>
+                  </p>
+                </a>
+                <ul class="nav nav-treeview">
+                        {% for flat in flat_list %}
+                      <li class="nav nav-item">
+                          <a href="{% url 'owner-tariffs' %}?flat={{ flat.pk }}" class="nav-link">
+                              <i class="fa fa-money-bill"></i>
+                              <p>{{ flat.house.name }}, кв.{{ flat.number }}</p>
+                          </a>
+                      </li>
+                        {% endfor %}
+                </ul>
+            </li>
+            <li class="nav nav-item">
+                <a href="{% url 'owner-messages' %}" class="nav-link">
+                    <i class="nav-icon fas fa-envelope"></i>
+                    <p>
+                        Повідомлення
+                    </p>
+                </a>
+            </li>
+            <li class="nav nav-item">
+                <a href="{% url 'owner-applications' %}" class="nav-link">
+                    <i class="nav-icon fas fa-wrench"></i>
+                    <p>
+                        Виклик майстра
+                    </p>
+                </a>
+            </li>
+            <li class="nav nav-item">
+                <a href="{% url 'owner-profile-detail' %}" class="nav-link">
+                    <i class="nav-icon fas fa-user-circle"></i>
+                    <p>
+                        Профіль
+                    </p>
+                </a>
+            </li>
+          </ul>
+          {% endif %}
       </nav>
       <!-- /.sidebar-menu -->
     </div>
@@ -375,14 +470,15 @@
 <!-- Bootstrap 4 -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-Fy6S3B9q64WdZWQUiU+q4/2Lc9npb8tCaSX9FK7E8HnRr0Jz8D6OP9dO5Vg3Q9ct" crossorigin="anonymous"></script>
 <!-- ChartJS -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js" integrity="sha512-ElRFoEQdI5Ht6kZvyzXhYG9NqjtkmlkfYk0wr6wHxU9JEHakS7UJZNeml5ALk+8IKlU6jDgMabC3vkumRokgJA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-<!-- Sparkline -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<!-- MomentJS -->
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.9.0/moment.min.js"></script>
+<!-- Include Bootstrap DateTimePicker CDN -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.17.37/js/bootstrap-datetimepicker.min.js"></script>
 <!-- JQVMap -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jqvmap/1.5.1/jquery.vmap.min.js"></script>
 <!-- Ionicons -->
-{#<script src="https://cdnjs.cloudflare.com/ajax/libs/ionicons/6.0.3/ionicons.min.js" integrity="sha512-8O7VIjJxO2P/Vfm34bYnEbPwocNkwUQdzJCYooCDWP9MT4GpPw5Ktmk9NxVyWfrzDlXnbCsZzSUR81Etc6gv0A==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>#}
 <script type="module" src="https://cdnjs.cloudflare.com/ajax/libs/ionicons/6.0.3/ionicons/ionicons.esm.js"></script>
-<!-- jQuery Knob Chart -->
 <!-- daterangepicker -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-daterangepicker/3.0.5/daterangepicker.min.js" integrity="sha512-mh+AjlD3nxImTUGisMpHXW03gE6F4WdQyvuFRkjecwuWLwD2yCijw4tKA3NsEFpA1C3neiKhGXPSIGSfCYPMlQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <!-- Tempusdominus Bootstrap 4 -->
@@ -401,7 +497,32 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.21/js/jquery.dataTables.min.js" integrity="sha512-BkpSL20WETFylMrcirBahHfSnY++H2O1W+UnEEO4yNIl+jI2+zowyoGJpbtk6bx97fBXf++WJHSSK2MV4ghPcg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <!-- Datepicker -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/js/bootstrap-datepicker.min.js" integrity="sha512-T/tUfKSV1bihCnd+MxKD0Hm1uBBroVYBOYSk1knyvQ9VyZJpc/ALb4P0r6ubwVPSGB2GvjeoMAJJImBG12TiaQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<!-- Rich Text Editor -->
+<script src="https://cdn.ckeditor.com/ckeditor5/35.4.0/classic/ckeditor.js"></script>
+
 <script src="{% static 'scripts.js' %}"></script>
+<script>
+    $('#logout-button').on('click', function() {
+        event.preventDefault();
+        Swal.fire({
+            title: 'Вийти',
+            text: "Ви впевнені, що хочете вийти?",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#A9A9A9',
+            cancelButtonText: 'Скасувати',
+            confirmButtonText: 'Вийти'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    fetch('/configuration/cabinet/logout/', {
+                        method: 'GET'
+                    })
+                    window.location.href = '/configuration/cabinet/login/'
+                }
+            })
+    })
+</script>
 {% block scripts %}
 {% endblock scripts %}
 </body>

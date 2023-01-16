@@ -1,6 +1,10 @@
 {% extends 'main_page.html' %}
 {% load static %}
 
+{% block title %}
+    <title>Особовий рахунок</title>
+{% endblock %}
+
 {% block content_header %}
     <h1>Особовий рахунок: {{ object.number }}</h1>
 {% endblock %}
@@ -24,8 +28,8 @@
                 </div>
                 <div class="col-sm-12 col-lg-6 text-right">
                     <div class="btn-group">
-                        <button class="btn btn-default" type="button" {% if not object.flat %}disabled{% endif %} style="margin-right: 10px;"><i class="fa fa-dollar"></i> Прийняти платіж</button>
-                        <button class="btn btn-default" type="button" {% if not object.flat %}disabled{% endif %} style="margin-right: 10px;"><i class="fa fa-clone"></i> Оформити квитанцію</button>
+                        <a class="btn btn-default {% if not object.flat or object.status == 'inactive' %}disabled{% endif %}" {% if object.flat %}href="{% url 'notoriety-create' %}?type=income&account={{ object.pk }}"{% endif %} style="margin-right: 10px;"><i class="fa fa-dollar"></i> Прийняти платіж</a>
+                        <a class="btn btn-default {% if not object.flat or object.status == 'inactive' %}disabled{% endif %}" {% if object.flat %}href="{% url 'receipt-create' %}?flat_id={{ object.flat.pk }}"{% endif %} style="margin-right: 10px;"><i class="fa fa-clone"></i> Оформити квитанцію</a>
                         <a class="btn btn-info" href="{% url 'personal-account-update' account_pk=object.pk %}">Редагувати особовий рахунок</a>
                     </div>
                 </div>
@@ -55,6 +59,10 @@
                         <tr>
                             <th>Власник</th>
                             <td>{% if object.flat.owner %}<a href="{% url 'user-detail' pk=object.flat.owner.pk %}">{{ object.flat.owner.name }} {{ object.flat.owner.surname }}</a>{% else %}не указано{% endif %}</td>
+                        </tr>
+                        <tr>
+                            <th>Залишок</th>
+                            <td {% if object.subtraction > 0 %}style="color: #109302;" {% elif object.subtraction < 0 %}style="color: #a20000;"{% endif %}>{% if object.subtraction %}{{ object.subtraction|floatformat:2 }} {% else %}0.00{% endif %} грн</td>
                         </tr>
                     </tbody>
                 </table>

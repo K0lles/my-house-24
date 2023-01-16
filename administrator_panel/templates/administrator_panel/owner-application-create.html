@@ -1,0 +1,117 @@
+{% extends 'main_page.html' %}
+{% load static %}
+
+{% block title %}
+    <title>Заявка</title>
+{% endblock %}
+
+{% block content_header %}
+    <h1>Нова заявка</h1>
+{% endblock %}
+
+{% block main_content %}
+    <div class="card">
+        <div class="card-body">
+            <form id="application-form" action="{% url 'owner-application-create' %}" method="post">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label class="form-label" for="{{ form.master_type.auto_id }}">Тип майстра</label>
+                    <select class="form-select" id="{{ form.master_type.auto_id }}" name="{{ form.master_type.html_name }}" onchange="alwaysIsValid(this)">
+                        {% for value, text in form.master_type.field.choices %}
+                            <option value="{{ value }}">{{ text }}</option>
+                        {% endfor %}
+                    </select>
+                    <p id="{{ form.master_type.auto_id }}-errors" style="color: red;"></p>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="{{ form.flat.auto_id }}">Квартира</label>
+                    <select class="form-select" id="{{ form.flat.auto_id }}" name="{{ form.flat.html_name }}" onchange="fieldIsValid(this)">
+                        <option>Вибрати...</option>
+                        {% for flat in flat_list %}
+                            <option value="{{ flat.pk }}">{{ flat.number }}</option>
+                        {% endfor %}
+                    </select>
+                    <p id="{{ form.flat.auto_id }}-errors" style="color: red;"></p>
+                </div>
+                <div class="row">
+                    <div class="col-sm-6">
+                        <div class="form-group">
+                            <label for="{{ form.desired_date.auto_id }}" class="form-label">Дата робіт</label>
+                            <div class="input-group date" id="datepicker">
+                                <span class="input-group-append">
+                                    <button type="button" class="btn btn-default" >
+                                        <i class="fa fa-calendar"></i>
+                                    </button>
+                                </span>
+                                <input type="text" class="form-control" id="{{ form.desired_date.auto_id }}" value="{{ form.desired_date.value|date:'d.m.Y' }}" name="{{ form.desired_date.html_name }}" onchange="fieldIsValid(this)">
+                            </div>
+                            <p id="{{ form.desired_date.auto_id }}-errors" style="color: red;"></p>
+                        </div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="form-group">
+                            <label for="{{ form.desired_time.auto_id }}" class="form-label">Зручний час</label>
+                            <div class="input-group date" id="timepicker">
+                                <span class="input-group-append">
+                                    <button type="button" class="btn btn-default" >
+                                        <i class="fa fa-clock"></i>
+                                    </button>
+                                </span>
+                                <input type="text" class="form-control" id="{{ form.desired_time.auto_id }}" value="{{ form.desired_time.value|date:'H:i' }}" name="{{ form.desired_time.html_name }}" onchange="fieldIsValid(this)">
+                            </div>
+                            <p id="{{ form.desired_time.auto_id }}-errors" style="color: red;"></p>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="{{ form.description.auto_id }}">Опис</label>
+                    <textarea id="{{ form.description.auto_id }}" name="{{ form.description.html_name }}" class="form-control" style="height: 140px;"></textarea>
+                </div>
+                <div class="row">
+                    <div class="col-sm-12 text-right">
+                        <button type="submit" class="btn btn-success" onclick="formIsValid()">Створити</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    $('#id_desired_time').datetimepicker({
+            format: 'HH:mm'
+        });
+
+    $('#id_desired_date').datepicker({
+        format: 'dd.mm.yyyy'
+    });
+
+    function formIsValid() {
+        event.preventDefault();
+        let isValid = true;
+
+        alwaysIsValid(document.getElementById('id_master_type'));
+
+        $(`#application-form`).find(`select`).each(function () {
+            if ($(this).attr('id') !== 'id_master_type' && !fieldIsValid(this)) {
+                isValid = false;
+            }
+        })
+
+        $('input[type="text"]').each(function () {
+            if ($(this).attr('id') !== 'id_master_type' && !fieldIsValid(this)) isValid = false;
+        })
+
+        if (!fieldIsValid(document.getElementById('id_description'))) isValid = false;
+
+        if (isValid) {
+            $(`#application-form`).submit();
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+</script>
+{% endblock %}

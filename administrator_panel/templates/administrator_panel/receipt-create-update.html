@@ -1,0 +1,901 @@
+{% extends 'main_page.html' %}
+{% load static %}
+
+{% block title %}
+    <title>Квитанція</title>
+{% endblock %}
+
+{% block content_header %}
+    <h1>{% if not form.instance.pk %}Нова квитанція{% else %}Редагування квитанції{% endif %}</h1>
+{% endblock %}
+
+{% block main_content %}
+    {% if form.instance.pk %}
+        <form id="delete-receipt-form" method="post" action="{% url 'receipt-delete' %}">
+        {% csrf_token %}
+        <input type="hidden" id="id_receipt_id" name="receipt_id" value="{{ form.instance.pk }}">
+        </form>
+    {% endif %}
+    <form id="receipt-form" {% if not form.instance.pk %}action="{% url 'receipt-create' %}"{% else %}action="{% url 'receipt-update' receipt_pk=form.instance.pk %}"{% endif %} method="post">
+    {% csrf_token %}
+        <div class="row">
+            <div class="col-sm-12 col-md-7 col-lg-6" style="display: flex; justify-content: flex-start;">
+                <div class="form-group">
+                    <div class="input-group">
+                        <div class="input-group-append" style="background-color: #fff; border: 1px solid #ccc; padding: 6px 12px;">
+                            №
+                        </div>
+                        <input type="text" class="form-control" id="{{ form.number.auto_id }}" name="{{ form.number.html_name }}" {% if form.number.value and not form.instance.pk %}value="{{ form.number.value }}"{% elif form.instance.pk %}value="{{ form.instance.number }}"{% endif %} onchange="fieldIsValid(this)" {% if form.number.errors %}style="border: 1px solid red;" {% endif %}>
+                    </div>
+                    <p id="{{ form.number.auto_id }}-errors" style="color: red;">{{ form.number.errors }}</p>
+                </div>
+                <span style="margin: 8px 15px 0 15px;">
+                    від
+                </span>
+                <div class="form-group">
+                    <div class="input-group date" id="datepicker-first">
+                        <span class="input-group-append">
+                            <button type="button" class="btn btn-default" >
+                                <i class="fa fa-calendar"></i>
+                            </button>
+                        </span>
+                        <input type="text" class="form-control" id="{{ form.created_at.auto_id }}" name="{{ form.created_at.html_name }}" {% if not base_receipt and not form.instance.pk %}value="{{ form.created_at.value|date:'d.m.Y' }}"{% elif base_receipt %}value="{{ base_receipt.created_at|date:'d.m.Y' }}"{% else %}value="{{ form.instance.created_at|date:'d.m.Y' }}"{% endif %} onchange="fieldIsValid(this)" {% if form.created_at.errors %}style="border: 1px solid red;" {% endif %}>
+                    </div>
+                    <p id="{{ form.created_at.auto_id }}-errors" style="color: red;">{{ form.created_at.errors }}</p>
+                </div>
+            </div>
+            <div class="col-sm-12 col-md-7 col-lg-6 text-right">
+                <div class="btn-group">
+                    <button type="button" class="btn btn-success dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        Виберіть дію
+                    </button>
+                    <div class="dropdown-menu dropdown-menu-right">
+                        {% if form.instance.pk %}
+                            <a class="dropdown-item" href="{% url 'receipt-create' %}?base_receipt={{ form.instance.pk }}">Копіювати</a>
+                            <button type="button" id="delete-receipt-button" class="dropdown-item">Видалити</button>
+                        {% endif %}
+                        <button class="dropdown-item set-by-default" type="button">Установити всі послуги згідно тарифу</button>
+                        <button class="dropdown-item add-evidences-counters" type="button" onclick="addEvidenceToServices()">Добавити показання лічильників</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="card" style="margin-bottom: 40px;">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-sm-12 col-lg-6">
+                        <div class="form-group">
+                            <label class="form-label" for="id_house">Будинок</label>
+                            <select class="form-select" id="id_house" onchange="changedHouse(this)">
+                                <option value="none">Вибрати...</option>
+                                {% for house in houses %}
+                                    <option value="{{ house.pk }}" {% if base_receipt and base_receipt.account.flat.house.pk == house.pk %}selected{% endif %} {% if form.instance.pk and form.instance.account.flat.house.pk == house.pk %}selected{% endif %}{% if base_flat and base_flat.house.pk == house.pk %}selected{% endif %}>{{ house.name }}</option>
+                                {% endfor %}
+                            </select>
+                            <p id="id_house-errors" style="color: red;"></p>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="id_section">Секція</label>
+                            <select class="form-select" id="id_section" onchange="changedSection(this)">
+                                <option value="none">Вибрати...</option>
+                                {% if form.instance.pk %}
+                                    {% for section in sections_in_houses %}
+                                        {% if section.house.pk == form.instance.account.flat.house.pk %}
+                                            <option value="{{ section.pk }}" {% if section.pk == form.instance.account.flat.section.pk %}selected{% endif %}>{{ section.name }}</option>
+                                        {% endif %}
+                                    {% endfor %}
+                                {% endif %}
+                                {% if base_receipt %}
+                                    {% for section in sections_in_houses %}
+                                        {% if section.house.pk == base_receipt.account.flat.house.pk %}
+                                            <option value="{{ section.pk }}" {% if base_receipt and base_receipt.account.flat.section.pk == section.pk %}selected{% endif %} {% if section.pk == form.instance.account.flat.section.pk %}selected{% endif %}>{{ section.name }}</option>
+                                        {% endif %}
+                                    {% endfor %}
+                                {% endif %}
+                                {% if base_flat %}
+                                    {% for section in sections_in_houses %}
+                                        {% if section.house.pk == base_flat.house.pk %}
+                                            <option value="{{ section.pk }}" {% if base_flat.section.pk == section.pk %}selected{% endif %}>{{ section.name }}</option>
+                                        {% endif %}
+                                    {% endfor %}
+                                {% endif %}
+                            </select>
+                            <p id="id_section-errors" style="color: red;"></p>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="id_flat">Квартира</label>
+                            <select class="form-select" id="id_flat" onchange="changedFlat(this)">
+                                <option value="none">Вибрати...</option>
+                                {% if form.instance.pk %}
+                                    {% for flat in flats %}
+                                        {% if flat.section.pk == form.instance.account.flat.section.pk %}
+                                            <option value="{{ flat.pk }}" {% if flat.pk == form.instance.account.flat.pk %}selected{% endif %}>{{ flat.number }}</option>
+                                        {% endif %}
+                                    {% endfor %}
+                                {% elif base_receipt %}
+                                    {% for flat in flats %}
+                                        {% if flat.section.pk == base_receipt.account.flat.section.pk %}
+                                            <option value="{{ flat.pk }}" {% if flat.pk == base_receipt.account.flat.pk %}selected{% endif %}>{{ flat.number }}</option>
+                                        {% endif %}
+                                    {% endfor %}
+                                {% elif base_flat %}
+                                    {% for flat in flats %}
+                                        {% if flat.section.pk == base_flat.section.pk %}
+                                            <option value="{{ flat.pk }}" {% if flat.pk == base_flat.pk %}selected{% endif %}>{{ flat.number }}</option>
+                                        {% endif %}
+                                    {% endfor %}
+                                {% else %}
+                                    {% for flat in flats %}
+                                        <option value="{{ flat.pk }}">{{ flat.number }}</option>
+                                    {% endfor %}
+                                {% endif %}
+                            </select>
+                            <p id="id_flat-errors" style="color: red;"></p>
+                        </div>
+                    </div>
+                    <div class="col-sm-12 col-lg-6">
+                        <div class="form-group">
+                            <input class="form-check-inline" type="checkbox" id="{{ form.is_completed.auto_id }}" name="{{ form.is_completed.html_name }}" {% if not form.instance.pk and not base_receipt %}checked{% endif %}{% if form.instance.pk and form.instance.is_completed %}checked{% endif %}{% if base_receipt and base_receipt.is_completed %}checked{% endif %}>
+                            <label class="form-label" for="{{ form.is_completed.auto_id }}">Проведена</label>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="{{ form.status.auto_id }}">Статус</label>
+                            <select class="form-select" id="{{ form.status.auto_id }}" name="{{ form.status.html_name }}" onchange="fieldIsValid(this)">
+                                <option>Вибрати...</option>
+                                {% for value, text in form.status.field.choices %}
+                                    <option value="{{ value }}" {% if form.instance.pk and form.instance.status == value %}selected{% endif %}{% if base_receipt and base_receipt.status == value %}selected{% endif %}>{{ text }}</option>
+                                {% endfor %}
+                            </select>
+                            <p id="{{ form.status.auto_id }}-errors" style="color: red;"></p>
+                        </div>
+                        <div class="form-group">
+                            <label for="{{ form.tariff.auto_id }}" class="form-label">Тариф{% if form.instance.pk %}:{% endif %}</label>
+                            {% if form.instance.pk %}
+                                <input type="hidden" id="{{ form.tariff.auto_id }}" name="{{ form.tariff.html_name }}" value="{{ form.instance.tariff.pk }}">
+                                <span>{% if form.instance.tariff %}<a href="{% url 'tariff-detail' pk=form.instance.tariff.pk %}">{{ form.instance.tariff.name }}</a>{% else %}не указано{% endif %}</span>
+                            {% else %}
+                            <select class="form-select" id="{{ form.tariff.auto_id }}" name="{{ form.tariff.html_name }}" onchange="alwaysIsValid(this)">
+                                <option value="none">Вибрати...</option>
+                                {% for tariff in tariffs %}
+                                    <option value="{{ tariff.pk }}" {% if base_receipt and base_receipt.tariff.pk == tariff.pk %}selected{% elif base_flat and base_flat.tariff.pk == tariff.pk %}selected{% endif %}>{{ tariff.name }}</option>
+                                {% endfor %}
+                            </select>
+                            {% endif %}
+                        </div>
+                        <div class="row">
+                            <div class="col-sm-6">
+                                <div class="form-group">
+                                    <label for="{{ form.date_from.auto_id }}" class="form-label">Період з</label>
+                                    <div class="input-group date" id="datepicker-second">
+                                        <span class="input-group-append">
+                                            <button type="button" class="btn btn-default" >
+                                                <i class="fa fa-calendar"></i>
+                                            </button>
+                                        </span>
+                                        <input type="text" class="form-control" id="{{ form.date_from.auto_id }}" name="{{ form.date_from.html_name }}" {% if not base_receipt and not form.instance.pk %}value="{{ form.date_from.value|date:'d.m.Y' }}"{% elif base_receipt %}value="{{ base_receipt.date_from|date:'d.m.Y' }}"{% else %}value="{{ form.instance.date_from|date:'d.m.Y' }}"{% endif %} onchange="fieldIsValid(this)" {% if form.date_from.errors %}style="border: 1px solid red;" {% endif %}>
+                                    </div>
+                                    <p id="{{ form.date_from.auto_id }}-errors" style="color: red;"></p>
+                                </div>
+                            </div>
+                            <div class="col-sm-6">
+                                <div class="form-group">
+                                    <label for="{{ form.date_to.auto_id }}" class="form-label">Період по</label>
+                                    <div class="input-group date" id="datepicker-third">
+                                        <span class="input-group-append">
+                                            <button type="button" class="btn btn-default" >
+                                                <i class="fa fa-calendar"></i>
+                                            </button>
+                                        </span>
+                                        <input type="text" class="form-control" id="{{ form.date_to.auto_id }}" name="{{ form.date_to.html_name }}" {% if not base_receipt and not form.instance.pk %}value="{{ form.date_to.value|date:'d.m.Y' }}"{% elif base_receipt %}value="{{ base_receipt.date_to|date:'d.m.Y' }}"{% else %}value="{{ form.instance.date_to|date:'d.m.Y' }}"{% endif %} onchange="fieldIsValid(this)" {% if form.date_to.errors %}style="border: 1px solid red;" {% endif %}>
+                                    </div>
+                                    <p id="{{ form.date_to.auto_id }}-errors" style="color: red;"></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-sm-12 col-lg-6">
+                        <div class="form-group">
+                            <label class="form-label" for="{{ form.account.auto_id }}">Особовий рахунок</label>
+                            <input type="text" class="form-control" id="{{ form.account.auto_id }}" name="{{ form.account.html_name }}" {% if not form.instance.pk and form.account.value %}value="{{ form.account.value }}"{% elif base_receipt %}value="{{ base_receipt.account.number }}"{% elif base_flat %}value="{{ base_flat.personalaccount.number }}"{% else %}value="{{ form.instance.account.number }}"{% endif %} onchange="searchFlatByPersonal(this)">
+                            <p id="{{ form.account.auto_id }}-errors" style="color: red;"></p>
+                        </div>
+                        <p><b>Власник: </b><span id="owner">{% if form.instance.pk and form.instance.account.flat.owner %}<a href="{% url 'owner-detail' owner_pk=form.instance.account.flat.owner.pk %}">{{ form.instance.account.flat.owner.name }} {{ form.instance.account.flat.owner.surname }}</a>{% elif base_receipt and base_receipt.account.flat.owner.pk %}<a href="{% url 'owner-detail' owner_pk=base_receipt.account.flat.owner.pk %}">{{ base_receipt.account.flat.owner.name }} {{ base_receipt.account.flat.owner.surname }}</a>{% elif base_flat and base_flat.owner.pk %}<a href="{% url 'owner-detail' owner_pk=base_flat.owner.pk %}">{{ base_flat.owner.name }} {{ base_flat.owner.surname }}</a>{% else %}не указано{% endif %}</span></p>
+                        <p><b>Телефон: </b><span id="owner-phone">{% if form.instance.pk and form.instance.account.flat.owner %}<a href="tel:{{ form.instance.account.flat.owner.phone }}">{{ form.instance.account.flat.owner.phone }}</a>{% elif base_receipt and base_receipt.account.flat.owner.pk %}<a href="tel:{{ base_receipt.account.flat.owner.phone }}">{{ base_receipt.account.flat.owner.phone }}</a>{% elif base_flat and base_flat.owner.pk %}<a href="tel:{{ base_flat.owner.phone }}">{{ base_flat.owner.phone }}</a>{% else %}не указано{% endif %}</span></p>
+                    </div>
+                </div>
+                <div class="col-sm-12">
+                    {% if not base_receipt %}
+                    {{ receipt_service_formset.management_form }}
+                    {% else %}
+                    <input type="hidden" name="form-TOTAL_FORMS" value="{{ base_receipt_services.count }}" id="id_form-TOTAL_FORMS">
+                    <input type="hidden" name="form-INITIAL_FORMS" value="0" id="id_form-INITIAL_FORMS">
+                    <input type="hidden" name="form-MIN_NUM_FORMS" value="0" id="id_form-MIN_NUM_FORMS">
+                    <input type="hidden" name="form-MAX_NUM_FORMS" value="1000" id="id_form-MAX_NUM_FORMS">
+                    {% endif %}
+                    <div class="row">
+                        <table class="table table-responsive table-borderless">
+                            <thead>
+                                <tr>
+                                    <th>Послуга</th>
+                                    <th>Розхід</th>
+                                    <th>Од. вим.</th>
+                                    <th>Ціна за од., грн</th>
+                                    <th>Вартість, грн</th>
+                                    <th></th>
+                                </tr>
+                                <tr id="empty-form" style="display: none;">
+                                    <td>
+                                        <select class="form-select" id="{{ receipt_service_formset.empty_form.service.auto_id }}" name="{{ receipt_service_formset.empty_form.service.html_name }}" onchange="changedService(this)">
+                                            <option value="none">Вибрати...</option>
+                                            {% for service in services %}
+                                                <option value="{{ service.pk }}">{{ service.name }}</option>
+                                            {% endfor %}
+                                        </select>
+                                        <p id="{{ receipt_service_formset.empty_form.service.auto_id }}-errors" style="color: red;"></p>
+                                    </td>
+                                    <td>
+                                        <input class="form-control" type="number" step="0.01" id="{{ receipt_service_formset.empty_form.amount.auto_id }}" name="{{ receipt_service_formset.empty_form.amount.html_name }}" onchange="changedAmount(this)">
+                                        <p id="{{ receipt_service_formset.empty_form.amount.auto_id }}-errors" style="color: red;"></p>
+                                    </td>
+                                    <td>
+                                        <select disabled class="form-select" id="{{ receipt_service_formset.empty_form.service.auto_id }}-measurement-unit">
+                                            <option>Вибрати...</option>
+                                            {% for service in services %}
+                                                <option value="{{ service.pk }}">{{ service.measurement_unit.name }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <input class="form-control" type="number" step="0.01" id="{{ receipt_service_formset.empty_form.price.auto_id }}" name="{{ receipt_service_formset.empty_form.price.html_name }}" onchange="changedPrice(this)">
+                                        <p id="{{ receipt_service_formset.empty_form.price.auto_id }}-errors" style="color: red;"></p>
+                                    </td>
+                                    <td>
+                                        <input class="form-control" type="number" step="0.01" id="{{ receipt_service_formset.empty_form.total_price.auto_id }}" name="{{ receipt_service_formset.empty_form.total_price.html_name }}">
+                                        <p id="{{ receipt_service_formset.empty_form.total_price.auto_id }}-errors" style="color: red;"></p>
+                                    </td>
+                                    <td>
+                                        <button type="button" class="btn btn-default delete-service">
+                                            <i class="fa fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            </thead>
+                            <tbody id="services-list">
+                                {% for form in receipt_service_formset.forms %}
+                                {{ form.id }}
+                                <tr>
+                                    <td>
+                                        <select class="form-select" id="{{ form.service.auto_id }}" name="{{ form.service.html_name }}" onchange="changedService(this)">
+                                            <option value="none">Вибрати...</option>
+                                            {% for service in services %}
+                                                <option value="{{ service.pk }}" {% if form.instance.service.pk == service.pk %}selected{% endif %}>{{ service.name }}</option>
+                                            {% endfor %}
+                                        </select>
+                                        <p id="{{ form.service.auto_id }}-errors" style="color: red;"></p>
+                                    </td>
+                                    <td>
+                                        <input class="form-control" type="number" step="0.01" id="{{ form.amount.auto_id }}" name="{{ form.amount.html_name }}" value="{{ form.instance.amount }}" onchange="changedAmount(this)">
+                                        <p id="{{ receipt_service_formset.empty_form.amount.auto_id }}-errors" style="color: red;"></p>
+                                    </td>
+                                    <td>
+                                        <select disabled class="form-select" id="{{ form.service.auto_id }}-measurement-unit">
+                                            <option>Вибрати...</option>
+                                            {% for service in services %}
+                                                <option value="{{ service.pk }}" {% if form.instance.service.pk == service.pk %}selected{% endif %}>{{ service.measurement_unit.name }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <input class="form-control" type="number" step="0.01" id="{{ form.price.auto_id }}" value="{{ form.instance.price }}" name="{{ form.price.html_name }}" onchange="changedPrice(this)">
+                                        <p id="{{ form.price.auto_id }}-errors" style="color: red;"></p>
+                                    </td>
+                                    <td>
+                                        <input class="form-control" type="number" step="0.01" id="{{ form.total_price.auto_id }}" value="{{ form.instance.total_price }}" name="{{ form.total_price.html_name }}">
+                                        <p id="{{ form.total_price.auto_id }}-errors" style="color: red;"></p>
+                                    </td>
+                                    <td>
+                                        <button id="{{ form.instance.pk }}" type="button" class="btn btn-default delete-existing">
+                                            <i class="fa fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                                {% if base_receipt %}
+                                    {% for receipt_service in base_receipt_services %}
+                                        <tr>
+                                            <td>
+                                                <select class="form-select" id="id_form-{{ forloop.counter0 }}-service" name="form-{{ forloop.counter0 }}-service" onchange="changedService(this)">
+                                                    <option value="none">Вибрати...</option>
+                                                    {% for service in services %}
+                                                        <option value="{{ service.pk }}" {% if receipt_service.service.pk == service.pk %}selected{% endif %}>{{ service.name }}</option>
+                                                    {% endfor %}
+                                                </select>
+                                                <p id="id_form-{{ forloop.counter0 }}-service-errors" style="color: red;"></p>
+                                            </td>
+                                            <td>
+                                                <input class="form-control" type="number" step="0.01" id="id_form-{{ forloop.counter0 }}-amount" name="form-{{ forloop.counter0 }}-amount" onchange="changedAmount(this)">
+                                                <p id="id_form-{{ forloop.counter0 }}-amount-errors" style="color: red;"></p>
+                                            </td>
+                                            <td>
+                                                <select disabled class="form-select" id="id_form-{{ forloop.counter0 }}-service-measurement-unit">
+                                                    <option>Вибрати...</option>
+                                                    {% for service in services %}
+                                                        <option value="{{ service.pk }}" {% if receipt_service.service.pk == service.pk %}selected{% endif %}>{{ service.measurement_unit.name }}</option>
+                                                    {% endfor %}
+                                                </select>
+                                            </td>
+                                            <td>
+                                                <input class="form-control" type="number" step="0.01" id="id_form-{{ forloop.counter0 }}-price" value="{{ receipt_service.price }}" name="form-{{ forloop.counter0 }}-price" onchange="changedPrice(this)">
+                                                <p id="id_form-{{ forloop.counter0 }}-price-errors" style="color: red;"></p>
+                                            </td>
+                                            <td>
+                                                <input class="form-control" type="number" step="0.01" id="id_form-{{ forloop.counter0 }}-total_price" name="form-{{ forloop.counter0 }}-total_price">
+                                                <p id="id_form-{{ forloop.counter0 }}-total_price-errors" style="color: red;"></p>
+                                            </td>
+                                            <td>
+                                                <button type="button" class="btn btn-default delete-service">
+                                                    <i class="fa fa-trash"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                {% endif %}
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <td colspan="4">
+                                        <button type="button" class="btn btn-default add-service" >Додати послугу</button>
+                                        <button type="button" class="btn btn-default set-by-default">Установити всі послуги згідно тарифу</button>
+                                        <button type="button" class="btn btn-default add-evidences-counters" onclick="addEvidenceToServices()">Добавити показання лічильників</button>
+                                    </td>
+                                    <td>
+                                        <div class="h5">
+                                            Всього:
+                                            <b>
+                                                <span id="overall-summ">0.00 </span>
+                                            </b>
+                                            грн
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-sm-12 text-right">
+                        <button type="reset" class="btn btn-default">Скасувати</button>
+                        <button type="submit" class="btn btn-success" onclick="formIsValid()">{% if not form.instance.pk %}Створити{% else %}Зберегти{% endif %}</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-sm-12">
+                        <h5 style="font-size: 18px; color: grey">Показання лічильників</h5>
+                    </div>
+                </div>
+                <table id="evidences-table" class="table table-borderless">
+                    <thead>
+                        <tr>
+                            <th>№</th>
+                            <th>Статус</th>
+                            <th>Дата</th>
+                            <th>Місяць</th>
+                            <th>Будинок</th>
+                            <th>Секція</th>
+                            <th>№ Квартири</th>
+                            <th>Лічильник</th>
+                            <th>Показання</th>
+                            <th>Од. вим.</th>
+                        </tr>
+                    </thead>
+                    <tbody id="body-evidences">
+                        <tr>
+                            <td colspan="10" style="text-align: center;">Не знайдено</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </form>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    $(document).on('load', evidencesByAccount());
+    $('#datepicker-first').datepicker({
+        format: 'dd.mm.yyyy'
+    });
+    $('#datepicker-second').datepicker({
+        format: 'dd.mm.yyyy'
+    });
+    $('#datepicker-third').datepicker({
+        format: 'dd.mm.yyyy'
+    });
+
+    let TOTAL_FORMS = $(`#id_form-TOTAL_FORMS`);
+
+    $('.add-service').on('click', function () {
+        let total_forms = parseInt(TOTAL_FORMS.attr('value'));
+        let empty_form = $('#empty-form').clone();
+
+        empty_form.find('#id_form-__prefix__-service').attr('name', `form-${total_forms}-service`);
+        empty_form.find('#id_form-__prefix__-service').attr('id', `id_form-${total_forms}-service`);
+
+        empty_form.find('#id_form-__prefix__-service-errors').attr('id', `id_form-${total_forms}-service-errors`);
+
+        empty_form.find('#id_form-__prefix__-amount').attr('name', `form-${total_forms}-amount`);
+        empty_form.find('#id_form-__prefix__-amount').attr('id', `id_form-${total_forms}-amount`);
+
+        empty_form.find('#id_form-__prefix__-amount-errors').attr('id', `id_form-${total_forms}-amount-errors`);
+
+        empty_form.find('#id_form-__prefix__-service-measurement-unit').attr('id', `id_form-${total_forms}-service-measurement-unit`);
+
+        empty_form.find('#id_form-__prefix__-price').attr('name', `form-${total_forms}-price`);
+        empty_form.find('#id_form-__prefix__-price').attr('id', `id_form-${total_forms}-price`);
+
+        empty_form.find('#id_form-__prefix__-price-errors').attr('id', `id_form-${total_forms}-price-errors`);
+
+        empty_form.find('#id_form-__prefix__-total_price').attr('name', `form-${total_forms}-total_price`);
+        empty_form.find('#id_form-__prefix__-total_price').attr('id', `id_form-${total_forms}-total_price`);
+
+        empty_form.find('#id_form-__prefix__-total_price-errors').attr('id', `id_form-${total_forms}-total_price-errors`);
+
+        empty_form.attr('class', 'service');
+
+        empty_form.css('display', '');
+
+        $('#id_form-TOTAL_FORMS').attr('value', total_forms + 1);
+        $('#services-list').append(empty_form);
+    })
+
+    function addEvidenceToServices() {
+        $('tbody#services-list > tr').each(function() {
+            $(this).find('td > select[id$="service"]').each(function() {
+                let id_number = (($(this).attr('id')).replace('id_form-', '')).replace('-service', '');
+                searchInTableEvidenceAndAddToServices($(this).find(':selected').val(), id_number);
+            })
+        })
+    }
+
+    function searchInTableEvidenceAndAddToServices(id_service, id_number) {
+        $("#body-evidences").find(`tr[data-service="${id_service}"]`).each(function() {
+            if ($(this).find('td[data-status="new"]').text() === 'Нове') {
+                let prev_val = $(`#id_form-${id_number}-amount`).val();
+                if (!prev_val) $(`#id_form-${id_number}-amount`).val($(this).find('td.counter-evidence').text());
+                else {
+                    $(`#id_form-${id_number}-amount`).val((parseFloat(prev_val) + parseFloat($(this).find('td.counter-evidence').text())).toFixed(2).toString());
+                }
+                $(`#id_form-${id_number}-amount`).change();
+            }
+        })
+    }
+
+    $('#delete-receipt-button').on('click', function () {
+        event.preventDefault();
+        Swal.fire({
+            title: 'Ви впевнені?',
+            text: "Після видалення квитанцію неможливо буде повернути!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#A9A9A9',
+            cancelButtonText: 'Скасувати',
+            confirmButtonText: 'Видалити'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $('form#delete-receipt-form').submit();
+                }
+            })
+    })
+
+    function changedService(element) {
+        let selectedService = $(element).children("option:selected").val();
+        $(`#${element.id}-measurement-unit > option`).each(function() {
+            $(this).removeAttr('selected');
+        });
+        $(`#${element.id}-measurement-unit option[value=${selectedService}]`).attr('selected', 'selected');
+        fieldIsValid(element);
+    }
+
+    $(document).on('click', 'button.delete-service', function () {
+        Swal.fire({
+            title: 'Ви впевнені?',
+            text: "Після видалення послугу неможливо буде повернути!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#A9A9A9',
+            cancelButtonText: 'Скасувати',
+            confirmButtonText: 'Видалити'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $(this).closest('tr').remove();
+                }
+            })
+    })
+
+    $(document).on('click', 'button.delete-existing', function () {
+        let id_to_delete = $(this).attr('id');
+        Swal.fire({
+            title: 'Ви впевнені?',
+            text: "Після видалення послугу неможливо буде повернути!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#A9A9A9',
+            cancelButtonText: 'Скасувати',
+            confirmButtonText: 'Видалити'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.ajax({
+                            url: `/administrator-panel/receipt-service/delete/${id_to_delete}/`,
+                            type: 'DELETE',
+                            headers: {
+                                'X-CSRFToken': $("input[name=csrfmiddlewaretoken]").val()
+                            },
+                            success: function (response) {
+                                if (response['answer'] === 'success') {
+                                    $(this).closest('tr').remove();
+                                    Swal.fire({
+                                        position: 'top-end',
+                                        icon: 'success',
+                                        title: 'Успішно видалено!',
+                                        showConfirmButton: false,
+                                        timer: 1200,
+                                    })
+                                }
+                                else {
+                                    Swal.fire({
+                                        position: 'top-end',
+                                        icon: 'error',
+                                        title: 'Щось пішло не так!',
+                                        showConfirmButton: false,
+                                        timer: 1200
+                                    });
+                                }
+                            }
+                        })
+
+                }
+            })
+    })
+
+    function changedPrice(element) {
+        let total_price_id = (element.id).replace('price', 'total_price');
+        let amount_id = element.id.replace('price', 'amount');
+
+        if (parseInt($(`#${element.id}`).val()) < 0) {
+            $(`#${element.id}-errors`).text('Ціна не може бути меншою 0');
+            $(`#${element.id}`).css('border', '1px solid red');
+            $(`#${total_price_id}`).val(0);
+            countOverallSum();
+            return;
+        }
+
+        $(`#${total_price_id}`).val(((parseFloat($(`#${amount_id}`).val()) * parseFloat($(`#${element.id}`).val())).toFixed(2)).toString());
+        countOverallSum();
+        fieldIsValid(element);
+    }
+
+    function changedAmount(element) {
+        let total_price_id = (element.id).replace('amount', 'total_price');
+        let price_id = (element.id).replace('amount', 'price');
+
+        if (parseInt($(`#${element.id}`).val()) < 0) {
+            $(`#${element.id}-errors`).text('Розхід не може бути меншим 0');
+            $(`#${element.id}`).css('border', '1px solid red');
+            $(`#${total_price_id}`).val(0);
+            countOverallSum();
+            return;
+        }
+
+        $(`#${total_price_id}`).val(((parseFloat($(`#${price_id}`).val()) * parseFloat($(`#${element.id}`).val())).toFixed(2)).toString());
+        countOverallSum();
+        fieldIsValid(element);
+    }
+
+
+    function countOverallSum() {
+        let sum = 0;
+        $('input[id*="total_price"]').each(function() {
+            if (!($(this).attr('id')).includes('__prefix__')) {
+                if ($(this).val()) sum += parseFloat($(this).val());
+            }
+        })
+        $('#overall-summ').text(sum.toFixed(2));
+    }
+
+    countOverallSum();
+
+    let create_new = {{ create_new_number|safe }};
+    if (create_new['create'] === 'true') $('#id_number').val(generateNumber());
+
+    let house_section = {{ house_section|safe }};
+    let section_flat = {{ section_flat|safe }};
+    let flat_personal_account = {{ flat_personal_account|safe }};
+    let flat_tariff = {{ flat_tariff|safe }};
+
+    function changedHouse(element) {
+        let selectedId = $(element).children("option:selected").val();
+        $('#id_section').find('option').remove().end().append('<option>Вибрати...</option>');
+        $('#id_flat').find('option').remove().end().append('<option>Вибрати...</option>');
+        if (selectedId === 'Вибрати...') {
+            $('#user').text('не задано');
+            $('#user-phone').text('не задано');
+        }
+        if (house_section[selectedId]){
+            for (let key_array in house_section[selectedId]) {
+                let option_to_append = `<option value="${house_section[selectedId][key_array][0]}">${house_section[selectedId][key_array][1]}</option>`
+                $('#id_section').append(option_to_append);
+            }
+        }
+        element.style = 'border: 1px solid #58c76d';
+        $(`#${element.id}-errors`).text('');
+    }
+
+    function changedSection(element) {
+        let selectedId = $(element).children("option:selected").val();
+        $('#id_flat').find('option').remove().end().append('<option>Вибрати...</option>');
+        if (selectedId === 'Вибрати...') return;
+        if (section_flat[selectedId]){
+            for (let key_array in section_flat[selectedId]) {
+                let option_to_append = `<option value="${section_flat[selectedId][key_array][0]}">${section_flat[selectedId][key_array][1]}</option>`
+                $('#id_flat').append(option_to_append);
+            }
+        }
+        element.style = 'border: 1px solid #58c76d';
+        $(`#${element.id}-errors`).text('');
+    }
+
+    function changedFlat(element) {
+        let selectedId = $(element).children("option:selected").val();
+        fieldIsValid(element);
+        if (selectedId === 'Вибрати...') {
+            $('#owner').text('не задано');
+            $('#owner-phone').text('не задано');
+            $('#id_account').val('');
+            $('select#id_tariff').val('none').change();
+            return
+        }
+        let selectedSectionId;
+        let selectedHouseId;
+        for (let key in section_flat) {
+            for (let el in section_flat[key]) {
+                if (parseInt(selectedId) === section_flat[key][el][0]) {
+                    selectedSectionId = key;
+                }
+            }
+        }
+
+        for (let key in house_section) {
+            for (let el in house_section[key]) {
+                if (parseInt(selectedSectionId) === house_section[key][el][0]) {
+                    selectedHouseId = key;
+                }
+            }
+        }
+
+        $('#id_house').children().each(function () {
+            if ($(this).val() === selectedHouseId) {
+                $(this).attr('selected', true);
+            }
+            else {
+                $(this).attr('selected', false);
+            }
+        });
+        changedHouse($('#id_house'));
+
+        $('#id_section').children().each(function () {
+            if ($(this).val() === selectedSectionId) {
+                $(this).attr('selected', true);
+            }
+            else {
+                $(this).attr('selected', false);
+            }
+        });
+
+        changedSection($('#id_section'));
+
+        $('#id_flat').children().each(function () {
+            if ($(this).val() === selectedId) {
+                $(this).attr('selected', true);
+            }
+            else {
+                $(this).attr('selected', false);
+            }
+        })
+
+        {% for flat in flats %}
+            if (parseInt(selectedId) === parseInt({{ flat.pk }})) {
+                if ('{{ flat.owner }}' === 'None') {
+                    $('#owner').text('не указано');
+                    $('#owner-phone').text('не указано');
+                }
+                else {
+                    $(`#owner`).html('<a href="/administrator-panel/owner/{{ flat.owner.id }}/">{{ flat.owner.name }} {{ flat.owner.surname }}</a>');
+                    $(`#owner-phone`).html('<a href="tel:{{ flat.owner.phone }}">{{ flat.owner.phone }}</a>');
+                }
+            }
+        {% endfor %}
+
+        $('#id_account').val(flat_personal_account[(parseInt(selectedId))]);
+        evidencesByAccount();
+
+        let selected_flat_tariff = flat_tariff[parseInt(selectedId)]
+        $('select#id_tariff').val(selected_flat_tariff.toString()).change();
+
+        fieldIsValid(document.getElementById('id_account'));
+        element.style = 'border: 1px solid #58c76d';
+        $(`#${element.id}-errors`).text('');
+    }
+
+    function searchFlatByPersonal(element) {
+        let currentAccount = $(element).val();
+        let flat_pk;
+        let section_pk;
+        let house_pk;
+
+        for (let key in flat_personal_account) {
+            if (flat_personal_account[key] == currentAccount) {
+                flat_pk = key;
+                break;
+            }
+        }
+
+        for (let key in section_flat) {
+            for (let el_arr of section_flat[key]) {
+                if (el_arr[0] == flat_pk) {
+                    section_pk = key;
+                    break;
+                }
+            }
+        }
+
+        for (let key in house_section) {
+            for (let el_arr of house_section[key]) {
+                if (el_arr[0] == section_pk) {
+                    house_pk = key;
+                    break;
+                }
+            }
+        }
+
+        if (flat_pk && section_pk && house_pk) {
+            $('#id_house').val(house_pk.toString()).change();
+            $('#id_section').val(section_pk.toString()).change();
+            $('#id_flat').val(flat_pk.toString()).change();
+        }
+        else {
+            $('select#id_tariff').val('none').change();
+            $('select#id_house').val('none').change();
+            $(`#${element.id}-errors`).text('Введіть корректний особовий рахунок');
+            element.style = 'border: 1px solid red';
+        }
+    }
+
+    function evidencesByAccount() {
+        let table_body = $('#body-evidences');
+        table_body.empty();
+        let account_number = $('#id_account').val();
+        let status_codes = {
+            'new': '<td data-status="new"><span class="badge badge-warning">Нове</span></td>',
+            'null': '<td><span class="badge badge-primary">Нульове</span></td>',
+            'taken': '<td><span class="badge badge-success">Враховане</span></td>',
+            'taken and paid': '<td><span class="badge badge-success">Враховане і оплачене</span></td>'
+        }
+        $.ajax({
+            url: `/administrator-panel/receipt/evidence/?account_number=${account_number}`,
+            type: 'get',
+            success: function (data) {
+                if (data['evidences'].length === 0) {
+                    table_body.append(`<tr>
+                                            <td colspan="10" style="text-align: center;">Не знайдено</td>
+                                       </tr>`)
+                }
+                else {
+                    for (let key in data['evidences']) {
+                        table_body.append(`<tr id="${key}-row" data-service="${data['evidences'][key]['service_id']}">
+                                                <td>${data['evidences'][key]['number']}</td>
+                                                ${status_codes[data['evidences'][key]['status']]}
+                                                <td>${data['evidences'][key]['date_from_formatted']}</td>
+                                                <td>${data['evidences'][key]['date_from_month']}</td>
+                                                <td>${data['evidences'][key]['flat__house__name']}</td>
+                                                <td>${data['evidences'][key]['flat__section__name']}</td>
+                                                <td>${data['evidences'][key]['flat__number']}</td>
+                                                <td class="service">${data['evidences'][key]['service__name']}</td>
+                                                <td class="counter-evidence">${data['evidences'][key]['counter_evidence']}</td>
+                                                <td>${data['evidences'][key]['service__measurement_unit__name']}</td>
+                                           </tr>`)
+                    }
+                }
+            }
+        })
+    }
+
+    $(`.set-by-default`).on('click', function () {
+        let tariff_id = $(`#id_tariff`).val();
+        $('#services-list').empty();
+        let counter = 0;
+        $('#overall-summ').text("0.00");
+        TOTAL_FORMS.val('0');
+        let row = "";
+        {% for tariff in tariffs %}
+            if ({{ tariff.pk }} == tariff_id) {
+                {% for tariff_service in tariff.tariffservice_set.all %}
+                    row = `<tr>
+                                <td>
+                                    <select class='form-select' id='id_form-${counter}-service' name="form-${counter}-service" onchange="changedService(this)">
+                                        <option value="none">Вибрати...</option>
+                                        {% for service in services %}
+                                            <option value="{{ service.pk }}"{% if service.pk == tariff_service.service.pk %}selected{% endif %}>{{ tariff_service.service.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <p id="id_form-${counter}-service-errors" style="color: red;"></p>
+                                </td>
+                                <td>
+                                    <input class="form-control" type="number" step="0.01" id="id_form-${counter}-amount" name="form-${counter}-amount" onchange="changedAmount(this)">
+                                    <p id="id_form-${counter}-amount-errors" style="color: red;"></p>
+                                </td>
+                                <td>
+                                    <select disabled class='form-select' id='id_form-${counter}-service-measurement-unit' name="form-${counter}-service-measurement-unit" onchange="changedService(this)">
+                                        <option value="none">Вибрати...</option>
+                                        {% for service in services %}
+                                            <option value="{{ service.pk }}"{% if service.pk == tariff_service.service.pk %}selected{% endif %}>{{ service.measurement_unit.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </td>
+                                <td>
+                                    <input class="form-control" type="number" step="0.01" id="id_form-${counter}-price" value="{{ tariff_service.price }}" name="form-${counter}-price" onchange="changedPrice(this)">
+                                    <p id="id_form-${counter}-price-errors" style="color: red;"></p>
+                                </td>
+                                <td>
+                                    <input class="form-control" type="number" step="0.01" id="id_form-${counter}-total_price" name="form-${counter}-total_price">
+                                    <p id="id_form-${counter}-total_price-errors" style="color: red;"></p>
+                                </td>
+                                <td>
+                                    <button type="button" class="btn btn-default delete-service">
+                                        <i class="fa fa-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>`;
+                    $('#services-list').append(row);
+                    counter++;
+                    TOTAL_FORMS.val(counter);
+                {% endfor %}
+            }
+        {% endfor %}
+    })
+
+    function formIsValid() {
+        event.preventDefault();
+        let isValid = true;
+
+        $('#receipt-form').find(`input[type!='hidden']`).each(function () {
+            if (($(this).attr('id') !== 'id_is_completed') && !($(this).attr('id')).includes('__prefix__')) {
+                if (!fieldIsValid(this)) isValid = false;
+            }
+        })
+
+        $(`#receipt-form`).find(`select`).each(function () {
+            if (!(($(this).attr('id')).includes('__prefix__')) && ($(this).attr('id') !== 'id_tariff')) {
+                if (!fieldIsValid(this)) isValid = false;
+            }
+        })
+
+        if (isValid) {
+            $('#receipt-form').submit();
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+
+</script>
+{% endblock %}

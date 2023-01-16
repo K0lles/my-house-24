@@ -1,0 +1,105 @@
+{% extends 'main_page.html' %}
+{% load static %}
+
+{% block title %}
+    <title>Повідомлення</title>
+{% endblock %}
+
+{% block styles %}
+<style>
+
+        .ck-editor__editable[role="textbox"] {
+            /* editing area */
+            min-height: 200px;
+            min-width: 100%;
+        }
+</style>
+{% endblock %}
+
+{% block content_header %}
+    <h1>Нове повідомлення</h1>
+{% endblock %}
+
+{% block main_content %}
+    <div class="card">
+        <div class="card-body">
+            <form id="message-form" action="{% url 'message-to-owner-create' %}" method="post">
+                {% csrf_token %}
+                <div class="row">
+                    <div class="form-group">
+                        <input type="text" class="form-control" id="{{ form.theme.auto_id }}" name="{{ form.theme.html_name }}" placeholder="Тема повідомлення:" onchange="fieldIsValid(this)">
+                        <p id="{{ form.theme.auto_id }}-errors" style="color: red;"></p>
+                    </div>
+                </div>
+                <div id="editor" style="margin-top: 2%;"></div>
+                <p id="{{ form.main_text.auto_id }}-errors" style="color: red;"></p>
+                <div hidden="hidden">
+                    {% autoescape off %}
+                        <div id="insert-into"></div>
+                    {% endautoescape %}
+                </div>
+                <div class="row" style="margin-top: 3%;">
+                    <div class="col-sm-12 col-md-6">
+                        <h5>Кому надіслати:</h5>
+                        <div class="form-group">
+                            <label class="form-label" for="{{ form.owner_receiver.auto_id }}">Власник</label>
+                            <select class="form-select" id="{{ form.owner_receiver.auto_id }}" name="{{ form.owner_receiver.html_name }}" onchange="fieldIsValid(this)">
+                                <option>Вибрати...</option>
+                                {% for owner in owners %}
+                                    <option value="{{ owner.pk }}" {% if base_owner.pk == owner.pk %}selected{% endif %}>{{ owner.surname }} {{ owner.name }} {% if owner.father %}{{ owner.father }}{% endif %}</option>
+                                {% endfor %}
+                            </select>
+                            <p id="{{ form.owner_receiver.auto_id }}-errors" style="color: red;"></p>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-sm-12 text-right">
+                        <button type="submit" class="btn btn-success" onclick="formIsValidUpdate(event)"><i class="fa fa-envelope"></i>  Надіслати</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    ClassicEditor
+        .create( document.querySelector( '#editor' ) )
+        .catch( error => {} );
+
+    function formIsValidUpdate(e) {
+        e.preventDefault();
+        let isValid = true;
+
+        $(`#message-form`).find(`input[id='id_theme']`).each(function () {
+            if (!fieldIsValid(this)) {
+                isValid = false;
+            }
+        })
+
+        if ($('.ck-editor__editable[role="textbox"]').html() === '<p><br data-cke-filler="true"></p>'){
+            if (!($(`#id_main_text-errors`).text()).includes('Поле не може бути пустим')) {
+                $(`#id_main_text-errors`).text('Поле не може бути пустим');
+            }
+            isValid = false;
+        }
+        else {
+            $(`#id_main_text-errors`).text('');
+        }
+
+        if (!fieldIsValid(document.getElementById('id_owner_receiver'))) isValid = false;
+
+        if (isValid) {
+            $('#insert-into').append(`<textarea id="{{ form.main_text.auto_id }}" name="{{ form.main_text.html_name }}">${$('.ck-editor__editable[role="textbox"]').html()}</textarea>`);
+            $(`#message-form`).submit();
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+
+</script>
+{% endblock %}

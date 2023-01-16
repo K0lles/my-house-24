@@ -1,0 +1,274 @@
+{% extends 'main_page.html' %}
+{% load static %}
+
+{% block title %}
+    <title>Квитанції</title>
+{% endblock %}
+
+{% block content_header %}
+    <h1>Квитанції на оплату</h1>
+{% endblock %}
+
+{% block main_content %}
+    <div class="row">
+        <div class="col-sm-12 col-lg-9">
+            <div class="row">
+                <div class="col-xs-12 col-md-4">
+                    <div class="small-box bg-green overflow-hidden">
+                        <div class="inner">
+                            <h3>{% if checkout_condition.sum and checkout_condition.sum >= 0.00 %}{{ checkout_condition.sum|floatformat:2 }}{% else %}0.00{% endif %} грн</h3>
+                            <p>Стан каси</p>
+                        </div>
+                        <div class="icon">
+                            <i class="fa fa-dollar"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-xs-12 col-md-4">
+                    <div class="small-box bg-blue overflow-hidden">
+                        <div class="inner">
+                            <h3>{% if sum_by_account.sum %}{{ sum_by_account.sum|floatformat:2 }}{% else %}0.00{% endif %} грн</h3>
+                            <p>Баланс по рахунках</p>
+                        </div>
+                        <div class="icon">
+                            <i class="fa fa-dollar"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-xs-12 col-md-4">
+                    <div class="small-box bg-red overflow-hidden">
+                        <div class="inner">
+                            <h3>{% if debt_by_account.debt %}{{ debt_by_account.debt|floatformat:2 }}{% else %}0.00{% endif %} грн</h3>
+                            <p>Заборгованість по рахунках</p>
+                        </div>
+                        <div class="icon">
+                            <i class="fa fa-dollar"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xs-12 col-lg-3 text-right">
+            <div class="btn-group">
+                <button type="button" class="btn btn-success dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    Виберіть дію
+                </button>
+                <div class="dropdown-menu dropdown-menu-right">
+                    <a class="dropdown-item" href="{% url 'receipt-create' %}">Створити загальну квитанцію</a>
+                    <form id="delete-receipts-form" action="{% url 'receipt-delete' %}" method="post">
+                    {% csrf_token %}
+                    <input type="hidden" id="id_receipts_to_delete" name="receipts_to_delete">
+                    <button type="submit" class="dropdown-item btn btn-default" id="delete-receipts-button">Видалити</button>
+                    </form>
+              </div>
+            </div>
+        </div>
+    </div>
+    <div class="card">
+        <form method="post" action="{% url 'receipt-delete' %}">
+        {% csrf_token %}
+            <div class="card-body">
+                <div class="row" style="margin-bottom: 25px;">
+                    <div class="col-sm-12 text-right">
+                        <a href="{% url 'receipts' %}" class="btn btn-default">Очистити</a>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="table-responsive">
+                        <table id="receipt-table" class="table table-borderless table-hover">
+                            <thead>
+                                <tr>
+                                    <th style="vertical-align: top;"><input class="form-check" type="checkbox" id="check-to-delete-all"></th>
+                                    <th>№ Квитанції<input type="text" class="form-control"></th>
+                                    <th>Статус<input type="text" class="form-control"></th>
+                                    <th>Дата<input type="text" class="form-control"></th>
+                                    <th>Місяць<input type="text" class="form-control"></th>
+                                    <th>Квартира<input type="text" class="form-control"></th>
+                                    <th>Власник<input type="text" class="form-control"></th>
+                                    <th>Проведена<input type="text" class="form-control"></th>
+                                    <th style="vertical-align: top;">Сума (грн)</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            {% for receipt in object_list %}
+                                <tr role="button" data-href="{% url 'receipt-detail' receipt_pk=receipt.pk %}">
+                                    <td><input class="form-check child-delete-checkbox" type="checkbox" id="{{ receipt.pk }}"></td>
+                                    <td>{{ receipt.number }}</td>
+                                    <td>
+                                        {% if receipt.status == 'paid' %}<span class="badge badge-success">{{ receipt.get_status_display }}</span>
+                                        {% elif receipt.status == 'not paid' %}<span class="badge badge-danger">{{ receipt.get_status_display }}</span>
+                                        {% elif receipt.status == 'partly paid' %}<span class="badge badge-warning">{{ receipt.get_status_display }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ receipt.created_at|date:'d.m.Y' }}</td>
+                                    <td>{{ receipt.date_to|date:'F' }}</td>
+                                    <td>{{ receipt.account.flat.number }}, {{ receipt.account.flat.house.name }}</td>
+                                    <td>{{ receipt.account.flat.owner.surname }} {{ receipt.account.flat.owner.name }} {{ receipt.account.flat.owner.father }}</td>
+                                    <td>{% if receipt.is_completed %}Проведена{% else %}Не проведена{% endif %}</td>
+                                    <td>{% if receipt.summ %}{{ receipt.summ|floatformat:2 }}{% else %}0.00{% endif %}</td>
+                                    <td class="text-right">
+                                        <div class="btn-group pull-right">
+                                            <a class="btn btn-default btn-sm" title="Копіювати" href="{% url 'receipt-create' %}?base_receipt={{ receipt.pk }}">
+                                                <i class="fa fa-clone"></i>
+                                            </a>
+                                            <a class="btn btn-default btn-sm" title="Редагувати" href="{% url 'receipt-update' receipt_pk=receipt.pk %}">
+                                                <i class="fa fa-pencil"></i>
+                                            </a>
+                                            <button id="{{ receipt.pk }}" type="button" class="btn btn-default btn-sm delete-receipt" title="Видалити">
+                                                <i class="fa fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+
+    $('.child-delete-checkbox').on('click', function (event) {
+        event.stopPropagation();
+        let prev_val = $('#id_receipts_to_delete').val();
+        if ($(this).is(':checked')) {
+            $('#id_receipts_to_delete').val(prev_val + $(this).attr('id') + ",");
+        }
+        else {
+            $('#id_receipts_to_delete').val(prev_val.replace(($(this).attr('id') + ",").toString(), ""));
+        }
+    })
+
+    $('#check-to-delete-all').on('click', function(event) {
+        if ($(this).is(':checked')) {
+            $('.child-delete-checkbox').each(function() {
+                if (!$(this).is(':checked'))
+                    $(this).click();
+            })
+        }
+        else {
+            $('.child-delete-checkbox').each(function() {
+                if (($(this).is(':checked')))
+                    $(this).click();
+            })
+        }
+    })
+
+    $(document).ready(function () {
+        $('#receipt-table').DataTable({
+            ordering: true,
+            dom: 'rtp',
+            language: {
+                paginate: {
+                    "previous": "<<",
+                    "next": ">>"
+                }
+            },
+            columns: [
+                null,
+                {'data': '№ Квитанції'},
+                {'data': 'Статус'},
+                {'data': 'Дата'},
+                {'data': 'Місяць'},
+                {'data': 'Квартира'},
+                {'data': 'Власник'},
+                {'data': 'Проведена'},
+                {'data': 'Сума (грн)'},
+                null
+            ],
+            columnDefs: [
+                {orderable: false, targets: 1},
+                {orderable: false, targets: 2},
+                {orderable: true, targets: 3},
+                {orderable: true, targets: 4},
+                {orderable: false, targets: 5},
+                {orderable: false, targets: 6},
+                {orderable: false, targets: 7},
+                {orderable: false, targets: 8},
+            ],
+            initComplete: function () {
+                this.api()
+                    .columns()
+                    .every(function () {
+                        let that = this;
+
+                        $('input[type="text"]', this.header()).on('keyup change clear', function () {
+                            if (that.search() !== this.value) {
+                                that.search(this.value).draw();
+                            }
+                        });
+                    });
+            },
+        });
+    })
+
+    $('#delete-receipts-button').on('click', function () {
+        event.preventDefault();
+        Swal.fire({
+            title: 'Ви впевнені?',
+            text: "Після видалення квитанції неможливо буде повернути!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#A9A9A9',
+            cancelButtonText: 'Скасувати',
+            confirmButtonText: 'Видалити'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $('#delete-receipts-form').submit();
+                }
+            })
+    })
+
+    $('button.delete-receipt').on('click', function (event) {
+        event.stopPropagation();
+        Swal.fire({
+            title: 'Ви впевнені?',
+            text: "Після видалення квитанцію неможливо буде повернути!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#A9A9A9',
+            cancelButtonText: 'Скасувати',
+            confirmButtonText: 'Видалити'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.ajax({
+                            url: `delete/`,
+                            type: 'GET',
+                            data: {
+                                'receipt_id': $(this).attr('id')
+                            },
+                            success: function (response) {
+                                if (response['answer'] === 'success') {
+                                    $(event.target).closest('tr').remove();
+                                    Swal.fire({
+                                        position: 'top-end',
+                                        icon: 'success',
+                                        title: 'Успішно видалено!',
+                                        showConfirmButton: false,
+                                        timer: 1200,
+                                    })
+                                }
+                                else {
+                                    Swal.fire({
+                                        position: 'top-end',
+                                        icon: 'error',
+                                        title: 'Щось пішло не так!',
+                                        showConfirmButton: false,
+                                        timer: 1200
+                                    });
+                                }
+                            }
+                        })
+                }
+            })
+    })
+</script>
+{% endblock %}

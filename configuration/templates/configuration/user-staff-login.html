@@ -1,0 +1,160 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Вхід</title>
+    <link rel="icon" type="image/png" href="{% static 'all_logos/header-icon-myhouse.png' %}">
+
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <!-- Google Font: Source Sans Pro -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css" integrity="sha512-xh6O/CkQoPOWDdYTDqeRdPCVd1SpvCA9XXcUnZS2FmJNp1coAFzvtCN9BmamE+4aHK8yyUHUSCcJHgXloTyT2A==" crossorigin="anonymous" referrerpolicy="no-referrer">
+    <!-- Ionicons -->
+    <link rel="stylesheet" href="https://code.ionicframework.com/ionicons/2.0.1/css/ionicons.min.css">
+    <!-- Theme style -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/css/adminlte.min.css">
+    <!-- overlayScrollbars -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/overlayscrollbars/1.13.3/css/OverlayScrollbars.min.css" integrity="sha512-Xd88BFhCPQY5aAt2W3F5FmTVKkubVsAZDJBo7aXPRc5mwIPTEJvNeqbvBWfNKd4IEu3v9ots+nTdsTzVynlaOw==" crossorigin="anonymous" referrerpolicy="no-referrer">
+    <!-- Daterange picker -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-daterangepicker/3.0.5/daterangepicker.min.css" integrity="sha512-rBi1cGvEdd3NmSAQhPWId5Nd6QxE8To4ADjM2a6n0BrqQdisZ/RPUlm0YycDzvNL1HHAh1nKZqI0kSbif+5upQ==" crossorigin="anonymous" referrerpolicy="no-referrer">
+    <!-- Sweet Alerts -->
+    <link href="//cdn.jsdelivr.net/npm/@sweetalert2/theme-default@4/default.css" rel="stylesheet">
+    <style>
+        .login-box, .register-box {
+            width: 360px;
+            margin: 0 auto;
+            padding-top: 7%;
+        }
+
+        .login-page .login-logo img {
+            max-width: 100%;
+            z-index: 2000;
+            position: relative;
+        }
+
+        .login-box-body{
+            background: #fff;
+            padding: 20px;
+            border-top: 0;
+            color: #666;
+        }
+    </style>
+</head>
+<body class="login" style="background: #d2d6de;">
+    <div class="login-box">
+        <div class="login-logo" >
+            <a href="#">
+                <img src="{% static 'all_logos/logo-my-house-24.svg' %}" alt="logo" width="360px" height="150px">
+            </a>
+        </div>
+        <nav style="background: white;">
+            <div class="nav nav-tabs justify-content-center" id="nav-tab" role="tablist">
+                <a class="nav-link" href="{% url 'user-login' %}" aria-expanded="true">Для жителів</a>
+                <a class="nav-link active" href="{% url 'user-staff-login' %}" aria-expanded="true" style="border-top: 3px solid #3c8dbc;">Для адміністрації</a>
+            </div>
+        </nav>
+        <div class="tab-content" style="background: white;">
+            <div class="tab-pane active" id="tab_1">
+                <div class="login-box-body">
+                    <p class="login-box-msg">Вхід у кабінет управління</p>
+                    <form id="login-form" action="{% url 'user-staff-login' %}" method="post">
+                    {% csrf_token %}
+                        <div class="form-group" style="position: relative;">
+                            <input type="email" id="{{ form.email.auto_id }}" class="form-control" name="{{ form.email.html_name }}" {% if form.email.value %}value="{{ form.email.value }}"{% endif %} placeholder="E-mail" aria-required="true" style="display: inline; {% if error %}border: 1px solid red;{% endif %}" onchange="emailTypeValidationLocal(this)">
+                            <i class="fas fa-envelope" style="position: absolute; right: 1%; padding: 10px; pointer-events: none;"></i>
+                            <p id="{{ form.email.auto_id }}-errors" style="color: red;"></p>
+                        </div>
+                        <div class="form-group" style="position: relative;">
+                            <input type="password" id="{{ form.password.auto_id }}" class="form-control" name="{{ form.password.html_name }}" placeholder="Пароль" aria-required="true" style="display: inline; {% if error %}border: 1px solid red;{% endif %}" onchange="passwordTypeValidationLocal(this)">
+                            <i class="fa fa-lock" style="position: absolute; right: 1%; padding: 10px; pointer-events: none;"></i>
+                            <p id="{{ form.password.auto_id }}-errors" style="color: red;"></p>
+                        </div>
+                        <p style="color: red;">{% if error %}{{ error }}{% endif %}</p>
+                        <div class="row">
+                            <div class="col-xs-12">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="{{ form.remember_me.auto_id }}" name="{{ form.remember_me.html_name }}">
+                                    <label for="{{ form.remember_me.auto_id }}">Запам'ятати мене</label>
+                                </div>
+                            </div>
+                            <div class="col-xs-12">
+                                <button type="submit" class="btn btn-primary btn-block" name="login-button" onclick="validateAll()">Вхід</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+<!-- jQuery -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.1/jquery.min.js" integrity="sha512-aVKKRRi/Q/YV+4mjoKBsE4x3H+BkegoM/em46NNlCqNTmUYADjBbeNefNxYV7giUp0VxICtqdrbqU7iVaeZNXA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<!-- jQuery UI 1.11.4 -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.13.2/jquery-ui.min.js" integrity="sha512-57oZ/vW8ANMjR/KQ6Be9v/+/h6bq9/l3f0Oc7vn6qMqyhvPd1cvKBRWWpzu0QoneImqr2SkmO4MSqU+RpHom3Q==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<!-- Bootstrap 4 -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-Fy6S3B9q64WdZWQUiU+q4/2Lc9npb8tCaSX9FK7E8HnRr0Jz8D6OP9dO5Vg3Q9ct" crossorigin="anonymous"></script>
+<!-- AdminLTE App -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/admin-lte/3.2.0/js/adminlte.min.js" integrity="sha512-KBeR1NhClUySj9xBB0+KRqYLPkM6VvXiiWaSz/8LCQNdRpUm38SWUrj0ccNDNSkwCD9qPA4KobLliG26yPppJA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<!-- Sweet Alerts -->
+<script src="//cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.js"></script>
+<!-- Bootstrap -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
+<script>
+    function emailTypeValidationLocal(element) {
+        let emailValid;
+        emailValid = textTypeValidation(element)
+        if (!emailValid) return emailValid;
+        if (!(element.value).match(/^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/)) {
+            $(`#${element.id}-errors`).text('Неправильно введений email');
+            element.style = 'border: 1px solid red; display: inline;';
+            return false;
+        }
+
+        else {
+            element.style = 'border: 1px solid #58c76d; display: inline;';
+            $(`#${element.id}-errors`).text('');
+            return true;
+        }
+    }
+
+    function passwordTypeValidationLocal(element) {
+        if (element.value !== '') {
+            element.style = 'border: 1px solid #58c76d; display: inline;';
+            $(`#${element.id}-errors`).text('');
+            return true;
+        } else if (element.value === '') {
+            if (!($(`#${element.id}-errors`).text()).includes('Поле не може бути пустим')) {
+                $(`#${element.id}-errors`).text('Поле не може бути пустим');
+                element.style = 'border: 1px solid red; display: inline;';
+            }
+            return false;
+        }
+    return true;
+    }
+
+    function validateAll() {
+        event.preventDefault();
+        let is_valid = true;
+        $('#login-form').find(`input[type='email']`).each(function () {
+            if (!emailTypeValidationLocal(this)) is_valid = false;
+        })
+
+        $('#login-form').find(`input[type='password']`).each(function () {
+            if (!passwordTypeValidationLocal(this)) is_valid = false;
+        })
+
+        if (is_valid) {
+            $('#login-form').submit();
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+
+</script>
+<script src="{% static 'scripts.js' %}"></script>
+</body>
+</html>

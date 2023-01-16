@@ -1,0 +1,35 @@
+{% extends 'main_page.html' %}
+{% load static %}
+
+{% block title %}
+    <title>Тарифи</title>
+{% endblock %}
+
+{% block content_header %}
+    <h1>Тарифи - {{ object_list.house.name }}, кв.{{ object_list.number }}</h1>
+{% endblock %}
+
+{% block main_content %}
+    <div class="card">
+        <div class="card-body">
+            <table class="table table-borderless">
+                <thead>
+                    <tr>
+                        <th>Послуга</th>
+                        <th>Од. вим.</th>
+                        <th>Ціна за од., грн</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for tariff_service in object_list.tariff.tariffservice_set.all %}
+                        <tr>
+                            <td>{{ tariff_service.tariff.name }}</td>
+                            <td>{{ tariff_service.service.measurement_unit.name }}</td>
+                            <td>{{ tariff_service.price|floatformat:2 }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}

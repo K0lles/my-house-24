@@ -1,7 +1,7 @@
-from django.forms import modelformset_factory, ModelForm, CharField, ModelChoiceField, FloatField
-from django.forms.widgets import TextInput
+from django.forms import modelformset_factory, ModelForm, CharField, ModelChoiceField, FloatField, BooleanField
+from django.forms.widgets import TextInput, CheckboxInput
 
-from .models import MeasurementUnit, Service, Tariff, TariffService, Role, PaymentRequisite, ArticlePayment, User
+from .models import *
 
 
 def measurement_unit_formset(has_queryset):
@@ -113,3 +113,46 @@ class ArticlePaymentForm(ModelForm):
     class Meta:
         model = ArticlePayment
         fields = '__all__'
+
+
+class UserLoginForm(ModelForm):
+    remember_me = BooleanField(widget=CheckboxInput(), required=False)
+
+    class Meta:
+        model = User
+        fields = ('email', 'password')
+
+    def clean(self):
+        cleaned_data = super().clean()
+        self._errors = {}
+        if not cleaned_data.get('email'):
+            self._errors['email'] = 'Поле не може бути пустим'
+
+        if not cleaned_data.get('password'):
+            self._errors['password'] = 'Поле не може бути пустим'
+
+        print(self._errors)
+
+        return cleaned_data
+
+    def clean_email(self):
+        if not self.cleaned_data.get('email'):
+            self._errors['email'] = 'Поле не може бути пустим'
+        return self.cleaned_data.get('email')
+
+
+class UserSelfRegistrationForm(ModelForm):
+
+    class Meta:
+        model = User
+        fields = ('surname', 'name', 'email', 'password')
+
+    def clean(self):
+        cleaned_data = super().clean()
+        return cleaned_data
+
+    def clean_email(self):
+        obj = User.objects.filter(email=self.cleaned_data.get('email')).exclude(id=self.instance.id)
+        if obj:
+            self._errors['email'] = 'E-mail повинен бути унікальним'
+        return self.cleaned_data.get('email')

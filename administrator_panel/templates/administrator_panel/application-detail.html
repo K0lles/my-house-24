@@ -1,0 +1,95 @@
+{% extends 'main_page.html' %}
+{% load static %}
+
+{% block title %}
+    <title>Заявка</title>
+{% endblock %}
+
+{% block content_header %}
+    <h1>Заявка №{{ object.pk }}</h1>
+{% endblock %}
+
+{% block main_content %}
+    <div class="row">
+        <div class="col-sm-12 col-md-7 col-lg-6" style="display: flex; justify-content: flex-start;">
+            <div class="form-group">
+                <div class="input-group">
+                    <div class="input-group-append" style="background-color: #fff; border: 1px solid #ccc; padding: 6px 12px;">
+                        №
+                    </div>
+                    <div class="form-control">{{ object.desired_date|date:'d.m.Y' }}</div>
+                </div>
+            </div>
+            <span style="margin: 8px 15px 0 15px;">
+                від
+            </span>
+            <div class="form-group">
+                <div class="input-group date" id="datepicker-first">
+                    <span class="input-group-append">
+                        <button type="button" class="btn btn-default" >
+                            <i class="fa fa-clock"></i>
+                        </button>
+                    </span>
+                    <div class="form-control">{{ object.desired_time|date:'H:i' }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-sm-12 text-right">
+                    <a href="{% url 'application-update' application_pk=object.pk %}" class="btn btn-info">Редагувати заявку</a>
+                </div>
+            </div>
+            <div class="row">
+                <table class="table table-borderless">
+                    <tbody>
+                        <tr>
+                            <th>Статус</th>
+                            <td>
+                                {% if object.status == 'new' %}<span class="badge badge-info">{{ object.get_status_display }}</span>
+                                {% elif object.status == 'in work' %}<span class="badge badge-warning">{{ object.get_status_display }}</span>
+                                {% else %}<span class="badge badge-success">{{ object.get_status_display }}</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Власник</th>
+                            <td>{% if object.flat.owner %}
+                                <a href="{% url 'owner-detail' owner_pk=object.flat.owner.pk %}">
+                                    {% if object.flat.owner.surname %}{{ object.flat.owner.surname }}{% endif %}
+                                    {% if object.flat.owner.name %}{{ object.flat.owner.name }}{% endif %}
+                                    {% if object.flat.owner.father %}{{ object.flat.owner.father }}{% endif %}
+                                </a>{% else %}не указано{% endif %}</td>
+                        </tr>
+                        <tr>
+                            <th>Телефон</th>
+                            <td>{% if object.flat.owner and object.flat.owner.phone %}{{ object.flat.owner.phone }}{% else %}не указано{% endif %}</td>
+                        </tr>
+                        <tr>
+                            <th>Квартира</th>
+                            <td><a href="{% url 'flat-detail' flat_pk=object.flat.pk %}">{{ object.flat.number }}, {{ object.flat.house.name }}</a></td>
+                        </tr>
+                        <tr>
+                            <th>Тип майстра</th>
+                            <td>{{ object.get_master_type_display }}</td>
+                        </tr>
+                        <tr>
+                            <th>Майстер</th>
+                            <td><a href="{% url 'user-detail' pk=object.master.pk %}">{% if object.master.surname %}{{ object.master.surname }}{% endif %} {% if object.master.name %}{{ object.master.name }}{% endif %} ({{ object.master.role.get_role_display }})</a></td>
+                        </tr>
+                        <tr>
+                            <th>Опис</th>
+                            <td>{{ object.description }}</td>
+                        </tr>
+                        <tr>
+                            <th>Додано</th>
+                            <td>{{ object.desired_date|date:'d.m.Y' }} - {{ object.desired_time|date:'H:i' }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+{% endblock %}

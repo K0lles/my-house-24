@@ -1,0 +1,82 @@
+{% extends 'main_page.html' %}
+{% load static %}
+
+{% block title %}
+    <title>Запрошення</title>
+{% endblock %}
+
+{% block content_header %}
+    <h1>Запросити власника квартир</h1>
+{% endblock %}
+
+{% block main_content %}
+    {% if messages %}
+        {% for message in messages %}
+            {% if message.tags == 'success' %}
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    {{ message }}
+                        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                </div>
+            {% elif message.tags == 'error' %}
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    {{ message }}
+                        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                </div>
+            {% endif %}
+        {% endfor %}
+    {% endif %}
+    <div class="card">
+        <div class="card-header">
+            <h5 style="font-size: 18px; color: grey">Надіслати запрошення</h5>
+        </div>
+        <div class="card-body">
+            <form id="invitation-form" action="{% url 'send-owner-invitation' %}" method="post">
+                {% csrf_token %}
+                <div class="row">
+                    <div class="col-sm-12 col-lg-6">
+                        <div class="form-group">
+                            <label class="form-label" for="{{ form.email.auto_id }}">Email</label>
+                            <input type="email" class="form-control" id="{{ form.email.auto_id }}" name="{{ form.email.html_name }}" onchange="fieldIsValid(this)">
+                            <p id="{{ form.email.auto_id }}-errors" style="color: red;"></p>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="{{ form.phone.auto_id }}">Телефон</label>
+                            <input type="text" class="form-control" id="{{ form.phone.auto_id }}" name="{{ form.phone.html_name }}" onchange="fieldIsValid(this)">
+                            <p id="{{ form.phone.auto_id }}-errors" style="color: red;"></p>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-sm-12 col-lg-6 text-right">
+                        <button type="submit" class="btn btn-success" onclick="formIsValid()">Надіслати запрошення</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function formIsValid() {
+        event.preventDefault();
+        let isValid = true;
+
+        if (!fieldIsValid(document.getElementById('id_email'))) isValid = false;
+
+        if (!fieldIsValid(document.getElementById('id_phone'))) isValid = false;
+
+        if (isValid) {
+            $('#invitation-form').submit();
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+</script>
+{% endblock %}

@@ -1,6 +1,10 @@
 {% extends 'main_page.html' %}
 {% load static %}
 
+{% block title %}
+    <title>Показання лічильників</title>
+{% endblock %}
+
 {% block content_header %}
     <h1>Показання</h1>
 {% endblock %}
@@ -18,7 +22,8 @@
                     <a href="{% url 'evidences-grouped' %}" class="btn btn-default">Очистити</a>
                 </div>
             </div>
-            <table id="evidence-table" class="table table-responsive table-borderless table-hover">
+            <div class="table-responsive">
+                <table id="evidence-table" class="table table-borderless table-hover">
                 <thead>
                     <tr>
                         <th>Будинок<input type="text" class="form-control"></th>
@@ -53,6 +58,7 @@
                     {% endfor %}
                 </tbody>
             </table>
+            </div>
         </div>
     </div>
 {% endblock %}

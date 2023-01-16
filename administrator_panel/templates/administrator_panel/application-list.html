@@ -22,7 +22,8 @@
                     <a href="{% url 'applications' %}" class="btn btn-default">Очистити</a>
                 </div>
             </div>
-            <table id="application-table" class="table table-borderless table-hover table-responsive">
+            <div class="table-responsive">
+                <table id="application-table" class="table table-borderless table-hover">
                 <thead>
                     <tr>
                         <th>№ заявки<input type="text" class="form-control"></th>
@@ -84,6 +85,7 @@
                     {% endfor %}
                 </tbody>
             </table>
+            </div>
         </div>
     </div>
 {% endblock %}

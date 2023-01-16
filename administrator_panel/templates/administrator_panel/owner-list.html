@@ -27,61 +27,63 @@
     <div class="card">
         <div class="card-body">
             <div class="row">
-                <table id="owner-table" class="table table-borderless table-hover table-responsive">
-                    <thead>
-                        <tr>
-                            <th>ID<input type="text" class="form-control"> </th>
-                            <th>ПІБ<input type="text" class="form-control"></th>
-                            <th>Телефон<input type="text" class="form-control"></th>
-                            <th>Email<input type="text" class="form-control"></th>
-                            <th>Будинок<input type="text" class="form-control"></th>
-                            <th>Квартира<input type="text" class="form-control"></th>
-                            <th>Доданий<input type="text" class="form-control"></th>
-                            <th>Статус<input type="text" class="form-control"></th>
-                            <th>Є борг<input type="text" class="form-control"></th>
-                            <th></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for owner in object_list %}
-                            <tr data-href="{% url 'owner-detail' owner_pk=owner.pk %}">
-                                <td style="vertical-align: middle;">{{ owner.owner_id }}</td>
-                                <td style="vertical-align: middle;">{{ owner.name }} {{ owner.surname }} {% if owner.father %}{{ owner.father }}{% endif %}</td>
-                                <td style="vertical-align: middle;">{{ owner.phone }}</td>
-                                <td style="vertical-align: middle;">{{ owner.email }}</td>
-                                <td style="vertical-align: middle;">
-                                    {% for flat in owner.flat_set.all %}
-                                        <a href="{% url 'house-detail' house_pk=flat.house.pk %}">{{ flat.house.name }}</a>,<br/>
-                                    {% endfor %}
-                                </td>
-                                <td style="vertical-align: middle;">
-                                    {% for flat in owner.flat_set.all %}
-                                        <a href="{% url 'flat-detail' flat_pk=flat.pk %}">№ {{ flat.number }}</a>,<br/>
-                                    {% endfor %}
-                                </td>
-                                <td style="vertical-align: middle;">{{ owner.created_at|date:'d.m.Y' }}</td>
-                                <td style="vertical-align: middle;">
-                                    {% if owner.status == 'new' %}<span class="badge badge-warning">{{ owner.get_status_display }}</span>
-                                    {% elif owner.status == 'active' %}<span class="badge badge-success">{{ owner.get_status_display }}</span>
-                                    {% else %}<span class="badge badge-danger">{{ owner.get_status_display }}</span>{% endif %}
-                                </td>
-                                <td style="vertical-align: middle;">
-                                    {% if debts|get_item:owner.pk %}Є{% else %}Немає{% endif %}
-                                </td>
-                                <td class="text-right" style="vertical-align: middle;">
-                                    <div class="btn-group">
-                                        <a class="btn btn-default btn-sm" title="Надіслати повідомлення" href="{% url 'message-to-owner-create' %}?owner={{ owner.pk }}">
-                                            <i class="fa fa-envelope"></i>
-                                        </a>
-                                        <button id="{{ owner.pk }}" type="button" class="btn btn-default btn-sm delete-owner" title="Видалити">
-                                            <i class="fa fa-trash"></i>
-                                        </button>
-                                    </div>
-                                </td>
+                <div class="table-responsive">
+                    <table id="owner-table" class="table table-borderless table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID<input type="text" class="form-control"> </th>
+                                <th>ПІБ<input type="text" class="form-control"></th>
+                                <th>Телефон<input type="text" class="form-control"></th>
+                                <th>Email<input type="text" class="form-control"></th>
+                                <th>Будинок<input type="text" class="form-control"></th>
+                                <th>Квартира<input type="text" class="form-control"></th>
+                                <th>Доданий<input type="text" class="form-control"></th>
+                                <th>Статус<input type="text" class="form-control"></th>
+                                <th>Є борг<input type="text" class="form-control"></th>
+                                <th></th>
                             </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            {% for owner in object_list %}
+                                <tr data-href="{% url 'owner-detail' owner_pk=owner.pk %}">
+                                    <td style="vertical-align: middle;">{{ owner.owner_id }}</td>
+                                    <td style="vertical-align: middle;">{{ owner.name }} {{ owner.surname }} {% if owner.father %}{{ owner.father }}{% endif %}</td>
+                                    <td style="vertical-align: middle;">{% if owner.phone %}{{ owner.phone }}{% else %}не указано{% endif %}</td>
+                                    <td style="vertical-align: middle;">{{ owner.email }}</td>
+                                    <td style="vertical-align: middle;">
+                                        {% for flat in owner.flat_set.all %}
+                                            <a href="{% url 'house-detail' house_pk=flat.house.pk %}">{{ flat.house.name }}</a>,<br/>
+                                        {% endfor %}
+                                    </td>
+                                    <td style="vertical-align: middle;">
+                                        {% for flat in owner.flat_set.all %}
+                                            <a href="{% url 'flat-detail' flat_pk=flat.pk %}">№ {{ flat.number }}</a>,<br/>
+                                        {% endfor %}
+                                    </td>
+                                    <td style="vertical-align: middle;">{{ owner.created_at|date:'d.m.Y' }}</td>
+                                    <td style="vertical-align: middle;">
+                                        {% if owner.status == 'new' %}<span class="badge badge-warning">{{ owner.get_status_display }}</span>
+                                        {% elif owner.status == 'active' %}<span class="badge badge-success">{{ owner.get_status_display }}</span>
+                                        {% else %}<span class="badge badge-danger">{{ owner.get_status_display }}</span>{% endif %}
+                                    </td>
+                                    <td style="vertical-align: middle;">
+                                        {% if debts|get_item:owner.pk %}Є{% else %}Немає{% endif %}
+                                    </td>
+                                    <td class="text-right" style="vertical-align: middle;">
+                                        <div class="btn-group">
+                                            <a class="btn btn-default btn-sm" title="Надіслати повідомлення" href="{% url 'message-to-owner-create' %}?owner={{ owner.pk }}">
+                                                <i class="fa fa-envelope"></i>
+                                            </a>
+                                            <button id="{{ owner.pk }}" type="button" class="btn btn-default btn-sm delete-owner" title="Видалити">
+                                                <i class="fa fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>

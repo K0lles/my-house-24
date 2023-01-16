@@ -3,30 +3,35 @@ from django.http import JsonResponse
 from django.shortcuts import redirect
 from django.views import View
 from django.views.generic import ListView, CreateView, UpdateView, DetailView, DeleteView
+from django.views.generic.base import ContextMixin, TemplateResponseMixin
 
 from administrator_panel.functions import owner_context_data
+from configuration.models import User
 
 
 class DirectorUserPassesTestMixin(UserPassesTestMixin):
-
     def test_func(self):
         if self.request.user.is_anonymous:
             return False
 
         string_permission = getattr(self, 'string_permission', None)
         if not string_permission:
-            raise AttributeError(f"String permission is not indicated in {self.__class__.__name__}")
+            raise AttributeError(f"String permission is not defined in {self.__class__.__name__}")
 
         return getattr(self.request.user.role, string_permission, False)
 
 
-class PermissionListView(DirectorUserPassesTestMixin, ListView):
+class BasePermissionView(TemplateResponseMixin, ContextMixin, View):
 
     def forbidden_page(self):
         self.template_name = 'forbidden_page.html'
+        self.object = None
         self.object_list = None
-        context = super().get_context_data()
+        context = self.get_context_data()
         return self.render_to_response(context)
+
+
+class PermissionListView(DirectorUserPassesTestMixin, BasePermissionView, ListView):
 
     def dispatch(self, request, *args, **kwargs):
         if not self.test_func():
@@ -36,13 +41,7 @@ class PermissionListView(DirectorUserPassesTestMixin, ListView):
         return super().dispatch(request, *args, **kwargs)
 
 
-class PermissionCreateView(DirectorUserPassesTestMixin, CreateView):
-
-    def forbidden_page(self):
-        self.template_name = 'forbidden_page.html'
-        self.object = None
-        context = super().get_context_data()
-        return self.render_to_response(context)
+class PermissionCreateView(DirectorUserPassesTestMixin, BasePermissionView, CreateView):
 
     def dispatch(self, request, *args, **kwargs):
         if not self.test_func():
@@ -52,13 +51,7 @@ class PermissionCreateView(DirectorUserPassesTestMixin, CreateView):
         return super().dispatch(request, *args, **kwargs)
 
 
-class PermissionDetailView(DirectorUserPassesTestMixin, DetailView):
-
-    def forbidden_page(self):
-        self.template_name = 'forbidden_page.html'
-        self.object = None
-        context = super().get_context_data()
-        return self.render_to_response(context)
+class PermissionDetailView(DirectorUserPassesTestMixin, BasePermissionView, DetailView):
 
     def dispatch(self, request, *args, **kwargs):
         if not self.test_func():
@@ -68,13 +61,7 @@ class PermissionDetailView(DirectorUserPassesTestMixin, DetailView):
         return super().dispatch(request, *args, **kwargs)
 
 
-class PermissionUpdateView(DirectorUserPassesTestMixin, UpdateView):
-
-    def forbidden_page(self):
-        self.template_name = 'forbidden_page.html'
-        self.object = None
-        context = super().get_context_data()
-        return self.render_to_response(context)
+class PermissionUpdateView(DirectorUserPassesTestMixin, BasePermissionView, UpdateView):
 
     def dispatch(self, request, *args, **kwargs):
         if not self.test_func():
@@ -84,13 +71,7 @@ class PermissionUpdateView(DirectorUserPassesTestMixin, UpdateView):
         return super().dispatch(request, *args, **kwargs)
 
 
-class PermissionDeleteView(DirectorUserPassesTestMixin, DeleteView):
-
-    def forbidden_page(self):
-        self.template_name = 'forbidden_page.html'
-        self.object = None
-        context = super().get_context_data()
-        return self.render_to_response(context)
+class PermissionDeleteView(DirectorUserPassesTestMixin, BasePermissionView, DeleteView):
 
     def dispatch(self, request, *args, **kwargs):
         if not self.test_func():
@@ -106,7 +87,7 @@ class PermissionView(DirectorUserPassesTestMixin, View):
         self.object = None
         self.name = getattr(self, 'name_view')
         if not self.name:
-            raise AttributeError('Indicate name of view')
+            raise AttributeError('Define name of view')
         return JsonResponse({'answer': f'Ви не маєте доступу до {self.name}'})
 
     def dispatch(self, request, *args, **kwargs):

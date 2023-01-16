@@ -912,6 +912,7 @@ class SendInvitationByEmailView(TemplateResponseMixin, FormMixin, PermissionView
     string_permission = 'owner_access'
     template_name = 'administrator_panel/send-invitation.html'
     form_class = SendInvitationForm
+    name = 'надсилання email-листів'
 
     def get(self, request, *args, **kwargs):
         context = self.get_context_data()

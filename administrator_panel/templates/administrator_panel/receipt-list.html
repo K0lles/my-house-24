@@ -74,55 +74,57 @@
                     </div>
                 </div>
                 <div class="row">
-                    <table id="receipt-table" class="table table-responsive table-borderless table-hover">
-                        <thead>
-                            <tr>
-                                <th style="vertical-align: top;"><input class="form-check" type="checkbox" id="check-to-delete-all"></th>
-                                <th>№ Квитанції<input type="text" class="form-control"></th>
-                                <th>Статус<input type="text" class="form-control"></th>
-                                <th>Дата<input type="text" class="form-control"></th>
-                                <th>Місяць<input type="text" class="form-control"></th>
-                                <th>Квартира<input type="text" class="form-control"></th>
-                                <th>Власник<input type="text" class="form-control"></th>
-                                <th>Проведена<input type="text" class="form-control"></th>
-                                <th style="vertical-align: top;">Сума (грн)</th>
-                                <th></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                        {% for receipt in object_list %}
-                            <tr role="button" data-href="{% url 'receipt-detail' receipt_pk=receipt.pk %}">
-                                <td><input class="form-check child-delete-checkbox" type="checkbox" id="{{ receipt.pk }}"></td>
-                                <td>{{ receipt.number }}</td>
-                                <td>
-                                    {% if receipt.status == 'paid' %}<span class="badge badge-success">{{ receipt.get_status_display }}</span>
-                                    {% elif receipt.status == 'not paid' %}<span class="badge badge-danger">{{ receipt.get_status_display }}</span>
-                                    {% elif receipt.status == 'partly paid' %}<span class="badge badge-warning">{{ receipt.get_status_display }}</span>
-                                    {% endif %}
-                                </td>
-                                <td>{{ receipt.created_at|date:'d.m.Y' }}</td>
-                                <td>{{ receipt.date_to|date:'F' }}</td>
-                                <td>{{ receipt.account.flat.number }}, {{ receipt.account.flat.house.name }}</td>
-                                <td>{{ receipt.account.flat.owner.surname }} {{ receipt.account.flat.owner.name }} {{ receipt.account.flat.owner.father }}</td>
-                                <td>{% if receipt.is_completed %}Проведена{% else %}Не проведена{% endif %}</td>
-                                <td>{% if receipt.summ %}{{ receipt.summ|floatformat:2 }}{% else %}0.00{% endif %}</td>
-                                <td class="text-right">
-                                    <div class="btn-group pull-right">
-                                        <a class="btn btn-default btn-sm" title="Копіювати" href="{% url 'receipt-create' %}?base_receipt={{ receipt.pk }}">
-                                            <i class="fa fa-clone"></i>
-                                        </a>
-                                        <a class="btn btn-default btn-sm" title="Редагувати" href="{% url 'receipt-update' receipt_pk=receipt.pk %}">
-                                            <i class="fa fa-pencil"></i>
-                                        </a>
-                                        <button id="{{ receipt.pk }}" type="button" class="btn btn-default btn-sm delete-receipt" title="Видалити">
-                                            <i class="fa fa-trash"></i>
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                        {% endfor %}
-                        </tbody>
-                    </table>
+                    <div class="table-responsive">
+                        <table id="receipt-table" class="table table-borderless table-hover">
+                            <thead>
+                                <tr>
+                                    <th style="vertical-align: top;"><input class="form-check" type="checkbox" id="check-to-delete-all"></th>
+                                    <th>№ Квитанції<input type="text" class="form-control"></th>
+                                    <th>Статус<input type="text" class="form-control"></th>
+                                    <th>Дата<input type="text" class="form-control"></th>
+                                    <th>Місяць<input type="text" class="form-control"></th>
+                                    <th>Квартира<input type="text" class="form-control"></th>
+                                    <th>Власник<input type="text" class="form-control"></th>
+                                    <th>Проведена<input type="text" class="form-control"></th>
+                                    <th style="vertical-align: top;">Сума (грн)</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            {% for receipt in object_list %}
+                                <tr role="button" data-href="{% url 'receipt-detail' receipt_pk=receipt.pk %}">
+                                    <td><input class="form-check child-delete-checkbox" type="checkbox" id="{{ receipt.pk }}"></td>
+                                    <td>{{ receipt.number }}</td>
+                                    <td>
+                                        {% if receipt.status == 'paid' %}<span class="badge badge-success">{{ receipt.get_status_display }}</span>
+                                        {% elif receipt.status == 'not paid' %}<span class="badge badge-danger">{{ receipt.get_status_display }}</span>
+                                        {% elif receipt.status == 'partly paid' %}<span class="badge badge-warning">{{ receipt.get_status_display }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ receipt.created_at|date:'d.m.Y' }}</td>
+                                    <td>{{ receipt.date_to|date:'F' }}</td>
+                                    <td>{{ receipt.account.flat.number }}, {{ receipt.account.flat.house.name }}</td>
+                                    <td>{{ receipt.account.flat.owner.surname }} {{ receipt.account.flat.owner.name }} {{ receipt.account.flat.owner.father }}</td>
+                                    <td>{% if receipt.is_completed %}Проведена{% else %}Не проведена{% endif %}</td>
+                                    <td>{% if receipt.summ %}{{ receipt.summ|floatformat:2 }}{% else %}0.00{% endif %}</td>
+                                    <td class="text-right">
+                                        <div class="btn-group pull-right">
+                                            <a class="btn btn-default btn-sm" title="Копіювати" href="{% url 'receipt-create' %}?base_receipt={{ receipt.pk }}">
+                                                <i class="fa fa-clone"></i>
+                                            </a>
+                                            <a class="btn btn-default btn-sm" title="Редагувати" href="{% url 'receipt-update' receipt_pk=receipt.pk %}">
+                                                <i class="fa fa-pencil"></i>
+                                            </a>
+                                            <button id="{{ receipt.pk }}" type="button" class="btn btn-default btn-sm delete-receipt" title="Видалити">
+                                                <i class="fa fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </form>

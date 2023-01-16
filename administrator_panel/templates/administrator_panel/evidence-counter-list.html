@@ -22,7 +22,8 @@
                     <a href="{% url 'evidences-grouped' %}" class="btn btn-default">Очистити</a>
                 </div>
             </div>
-            <table id="evidence-table" class="table table-responsive table-hover table-borderless">
+            <div class="table-responsive">
+                <table id="evidence-table" class="table table-hover table-borderless">
                 <thead>
                     <tr>
                         <th>№<input type="text" class="form-control"></th>
@@ -68,6 +69,7 @@
                     {% endfor %}
                 </tbody>
             </table>
+            </div>
         </div>
     </div>
 {% endblock %}

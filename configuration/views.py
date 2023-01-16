@@ -8,6 +8,8 @@ from django.template.loader import render_to_string
 from django.utils.encoding import force_bytes, force_str
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 
+import random
+
 from administrator_panel.mixins import *
 from .forms import *
 from .tokens import *
@@ -588,6 +590,17 @@ class UserRegistrationView(CreateView):
     template_name = 'configuration/user-registration.html'
     form_class = UserSelfRegistrationForm
 
+    @staticmethod
+    def rand_x_digit_num(x: int, leading_zeroes=True):
+        """Return an X digit number, leading_zeroes returns a string, otherwise int"""
+        if not leading_zeroes:
+            return str(random.randint(10 ** (x - 1), 10 ** x - 1))
+        else:
+            if x > 6000:
+                return ''.join([str(random.randint(0, 9)) for i in range(x)])
+            else:
+                return '{0:0{x}d}'.format(random.randint(0, 10 ** x - 1), x=x)
+
     def get(self, request, *args, **kwargs):
         if self.request.user.is_authenticated:
             if self.request.user.role.role == 'owner':
@@ -602,7 +615,8 @@ class UserRegistrationView(CreateView):
         return self.form_invalid(form)
 
     def form_valid(self, form):
-        user = User.objects.create_user(email=form.cleaned_data.get('email'),
+        user = User.objects.create_user(owner_id=UserRegistrationView.rand_x_digit_num(8),
+                                        email=form.cleaned_data.get('email'),
                                         name=form.cleaned_data.get('name'),
                                         surname=form.cleaned_data.get('surname'),
                                         password=form.cleaned_data.get('password'),

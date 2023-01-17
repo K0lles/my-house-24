@@ -9,7 +9,7 @@ function fieldIsValid(element) {
         'text': textTypeValidation,
         'number': numberTypeValidation,
         'email': emailTypeValidation,
-        'password': passwordTypeValidation,
+        'password': passwordTypeValidation
     }
     if ($(`#${element.id}`).attr('type') === 'file') return true;
     return dict_function_by_type[$(`#${element.id}`).attr('type')](element);

@@ -1,0 +1,246 @@
+{% extends 'main_page.html' %}
+{% load static %}
+
+{% block title %}
+    <title>Редагування сторінки</title>
+{% endblock %}
+
+{% block styles %}
+<style>
+
+        .ck-editor__editable[role="textbox"] {
+            /* editing area */
+            min-height: 200px;
+            min-width: 100%;
+        }
+</style>
+{% endblock %}
+
+{% block content_header %}
+    <h1>Редагування сторінки</h1>
+{% endblock %}
+
+{% block main_content %}
+    <div class="card">
+        <div class="card-header">
+            <div class="row">
+                <div class="col-sm-12 col-lg-6">
+                    <h5 style="font-size: 18px; color: grey">Редагування сторінка "Головна"</h5>
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="row" style="margin-bottom: 15px; margin-top: 10px;">
+                <h5 style="border-bottom: 1px solid rgba(0,0,0,.125); padding-bottom: 10px;">Слайдер</h5>
+            </div>
+            <div class="row">
+                <div class="col-md-4">
+                    <h6>Слайд 1</h6>
+                    <img width="100%" height="300px" id="{{ form.slide_1.auto_id }}-display" {% if form.instance.slide_1 %}src="{{ form.slide_1.url }}"{% else %}src="{% static 'all_logos/empty-photo.png' %}"{% endif %} class="img-responsive">
+                    <div class="form-group">
+                        <label class="control-label" for="{{ form.slide_1.auto_id }}">Рекомендований розмір: (1920х1080)</label>
+                        <input type="file" accept="image/*" id="{{ form.slide_1.auto_id }}" name="{{ form.slide_1.html_name }}" {% if form.instance.slide_1 %}value="{{ form.instance.slide_1 }}"{% endif %} onchange="loadFile(event, this.id)" style="display: block;">
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <h6>Слайд 2</h6>
+                    <img width="100%" height="300px" id="{{ form.slide_2.auto_id }}-display" {% if form.instance.slide_2 %}src="{{ form.slide_2.url }}"{% else %}src="{% static 'all_logos/empty-photo.png' %}"{% endif %} class="img-responsive">
+                    <div class="form-group">
+                        <label class="control-label" for="{{ form.slide_2.auto_id }}">Рекомендований розмір: (1920х1080)</label>
+                        <input type="file" accept="image/*" id="{{ form.slide_2.auto_id }}" name="{{ form.slide_2.html_name }}" onchange="loadFile(event, this.id)" style="display: block;">
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <h6>Слайд 3</h6>
+                    <img width="100%" height="300px" id="{{ form.slide_3.auto_id }}-display" {% if form.instance.slide_3 %}src="{{ form.slide_3.url }}"{% else %}src="{% static 'all_logos/empty-photo.png' %}"{% endif %} class="img-responsive">
+                    <div class="form-group">
+                        <label class="control-label" for="{{ form.slide_3.auto_id }}">Рекомендований розмір: (1920х1080)</label>
+                        <input type="file" accept="image/*" id="{{ form.slide_3.auto_id }}" name="{{ form.slide_3.html_name }}" onchange="loadFile(event, this.id)" style="display: block;">
+                    </div>
+                </div>
+            </div>
+            <div class="row" style="margin-bottom: 15px; margin-top: 20px;">
+                <h5 style="border-bottom: 1px solid rgba(0,0,0,.125); padding-bottom: 20px;">Коротка інформація</h5>
+            </div>
+            <div class="row">
+                <div class="form-group">
+                    <label for="{{ form.title.auto_id }}" class="form-label">Заголовок</label>
+                    <input type="text" class="form-control" id="{{ form.title.auto_id }}" {% if form.instance.title %}value="{{ form.instance.title }}"{% endif %} name="{{ form.title.html_name }}" onchange="fieldIsValid(this)">
+                    <p id="{{ form.title.auto_id }}-errors" style="color: red;"></p>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Короткий текст</label>
+                    <div id="editor-short-text" style="margin-top: 2%;">{% if form.instance.short_text %}{{ form.instance.short_text|safe }}{% endif %}</div>
+                    <div hidden="hidden">
+                        <div id="insert-into-short-text"></div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input" id="{{ form.show_urls.auto_id }}" name="{{ form.show_urls.html_name }}">
+                        <label for="{{ form.show_urls.auto_id }}" class="form-label">Показати посилання на додатки</label>
+                    </div>
+                </div>
+            </div>
+            <div class="row" style="margin-bottom: 15px; margin-top: 20px;">
+                <h5 style="border-bottom: 1px solid rgba(0,0,0,.125); padding-bottom: 20px;">Поруч з нами</h5>
+            </div>
+            <div class="row">
+                <div class="col-md-4">
+                    <h6>Блок 1</h6>
+                    <img width="100%" height="300px" id="{{ form.block_photo_1.auto_id }}-display" {% if form.instance.block_photo_1 %}src="{{ form.block_photo_1.url }}"{% else %}src="{% static 'all_logos/empty-photo.png' %}"{% endif %} class="img-responsive">
+                    <div class="form-group">
+                        <label class="control-label" for="{{ form.block_photo_1.auto_id }}">Рекомендований розмір: (1000х600)</label>
+                        <input type="file" accept="image/*" id="{{ form.block_photo_1.auto_id }}" name="{{ form.block_photo_1.html_name }}" onchange="loadFile(event, this.id)" style="display: block;">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="{{ form.block_header_1.auto_id }}">Заголовок</label>
+                        <input type="text" class="form-control" id="{{ form.block_header_1.auto_id }}" name="{{ form.block_header_1.html_name }}" onchange="fieldIsValid(this)">
+                        <p id="{{ form.block_header_1.auto_id }}-errors" style="color: red;"></p>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Опис</label>
+                        <div id="editor-block-1"></div>
+                        <div hidden="hidden">
+                            <div id="insert-into-id_block_description_1"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <h6>Блок 2</h6>
+                    <img width="100%" height="300px" id="{{ form.block_photo_2.auto_id }}-display" {% if form.instance.block_photo_2 %}src="{{ form.block_photo_2.url }}"{% else %}src="{% static 'all_logos/empty-photo.png' %}"{% endif %} class="img-responsive">
+                    <div class="form-group">
+                        <label class="control-label" for="{{ form.block_photo_2.auto_id }}">Рекомендований розмір: (1000х600)</label>
+                        <input type="file" accept="image/*" id="{{ form.block_photo_2.auto_id }}" name="{{ form.block_photo_2.html_name }}" onchange="loadFile(event, this.id)" style="display: block;">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="{{ form.block_header_2.auto_id }}">Заголовок</label>
+                        <input type="text" class="form-control" id="{{ form.block_header_2.auto_id }}" name="{{ form.block_header_2.html_name }}" onchange="fieldIsValid(this)">
+                        <p id="{{ form.block_header_2.auto_id }}-errors" style="color: red;"></p>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Опис</label>
+                        <div id="editor-block-2"></div>
+                        <div hidden="hidden">
+                            <div id="insert-into-id_block_description_2"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <h6>Блок 3</h6>
+                    <img width="100%" height="300px" id="{{ form.block_photo_3.auto_id }}-display" {% if form.instance.block_photo_3 %}src="{{ form.block_photo_3.url }}"{% else %}src="{% static 'all_logos/empty-photo.png' %}"{% endif %} class="img-responsive">
+                    <div class="form-group">
+                        <label class="control-label" for="{{ form.block_photo_3.auto_id }}">Рекомендований розмір: (1000х600)</label>
+                        <input type="file" accept="image/*" id="{{ form.block_photo_3.auto_id }}" name="{{ form.block_photo_3.html_name }}" onchange="loadFile(event, this.id)" style="display: block;">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="{{ form.block_header_3.auto_id }}">Заголовок</label>
+                        <input type="text" class="form-control" id="{{ form.block_header_3.auto_id }}" name="{{ form.block_header_3.html_name }}" onchange="fieldIsValid(this)">
+                        <p id="{{ form.block_header_3.auto_id }}-errors" style="color: red;"></p>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Опис</label>
+                        <div id="editor-block-3"></div>
+                        <div hidden="hidden">
+                            <div id="insert-into-id_block_description_3"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <h6>Блок 4</h6>
+                    <img width="100%" height="300px" id="{{ form.block_photo_4.auto_id }}-display" {% if form.instance.block_photo_4 %}src="{{ form.block_photo_4.url }}"{% else %}src="{% static 'all_logos/empty-photo.png' %}"{% endif %} class="img-responsive">
+                    <div class="form-group">
+                        <label class="control-label" for="{{ form.block_photo_4.auto_id }}">Рекомендований розмір: (1000х600)</label>
+                        <input type="file" accept="image/*" id="{{ form.block_photo_4.auto_id }}" name="{{ form.block_photo_4.html_name }}" onchange="loadFile(event, this.id)" style="display: block;">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="{{ form.block_header_4.auto_id }}">Заголовок</label>
+                        <input type="text" class="form-control" id="{{ form.block_header_4.auto_id }}" name="{{ form.block_header_4.html_name }}" onchange="fieldIsValid(this)">
+                        <p id="{{ form.block_header_4.auto_id }}-errors" style="color: red;"></p>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Опис</label>
+                        <div id="editor-block-4"></div>
+                        <div hidden="hidden">
+                            <div id="insert-into-id_block_description_4"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <h6>Блок 5</h6>
+                    <img width="100%" height="300px" id="{{ form.block_photo_5.auto_id }}-display" {% if form.instance.block_photo_5 %}src="{{ form.block_photo_5.url }}"{% else %}src="{% static 'all_logos/empty-photo.png' %}"{% endif %} class="img-responsive">
+                    <div class="form-group">
+                        <label class="control-label" for="{{ form.block_photo_5.auto_id }}">Рекомендований розмір: (1000х600)</label>
+                        <input type="file" accept="image/*" id="{{ form.block_photo_5.auto_id }}" name="{{ form.block_photo_5.html_name }}" onchange="loadFile(event, this.id)" style="display: block;">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="{{ form.block_header_5.auto_id }}">Заголовок</label>
+                        <input type="text" class="form-control" id="{{ form.block_header_5.auto_id }}" name="{{ form.block_header_5.html_name }}" onchange="fieldIsValid(this)">
+                        <p id="{{ form.block_header_5.auto_id }}-errors" style="color: red;"></p>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Опис</label>
+                        <div id="editor-block-5"></div>
+                        <div hidden="hidden">
+                            <div id="insert-into-id_block_description_5"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <h6>Блок 6</h6>
+                    <img width="100%" height="300px" id="{{ form.block_photo_6.auto_id }}-display" {% if form.instance.block_photo_6 %}src="{{ form.block_photo_6.url }}"{% else %}src="{% static 'all_logos/empty-photo.png' %}"{% endif %} class="img-responsive">
+                    <div class="form-group">
+                        <label class="control-label" for="{{ form.block_photo_6.auto_id }}">Рекомендований розмір: (1000х600)</label>
+                        <input type="file" accept="image/*" id="{{ form.block_photo_6.auto_id }}" name="{{ form.block_photo_6.html_name }}" onchange="loadFile(event, this.id)" style="display: block;">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="{{ form.block_header_6.auto_id }}">Заголовок</label>
+                        <input type="text" class="form-control" id="{{ form.block_header_6.auto_id }}" name="{{ form.block_header_6.html_name }}" onchange="fieldIsValid(this)">
+                        <p id="{{ form.block_header_6.auto_id }}-errors" style="color: red;"></p>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Опис</label>
+                        <div id="editor-block-6"></div>
+                        <div hidden="hidden">
+                            <div id="insert-into-id_block_description_6"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row" style="margin-bottom: 15px; margin-top: 20px;">
+                <h5 style="border-bottom: 1px solid rgba(0,0,0,.125); padding-bottom: 20px;">Налаштування SEO</h5>
+            </div>
+            <div class="row">
+                <div class="form-group">
+                    <label for="{{ seo_form.title.auto_id }}">Title</label>
+                    <input type="text" class="form-control" id="{{ seo_form.title.auto_id }}" name="{{ seo_form.title.html_name }}">
+                    <p id="{{ seo_form.title.auto_id }}-errors" style="color: red;"></p>
+                </div>
+                <div class="form-group">
+                    <label for="{{ seo_form.description.auto_id }}">Description</label>
+                    <textarea rows="6" class="form-control" id="{{ seo_form.description.auto_id }}" name="{{ seo_form.description.html_name }}" onchange="fieldIsValid(this)"></textarea>
+                    <p id="{{ seo_form.description.auto_id }}-errors" style="color: red;"></p>
+                </div>
+                <div class="form-group">
+                    <label for="{{ seo_form.keywords.auto_id }}">Keywords</label>
+                    <textarea rows="6" class="form-control" id="{{ seo_form.keywords.auto_id }}" name="{{ seo_form.keywords.html_name }}" onchange="fieldIsValid(this)"></textarea>
+                    <p id="{{ seo_form.keywords.auto_id }}-errors" style="color: red;"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    ClassicEditor
+        .create( document.querySelector( '#editor-short-text' ) )
+        .catch( error => {} );
+
+    for (let i = 1; i < 7; i++) {
+        ClassicEditor
+        .create( document.querySelector( `#editor-block-${i}` ) )
+        .catch( error => {} );
+    }
+</script>
+{% endblock %}

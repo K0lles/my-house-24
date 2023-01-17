@@ -12,6 +12,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('administrator-panel/', include('administrator_panel.urls')),
     path('configuration/', include('configuration.urls')),
+    path('site-management/', include('site_management.urls')),
 
     path('__debug__/', include('debug_toolbar.urls')),
 ]

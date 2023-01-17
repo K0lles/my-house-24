@@ -61,6 +61,7 @@
       <list>
         <option value="$MODULE_DIR$/administrator_panel/templates" />
         <option value="$MODULE_DIR$/configuration/templates" />
+        <option value="$MODULE_DIR$/site_management/templates" />
       </list>
     </option>
   </component>

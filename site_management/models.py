@@ -2,7 +2,7 @@ from django.db import models
 
 from phonenumber_field.modelfields import PhoneNumberField
 
-from additional.models import Seo, Gallery
+from additional.models import Seo, Gallery, Photo
 
 
 class MainPage(models.Model):
@@ -34,12 +34,14 @@ class MainPage(models.Model):
 
 
 class AboutUs(models.Model):
-    gallery = models.ForeignKey(Gallery, on_delete=models.SET_NULL, blank=True, null=True)
+    gallery = models.ForeignKey(Gallery, related_name='gallery', on_delete=models.SET_NULL, blank=True, null=True)
+    additional_gallery = models.ForeignKey(Gallery, related_name='additional_gallery', on_delete=models.SET_NULL, blank=True, null=True)
     seo = models.ForeignKey(Seo, on_delete=models.SET_NULL, blank=True, null=True)
-    title = models.CharField(max_length=200, verbose_name='Заголовок')
-    short_text = models.TextField(verbose_name='Короткий текст')
-    additional_title = models.CharField(max_length=200, verbose_name='Заголовок')
-    additional_text = models.TextField(verbose_name='Короткий текст')
+    title = models.CharField(max_length=200, verbose_name='Заголовок', blank=True, null=True)
+    director_photo = models.ImageField(upload_to='about-us/photo/director', blank=True, null=True)
+    short_text = models.TextField(verbose_name='Короткий текст', blank=True, null=True)
+    additional_title = models.CharField(max_length=200, verbose_name='Заголовок', blank=True, null=True)
+    additional_text = models.TextField(verbose_name='Короткий текст', blank=True, null=True)
 
 
 class ServiceFront(models.Model):

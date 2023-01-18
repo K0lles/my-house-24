@@ -45,3 +45,28 @@ class MainPageUpdateView(PermissionUpdateView):
         context['form'] = form
         context['seo_form'] = seo_form
         return self.render_to_response(context)
+
+
+class AboutUsUpdateView(PermissionUpdateView):
+    model = AboutUs
+    template_name = 'site_management/about-us-update.html'
+    form_class = AboutUsForm
+    string_permission = 'site_management_access'
+
+    def get_object(self, queryset=None):
+        obj = AboutUs.objects.select_related('seo', 'gallery').first()
+        if not obj:
+            obj = AboutUs.objects.create()
+        return obj
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['seo_form'] = SeoForm(prefix='seo', instance=self.object.seo)
+        context['document_formset'] = document_formset_factory(prefix='document', queryset=Document.objects.filter(about_us=self.object))
+        context['photo_form'] = PhotoForm(prefix='photo')
+        context['photos'] = Photo.objects.filter(gallery=self.object.gallery)
+        context['additional_photo_form'] = PhotoForm(prefix='additional-photo')
+        context['additional_photos'] = Photo.objects.filter(gallery=self.object.additional_gallery)
+        # photo_formset_factory = modelformset_factory(Photo, PhotoForm, extra=1 if not Photo.objects.filter(gallery=self.object.gallery).exists() else 0)
+        # context['photo_formset'] = photo_formset_factory(prefix='photo', queryset=Photo.objects.filter(gallery=self.object.gallery))
+        return context

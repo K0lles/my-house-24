@@ -1,7 +1,13 @@
-from django.forms import ModelForm
+from django.forms import ModelForm, modelformset_factory
 
-from additional.models import Seo
 from .models import *
+
+
+class SeoForm(ModelForm):
+
+    class Meta:
+        model = Seo
+        fields = '__all__'
 
 
 class MainPageForm(ModelForm):
@@ -11,8 +17,25 @@ class MainPageForm(ModelForm):
         fields = '__all__'
 
 
-class SeoForm(ModelForm):
+class AboutUsForm(ModelForm):
 
     class Meta:
-        model = Seo
+        model = AboutUs
         fields = '__all__'
+
+
+class DocumentForm(ModelForm):
+
+    class Meta:
+        model = Document
+        exclude = ['about_us']
+
+
+document_formset_factory = modelformset_factory(Document, DocumentForm, extra=0, can_delete=True)
+
+
+class PhotoForm(ModelForm):
+
+    class Meta:
+        model = Photo
+        exclude = ['gallery']

@@ -1,0 +1,131 @@
+{% extends 'main_page.html' %}
+{% load static %}
+
+{% block title %}
+    <title>Редагування сторінки</title>
+{% endblock %}
+
+{% block content_header %}
+    <h1>Редагування сторінки</h1>
+{% endblock %}
+
+{% block styles %}
+<style>
+
+        .ck-editor__editable[role="textbox"] {
+            /* editing area */
+            min-height: 200px;
+            min-width: 100%;
+        }
+</style>
+{% endblock %}
+
+{% block main_content %}
+    <div class="card">
+        <div class="card-header">
+            <div class="row">
+                <div class="col-sm-12 col-lg-6">
+                    <h5 style="font-size: 18px; color: grey">Редагування сторінка "Про нас"</h5>
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            <form id="about-us-form" method="post" action="{% url 'about-us-update' %}">
+                <div class="row">
+                    <h5 style="border-bottom: 1px solid rgba(0,0,0,.125); padding-bottom: 10px;">Інформація</h5>
+                </div>
+                <div class="row">
+                    <div class="col-md-8">
+                        <div class="form-group">
+                            <label class="form-label" for="{{ form.title.auto_id }}">Заголовок</label>
+                            <input type="text" class="form-control" id="{{ form.title.auto_id }}" name="{{ form.title.html_name }}" onchange="fieldIsValid(this)">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Короткий текст</label>
+                            <div id="parent-short-text">
+                                <div id="editor-short-text"></div>
+                            </div>
+                            <div hidden="hidden">
+                                <div id="insert-into-id_short_text"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <h6 style="font-size: 18px; color: grey">Фото директора</h6>
+                        <img id="{{ form.director_photo.auto_id }}-display" height="300px" width="237px" {% if form.instance.director_photo %}src="{{ form.instance.director_photo.url }}"{% else %}src="{% static 'all_logos/empty-photo.png' %}"{% endif %}>
+                        <div class="form-group">
+                            <label class="form-label" for="{{ form.director_photo.auto_id }}">Рекомендований розмір: (250х310)</label>
+                            <input type="file" accept="image/*" id="{{ form.director_photo.auto_id }}" name="{{ form.director_photo.html_name }}" onchange="loadFile(event, this.id)" style="display: block;">
+                        </div>
+                    </div>
+                </div>
+                <div class="row" style="margin-bottom: 15px; margin-top: 20px;">
+                    <h5 style="border-bottom: 1px solid rgba(0,0,0,.125); padding-bottom: 20px;">Фотогалерея</h5>
+                </div>
+                <div class="row">
+                    {% for photo in photos %}
+                        <div class="col-md-3">
+                            <img class="margin-bottom-15" src="{{ photo.photo.url }}" height="150px">
+                            <div class="form-group margin-bottom-15">
+                                <button id="{{ photo.id }}" type="button" class="btn btn-danger delete-photo"><i class="fa fa-trash"></i></button>
+                            </div>
+                        </div>
+                    {% endfor %}
+                    <div class="row col-sm-12 form-group" >
+                        <label for="{{ photo_form.photo.auto_id }}" class="form-label">Рекомендований розмір: (1200х1200)</label>
+                        <input type="file" accept="image/*" id="{{ photo_form.photo.auto_id }}" name="{{ photo_form.photo.html_name }}" style="display: block;">
+                    </div>
+                </div>
+                <div class="row" style="margin-bottom: 15px; margin-top: 20px;">
+                    <h5 style="border-bottom: 1px solid rgba(0,0,0,.125); padding-bottom: 20px;">Додаткова інформація</h5>
+                </div>
+                <div class="row">
+                    <div class="form-group">
+                        <label class="form-label" for="{{ form.additional_title.auto_id }}">Заголовок</label>
+                        <input type="text" class="form-control" id="{{ form.additional_title.auto_id }}" name="{{ form.additional_title.html_name }}" onchange="fieldIsValid(this)">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Короткий текст</label>
+                        <div id="parent-additional-short-text">
+                            <div id="editor-additional-short-text"></div>
+                        </div>
+                        <div hidden="hidden">
+                            <div id="insert-into-id_additional_short_text"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row" style="margin-bottom: 15px; margin-top: 20px;">
+                    <h5 style="border-bottom: 1px solid rgba(0,0,0,.125); padding-bottom: 20px;">Додаткова фотогалерея</h5>
+                </div>
+                <div class="row">
+                    {% for photo in additional_photos %}
+                        <div class="col-md-3">
+                            <img class="margin-bottom-15" src="{{ photo.photo.url }}" height="150px">
+                            <div class="form-group margin-bottom-15">
+                                <button id="{{ photo.id }}" type="button" class="btn btn-danger delete-additional-photo"><i class="fa fa-trash"></i></button>
+                            </div>
+                        </div>
+                    {% endfor %}
+                    <div class="row col-sm-12 form-group" >
+                        <label for="{{ additional_photo_form.photo.auto_id }}" class="form-label">Рекомендований розмір: (1200х1200)</label>
+                        <input type="file" accept="image/*" id="{{ additional_photo_form.photo.auto_id }}" name="{{ additional_photo_form.photo.html_name }}" style="display: block;">
+                    </div>
+                </div>
+                <div class="row" style="margin-bottom: 15px; margin-top: 20px;">
+                    <h5 style="border-bottom: 1px solid rgba(0,0,0,.125); padding-bottom: 20px;">Документи</h5>
+                </div>
+                <div class="row">
+
+                </div>
+            </form>
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    ClassicEditor.create(document.querySelector('#editor-short-text'));
+    ClassicEditor.create(document.querySelector('#editor-additional-short-text'));
+
+</script>
+{% endblock %}

@@ -1,3 +1,5 @@
+import os
+
 from django.db import models
 
 from phonenumber_field.modelfields import PhoneNumberField
@@ -75,4 +77,9 @@ class Contact(models.Model):
 
 class Document(models.Model):
     about_us = models.ForeignKey(AboutUs, on_delete=models.CASCADE)
+    title = models.CharField(max_length=200, verbose_name='Назва документа')
     file = models.FileField(upload_to='about-us/files/')
+
+    def extension(self):
+        name, extension = os.path.splitext(self.file.name)
+        return extension

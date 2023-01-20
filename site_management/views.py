@@ -70,3 +70,25 @@ class AboutUsUpdateView(PermissionUpdateView):
         # photo_formset_factory = modelformset_factory(Photo, PhotoForm, extra=1 if not Photo.objects.filter(gallery=self.object.gallery).exists() else 0)
         # context['photo_formset'] = photo_formset_factory(prefix='photo', queryset=Photo.objects.filter(gallery=self.object.gallery))
         return context
+
+    def post(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        form = self.get_form_class()(request.POST, request.FILES, instance=self.object)
+        seo_form = SeoForm(request.POST, prefix='seo', instance=self.object.seo)
+        photo_form = PhotoForm(request.POST, request.FILES, prefix='photo')
+        additional_photo_form = PhotoForm(request.POST, request.FILES, prefix='additional-photo')
+        document_formset = document_formset_factory(request.POST, request.FILES, prefix='document', queryset=Document.objects.filter(about_us=self.object))
+        if form.is_valid() and seo_form.is_valid() and photo_form.is_valid() and additional_photo_form.is_valid() and document_formset.is_valid():
+            return self.form_valid(form, seo_form, photo_form, additional_photo_form, document_formset)
+        print(f'form: {form.errors}')
+        print(f'seo-form: {seo_form.errors}')
+        print(f'photo_form: {photo_form.errors}')
+        print(f'additional_photo_form: {additional_photo_form.errors}')
+        print(f'document_formset: {document_formset.errors}')
+        return redirect('about-us-update')
+
+    def form_valid(self, form, seo_form, photo_form, additional_photo_form, document_formset):
+        about_us = form.save(commit=False)
+        seo = seo_form.save()
+        about_us.seo = seo
+

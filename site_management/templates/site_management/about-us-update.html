@@ -30,7 +30,8 @@
             </div>
         </div>
         <div class="card-body">
-            <form id="about-us-form" method="post" action="{% url 'about-us-update' %}">
+            <form id="about-us-form" method="post" action="{% url 'about-us-update' %}" enctype="multipart/form-data">
+                {% csrf_token %}
                 <div class="row">
                     <h5 style="border-bottom: 1px solid rgba(0,0,0,.125); padding-bottom: 10px;">Інформація</h5>
                 </div>
@@ -48,6 +49,7 @@
                             <div hidden="hidden">
                                 <div id="insert-into-id_short_text"></div>
                             </div>
+                            <p id="{{ form.short_text.auto_id }}-errors" style="color: red;"></p>
                         </div>
                     </div>
                     <div class="col-md-4">
@@ -87,11 +89,12 @@
                     <div class="form-group">
                         <label class="form-label">Короткий текст</label>
                         <div id="parent-additional-short-text">
-                            <div id="editor-additional-short-text"></div>
+                            <div id="editor-additional-text"></div>
                         </div>
                         <div hidden="hidden">
-                            <div id="insert-into-id_additional_short_text"></div>
+                            <div id="insert-into-id_additional_text"></div>
                         </div>
+                        <p id="{{ form.additional_text.auto_id }}-errors" style="color: red;"></p>
                     </div>
                 </div>
                 <div class="row" style="margin-bottom: 15px; margin-top: 20px;">
@@ -115,7 +118,66 @@
                     <h5 style="border-bottom: 1px solid rgba(0,0,0,.125); padding-bottom: 20px;">Документи</h5>
                 </div>
                 <div class="row">
-
+                {{ document_formset.management_form }}
+                    <div id="document-list">
+                        {% for document in document_formset.forms %}
+                            <div id="{{ document.file.auto_id }}-parent" class="col-sm-12 col-lg-6">
+                                <div class="form-group">
+                                    <button type="button" id="{{ document.file.auto_id }}-delete" data-file="{{ document.instance.id }}" class="btn btn-danger float-right"><i class="fa fa-trash"></i></button>
+                                    <img class="img-responsive float-left" {% if document.file.get_extension != '.png' or document.file.get_extension != '.jpg' %}src="{% static 'all_logos/pdf-icon.png' %}"{% else %}src="{{ document.file.url }}"{% endif %} height="60px" width="55px">
+                                    <label for="{{ document.file.auto_id }}" class="form-label">PDF, JPG (макс. розмір 20 Mb)</label>
+                                    <input type="file" id="{{ document.file.auto_id }}" name="{{ document.file.html_name }}" style="display: block">
+                                </div>
+                                <div class="form-group">
+                                    <label for="{{ document.title.auto_id }}" class="form-label">Назва документу</label>
+                                    <input type="text" class="form-control" id="{{ document.title.auto_id }}" name="{{ document.title.html_name }}" onchange="fieldIsValid(this)">
+                                    <p id="{{ document.title.auto_id }}-errors" style="color: red;"></p>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                    <div id="{{ document_formset.empty_form.file.auto_id }}-parent" hidden="hidden" class="col-sm-12 col-lg-6">
+                        <div class="form-group">
+                            <a id="{{ document_formset.empty_form.file.auto_id }}-delete" href="#" class="btn btn-danger float-right"><i class="fa fa-trash"></i></a>
+                            <img class="img-responsive float-left" src="{% static 'all_logos/empty-document.png' %}" height="60px" width="55px">
+                            <label for="{{ document_formset.empty_form.file.auto_id }}" class="form-label">PDF, JPG (макс. розмір 20 Mb)</label>
+                            <input type="file" id="{{ document_formset.empty_form.file.auto_id }}" name="{{ document_formset.empty_form.file.html_name }}" style="display: block">
+                        </div>
+                        <div class="form-group">
+                            <label for="{{ document_formset.empty_form.title.auto_id }}" class="form-label">Назва документу</label>
+                            <input type="hidden" class="form-control" id="{{ document_formset.empty_form.title.auto_id }}" name="{{ document_formset.empty_form.title.html_name }}" onchange="fieldIsValid(this)">
+                            <p id="{{ document_formset.empty_form.title.auto_id }}-errors" style="color: red;"></p>
+                        </div>
+                    </div>
+                    <div class="col-sm-12">
+                        <button type="button" class="btn btn-success" id="add-document">Додати документ</button>
+                    </div>
+                </div>
+                <div class="row" style="margin-bottom: 15px; margin-top: 20px;">
+                    <h5 style="border-bottom: 1px solid rgba(0,0,0,.125); padding-bottom: 20px;">Налаштування Seo</h5>
+                </div>
+                <div class="row">
+                    <div class="form-group">
+                        <label for="{{ seo_form.title.auto_id }}">Title</label>
+                        <input type="text" class="form-control" id="{{ seo_form.title.auto_id }}" {% if seo_form.instance.title %}value="{{ seo_form.instance.title }}"{% endif %} name="{{ seo_form.title.html_name }}" onchange="fieldIsValid(this)">
+                        <p id="{{ seo_form.title.auto_id }}-errors" style="color: red;"></p>
+                    </div>
+                    <div class="form-group">
+                        <label for="{{ seo_form.description.auto_id }}">Description</label>
+                        <textarea rows="6" class="form-control" id="{{ seo_form.description.auto_id }}" name="{{ seo_form.description.html_name }}" onchange="fieldIsValid(this)">{% if seo_form.instance.description %}{{ seo_form.instance.description }}{% endif %}</textarea>
+                        <p id="{{ seo_form.description.auto_id }}-errors" style="color: red;"></p>
+                    </div>
+                    <div class="form-group">
+                        <label for="{{ seo_form.keywords.auto_id }}">Keywords</label>
+                        <textarea rows="6" class="form-control" id="{{ seo_form.keywords.auto_id }}" name="{{ seo_form.keywords.html_name }}" onchange="fieldIsValid(this)">{% if seo_form.instance.keywords %}{{ seo_form.instance.keywords }}{% endif %}</textarea>
+                        <p id="{{ seo_form.keywords.auto_id }}-errors" style="color: red;"></p>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-sm-12 text-center">
+                        <button type="reset" class="btn btn-default">Скасувати</button>
+                        <button type="submit" class="btn btn-success" onclick="formIsValid()">Зберегти</button>
+                    </div>
                 </div>
             </form>
         </div>
@@ -125,7 +187,68 @@
 {% block scripts %}
 <script>
     ClassicEditor.create(document.querySelector('#editor-short-text'));
-    ClassicEditor.create(document.querySelector('#editor-additional-short-text'));
+    ClassicEditor.create(document.querySelector('#editor-additional-text'));
 
+    const DOCUMENT_TOTAL_FORMS = $('#id_document-TOTAL_FORMS');
+    $('#add-document').on('click', function () {
+        let empty_form = $('div#id_document-__prefix__-file-parent').clone();
+        let total_forms = DOCUMENT_TOTAL_FORMS.val();
+
+        empty_form.find('label[for="id_document-__prefix__-title"]').attr('for', `id_document-${total_forms}-title`);
+        empty_form.find('#id_document-__prefix__-title').attr('type', `text`);
+        empty_form.find('#id_document-__prefix__-title').attr('name', `document-${total_forms}-title`);
+        empty_form.find('#id_document-__prefix__-title').attr('id', `id_document-${total_forms}-title`);
+
+        empty_form.find('#id_document-__prefix__-file').attr('name', `document-${total_forms}-file`);
+        empty_form.find('#id_document-__prefix__-file').attr('id', `id_document-${total_forms}-file`);
+
+        empty_form.find('#id_document-__prefix__-file-delete').attr('id', `id_document-${total_forms}-file-delete`);
+
+        empty_form.attr('id', `id_document-${total_forms}-file-parent`);
+        empty_form.removeAttr('hidden');
+        empty_form.find(`#id_document-__prefix__-title-errors`).attr('id', `id_document-${total_forms}-title-errors`);
+
+        DOCUMENT_TOTAL_FORMS.attr('value', parseInt(total_forms) + 1);
+        $('#document-list').append(empty_form);
+    })
+
+    function formIsValid() {
+        event.preventDefault();
+        let isValid = true;
+
+        if ($('#parent-short-text .ck-editor__editable[role="textbox"]').html() === '<p><br data-cke-filler="true"></p>'){
+            if (!($(`#id_short_text-errors`).text()).includes('Поле не може бути пустим')) {
+                $(`#id_short_text-errors`).text('Поле не може бути пустим');
+            }
+            isValid = false;
+        }
+        else {
+            $(`#id_short_text-errors`).text('');
+        }
+
+        if ($('#parent-additional-text .ck-editor__editable[role="textbox"]').html() === '<p><br data-cke-filler="true"></p>'){
+            if (!($(`#id_additional_text-errors`).text()).includes('Поле не може бути пустим')) {
+                $(`#id_additional_text-errors`).text('Поле не може бути пустим');
+            }
+            isValid = false;
+        }
+        else {
+            $(`#id_additional_text-errors`).text('');
+        }
+
+        $(`#about-us-form`).find(`input[type!='hidden'][class!="ck-hidden"]`).each(function() {
+            if (!$(this).attr('id').includes('ck-') && !fieldIsValid(this)) {
+                isValid = false;
+            }
+        });
+
+        if (isValid) {
+            $(`form#about-us-form`).submit();
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
 </script>
 {% endblock %}

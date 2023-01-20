@@ -31,7 +31,7 @@ class DocumentForm(ModelForm):
         exclude = ['about_us']
 
 
-document_formset_factory = modelformset_factory(Document, DocumentForm, extra=0, can_delete=True)
+document_formset_factory = modelformset_factory(Document, DocumentForm, extra=2, can_delete=True)
 
 
 class PhotoForm(ModelForm):

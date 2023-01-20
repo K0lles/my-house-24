@@ -313,7 +313,6 @@
             $(`#id_short_text-errors`).text('');
         }
 
-        console.log(isValid);
 
         for (let i = 1; i < 7; i++) {
             if ($(`#parent-block_description_${i} .ck-editor__editable[role="textbox"]`).html() === '<p><br data-cke-filler="true"></p>'){
@@ -327,10 +326,8 @@
             }
         }
 
-        console.log(isValid);
 
         $(`#main-page-form`).find('input[type!="hidden"][class!="ck-hidden"][type!="checkbox"]').each(function() {
-            console.log(`${$(this).attr('id')} contains ck- === ${$(this).attr('id').includes('ck-')}`);
             if (!$(this).attr('id').includes('ck-') && !fieldIsValid(this)) {
                 console.log($(this).attr('id'), ' have invalid something');
                 isValid = false;
@@ -341,8 +338,6 @@
         || !fieldIsValid(document.getElementById('id_seo-keywords'))) {
             isValid = false;
         }
-
-        console.log(isValid);
 
         if (isValid) {
             $('#insert-into-id_short_text').append(`<textarea id="{{ form.short_text.auto_id }}" name="{{ form.short_text.html_name }}">${$('#parent-short_text .ck-editor__editable[role="textbox"]').html()}</textarea>`);

@@ -279,11 +279,11 @@
                     </div>
                 </div>
                 <div class="row">
-                <div class="col-sm-12 text-center">
-                    <button type="reset" class="btn btn-default">Скасувати</button>
-                    <button type="submit" class="btn btn-success" onclick="formIsValid()">Зберегти</button>
+                    <div class="col-sm-12 text-center">
+                        <button type="reset" class="btn btn-default">Скасувати</button>
+                        <button type="submit" class="btn btn-success" onclick="formIsValid()">Зберегти</button>
+                    </div>
                 </div>
-            </div>
             </form>
         </div>
     </div>
@@ -329,13 +329,15 @@
 
         $(`#main-page-form`).find('input[type!="hidden"][class!="ck-hidden"][type!="checkbox"]').each(function() {
             if (!$(this).attr('id').includes('ck-') && !fieldIsValid(this)) {
-                console.log($(this).attr('id'), ' have invalid something');
                 isValid = false;
             }
         });
 
-        if (!fieldIsValid(document.getElementById('id_seo-description'))
-        || !fieldIsValid(document.getElementById('id_seo-keywords'))) {
+        if (!fieldIsValid(document.getElementById('id_seo-description'))) {
+            isValid = false;
+        }
+
+        if (!fieldIsValid(document.getElementById('id_seo-keywords'))) {
             isValid = false;
         }
 

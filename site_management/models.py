@@ -48,18 +48,13 @@ class AboutUs(models.Model):
 
 class ServiceFront(models.Model):
     seo = models.ForeignKey(Seo, on_delete=models.SET_NULL, blank=True, null=True)
-    service_photo_1 = models.ImageField(upload_to='service/photos/')
-    service_title_1 = models.CharField(max_length=200, verbose_name='Назва послуги')
-    service_text_1 = models.TextField(verbose_name='Опис послуги')
-    service_photo_2 = models.ImageField(upload_to='service/photos/')
-    service_title_2 = models.CharField(max_length=200, verbose_name='Назва послуги')
-    service_text_2 = models.TextField(verbose_name='Опис послуги')
-    service_photo_3 = models.ImageField(upload_to='service/photos/')
-    service_title_3 = models.CharField(max_length=200, verbose_name='Назва послуги')
-    service_text_3 = models.TextField(verbose_name='Опис послуги')
-    service_photo_4 = models.ImageField(upload_to='service/photos/')
-    service_title_4 = models.CharField(max_length=200, verbose_name='Назва послуги')
-    service_text_4 = models.TextField(verbose_name='Опис послуги')
+
+
+class ServiceObjectFront(models.Model):
+    service_front = models.ForeignKey(ServiceFront, on_delete=models.CASCADE)
+    photo = models.ImageField(upload_to='service/photos/')
+    title = models.CharField(max_length=200, verbose_name='Назва послуги')
+    description = models.TextField()
 
 
 class Contact(models.Model):

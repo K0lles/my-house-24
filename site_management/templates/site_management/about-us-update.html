@@ -30,6 +30,25 @@
             </div>
         </div>
         <div class="card-body">
+            {% if messages %}
+                {% for message in messages %}
+                    {% if message.tags == 'success' %}
+                        <div class="alert alert-success alert-dismissible fade show" role="alert">
+                            {{ message }}
+                                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                        </div>
+                    {% elif message.tags == 'error' %}
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            {{ message }}
+                                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            {% endif %}
             <form id="about-us-form" method="post" action="{% url 'about-us-update' %}" enctype="multipart/form-data">
                 {% csrf_token %}
                 <div class="row">
@@ -39,12 +58,12 @@
                     <div class="col-md-8">
                         <div class="form-group">
                             <label class="form-label" for="{{ form.title.auto_id }}">Заголовок</label>
-                            <input type="text" class="form-control" id="{{ form.title.auto_id }}" name="{{ form.title.html_name }}" onchange="fieldIsValid(this)">
+                            <input type="text" class="form-control" id="{{ form.title.auto_id }}" value="{{ form.instance.title }}" name="{{ form.title.html_name }}" onchange="fieldIsValid(this)">
                         </div>
                         <div class="form-group">
                             <label class="form-label">Короткий текст</label>
                             <div id="parent-short-text">
-                                <div id="editor-short-text"></div>
+                                <div id="editor-short-text">{{ form.instance.short_text|safe }}</div>
                             </div>
                             <div hidden="hidden">
                                 <div id="insert-into-id_short_text"></div>
@@ -57,7 +76,7 @@
                         <img id="{{ form.director_photo.auto_id }}-display" height="300px" width="237px" {% if form.instance.director_photo %}src="{{ form.instance.director_photo.url }}"{% else %}src="{% static 'all_logos/empty-photo.png' %}"{% endif %}>
                         <div class="form-group">
                             <label class="form-label" for="{{ form.director_photo.auto_id }}">Рекомендований розмір: (250х310)</label>
-                            <input type="file" accept="image/*" id="{{ form.director_photo.auto_id }}" name="{{ form.director_photo.html_name }}" onchange="loadFile(event, this.id)" style="display: block;">
+                            <input type="file" accept="image/*" id="{{ form.director_photo.auto_id }}" name="{{ form.director_photo.html_name }}" value="{{ form.instance.director_photo }}" onchange="loadFile(event, this.id)" style="display: block;">
                         </div>
                     </div>
                 </div>
@@ -67,9 +86,9 @@
                 <div class="row">
                     {% for photo in photos %}
                         <div class="col-md-3">
-                            <img class="margin-bottom-15" src="{{ photo.photo.url }}" height="150px">
-                            <div class="form-group margin-bottom-15">
-                                <button id="{{ photo.id }}" type="button" class="btn btn-danger delete-photo"><i class="fa fa-trash"></i></button>
+                            <img src="{{ photo.photo.url }}" height="150px" width="100%">
+                            <div class="form-group text-center" style="margin-top: 15px;">
+                                <a href="{% url 'photo-delete' photo_pk=photo.pk %}" type="button" class="btn btn-danger delete-button"><i class="fa fa-trash"></i></a>
                             </div>
                         </div>
                     {% endfor %}
@@ -84,12 +103,12 @@
                 <div class="row">
                     <div class="form-group">
                         <label class="form-label" for="{{ form.additional_title.auto_id }}">Заголовок</label>
-                        <input type="text" class="form-control" id="{{ form.additional_title.auto_id }}" name="{{ form.additional_title.html_name }}" onchange="fieldIsValid(this)">
+                        <input type="text" class="form-control" id="{{ form.additional_title.auto_id }}" value="{{ form.instance.additional_title }}" name="{{ form.additional_title.html_name }}" onchange="fieldIsValid(this)">
                     </div>
                     <div class="form-group">
                         <label class="form-label">Короткий текст</label>
-                        <div id="parent-additional-short-text">
-                            <div id="editor-additional-text"></div>
+                        <div id="parent-additional-text">
+                            <div id="editor-additional-text">{{ form.instance.additional_text|safe }}</div>
                         </div>
                         <div hidden="hidden">
                             <div id="insert-into-id_additional_text"></div>
@@ -123,14 +142,14 @@
                         {% for document in document_formset.forms %}
                             <div id="{{ document.file.auto_id }}-parent" class="col-sm-12 col-lg-6">
                                 <div class="form-group">
-                                    <button type="button" id="{{ document.file.auto_id }}-delete" data-file="{{ document.instance.id }}" class="btn btn-danger float-right"><i class="fa fa-trash"></i></button>
-                                    <img class="img-responsive float-left" {% if document.file.get_extension != '.png' or document.file.get_extension != '.jpg' %}src="{% static 'all_logos/pdf-icon.png' %}"{% else %}src="{{ document.file.url }}"{% endif %} height="60px" width="55px">
-                                    <label for="{{ document.file.auto_id }}" class="form-label">PDF, JPG (макс. розмір 20 Mb)</label>
-                                    <input type="file" id="{{ document.file.auto_id }}" name="{{ document.file.html_name }}" style="display: block">
+                                    <a href="{% url 'document-delete' document_pk=document.instance.pk %}" id="{{ document.file.auto_id }}-delete" data-file="{{ document.instance.id }}" class="btn btn-danger float-right delete-button"><i class="fa fa-trash"></i></a>
+                                    <img class="img-responsive float-left" {% if document.instance.get_extension != '.png' and document.instance.get_extension != '.jpg' and document.instance.get_extension != '.jpeg' %}src="{% static 'all_logos/pdf-icon.png' %}"{% else %}src="{{ document.instance.file.url }}"{% endif %} height="60px" width="55px">
+                                    <label for="{{ document.file.auto_id }}" class="form-label">PDF, JPG (макс. розмір 20 Mb);</label>
+                                    <input type="file" id="{{ document.file.auto_id }}" value="{{ document.instance.file }}" name="{{ document.file.html_name }}" style="display: block">
                                 </div>
                                 <div class="form-group">
                                     <label for="{{ document.title.auto_id }}" class="form-label">Назва документу</label>
-                                    <input type="text" class="form-control" id="{{ document.title.auto_id }}" name="{{ document.title.html_name }}" onchange="fieldIsValid(this)">
+                                    <input type="text" class="form-control" id="{{ document.title.auto_id }}" value="{{ document.instance.title }}" name="{{ document.title.html_name }}" onchange="fieldIsValid(this)">
                                     <p id="{{ document.title.auto_id }}-errors" style="color: red;"></p>
                                 </div>
                             </div>
@@ -138,7 +157,7 @@
                     </div>
                     <div id="{{ document_formset.empty_form.file.auto_id }}-parent" hidden="hidden" class="col-sm-12 col-lg-6">
                         <div class="form-group">
-                            <a id="{{ document_formset.empty_form.file.auto_id }}-delete" href="#" class="btn btn-danger float-right"><i class="fa fa-trash"></i></a>
+                            <button type="button" id="{{ document_formset.empty_form.file.auto_id }}-delete" class="btn btn-danger float-right"><i class="fa fa-trash"></i></button>
                             <img class="img-responsive float-left" src="{% static 'all_logos/empty-document.png' %}" height="60px" width="55px">
                             <label for="{{ document_formset.empty_form.file.auto_id }}" class="form-label">PDF, JPG (макс. розмір 20 Mb)</label>
                             <input type="file" id="{{ document_formset.empty_form.file.auto_id }}" name="{{ document_formset.empty_form.file.html_name }}" style="display: block">
@@ -154,7 +173,7 @@
                     </div>
                 </div>
                 <div class="row" style="margin-bottom: 15px; margin-top: 20px;">
-                    <h5 style="border-bottom: 1px solid rgba(0,0,0,.125); padding-bottom: 20px;">Налаштування Seo</h5>
+                    <h5 style="border-bottom: 1px solid rgba(0,0,0,.125); padding-bottom: 20px;">Налаштування SEO</h5>
                 </div>
                 <div class="row">
                     <div class="form-group">
@@ -204,6 +223,8 @@
 
         empty_form.find('#id_document-__prefix__-file-delete').attr('id', `id_document-${total_forms}-file-delete`);
 
+        empty_form.find(`#id_document-${total_forms}-file-delete`).attr('onclick', 'deletePhoto(this)');
+
         empty_form.attr('id', `id_document-${total_forms}-file-parent`);
         empty_form.removeAttr('hidden');
         empty_form.find(`#id_document-__prefix__-title-errors`).attr('id', `id_document-${total_forms}-title-errors`);
@@ -242,6 +263,14 @@
             }
         });
 
+        if (!fieldIsValid(document.getElementById('id_seo-description'))) {
+            isValid = false;
+        }
+
+        if (!fieldIsValid(document.getElementById('id_seo-keywords'))) {
+            isValid = false;
+        }
+
         if (isValid) {
             $(`form#about-us-form`).submit();
             return true;
@@ -249,6 +278,42 @@
         else {
             return false;
         }
+    }
+
+    $('.delete-button').on('click', function (event) {
+        event.stopPropagation();
+        event.preventDefault();
+        Swal.fire({
+            title: 'Ви впевнені?',
+            text: "Після видалення елемент неможливо буде повернути!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#A9A9A9',
+            cancelButtonText: 'Скасувати',
+            confirmButtonText: 'Видалити'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.location.href = $(this).attr('href');
+                }
+            })
+    })
+
+    function deletePhoto(element) {
+        Swal.fire({
+            title: 'Ви впевнені?',
+            text: "Після видалення елемент неможливо буде повернути!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#A9A9A9',
+            cancelButtonText: 'Скасувати',
+            confirmButtonText: 'Видалити'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $(`#${element.id}`).parent().parent().remove();
+                }
+            })
     }
 </script>
 {% endblock %}

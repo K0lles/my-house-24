@@ -1,4 +1,4 @@
-from django.forms import ModelForm, modelformset_factory, BaseModelFormSet
+from django.forms import ModelForm, modelformset_factory, BaseModelFormSet, ImageField
 
 from .models import *
 
@@ -21,7 +21,7 @@ class AboutUsForm(ModelForm):
 
     class Meta:
         model = AboutUs
-        fields = '__all__'
+        exclude =['gallery', 'additional_gallery']
 
 
 class DocumentForm(ModelForm):
@@ -33,7 +33,6 @@ class DocumentForm(ModelForm):
     def clean(self):
         cleaned_data = super().clean()
         self._errors = {}
-        print(f'cleaned data in document: {self.cleaned_data}')
         return cleaned_data
 
 
@@ -50,6 +49,7 @@ document_formset_factory = modelformset_factory(Document, form=DocumentForm, for
 
 
 class PhotoForm(ModelForm):
+    photo = ImageField(required=False)
 
     class Meta:
         model = Photo
@@ -57,12 +57,7 @@ class PhotoForm(ModelForm):
 
     def clean(self):
         cleaned_data = super().clean()
-        if self._errors.get('photo'):
-            del self._errors['photo']
         self._errors = {}
-        print(f'cleaned data in photo: {self.cleaned_data}')
-        print(f'in form with prefix: {self.prefix} there are {self._errors}, photo: {self.cleaned_data.get("photo")}')
-        print(self._errors.get('photo'))
         return cleaned_data
 
 
@@ -81,8 +76,12 @@ class ServiceFrontObjectForm(ModelForm):
 
     def clean(self):
         cleaned_data = super().clean()
-        self._errors = {}
-        print(self.cleaned_data)
+        if self._errors.get('photo'):
+            del self._errors['photo']
+        if self._errors.get('title'):
+            del self._errors['title']
+        if self._errors.get('description'):
+            del self._errors['description']
         return cleaned_data
 
 

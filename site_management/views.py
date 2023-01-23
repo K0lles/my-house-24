@@ -76,20 +76,8 @@ class AboutUsUpdateView(PermissionUpdateView):
         photo_form = PhotoForm(request.POST, request.FILES, prefix='photo')
         additional_photo_form = PhotoForm(request.POST, request.FILES, prefix='additional-photo')
         document_formset = document_formset_factory(request.POST, request.FILES, prefix='document', queryset=Document.objects.filter(about_us=self.object))
-        if form.is_valid():
-            print('form is valid!')
-        if seo_form.is_valid():
-            print('seo form is valid')
-        if photo_form.is_valid():
-            print('photo form is valid')
-        if additional_photo_form.is_valid():
-            print('additional form is valid')
-        if document_formset.is_valid():
-            print('documents are valid')
         if form.is_valid() and seo_form.is_valid() and photo_form.is_valid() and additional_photo_form.is_valid() and document_formset.is_valid():
             return self.form_valid(form, seo_form, photo_form, additional_photo_form, document_formset)
-        print(f'photo_form: {photo_form.errors}')
-        print(f'additional_photo_form: {additional_photo_form.errors}')
         return self.form_invalid(form)
 
     def form_valid(self, form, seo_form, photo_form, additional_photo_form, document_formset):
@@ -97,9 +85,9 @@ class AboutUsUpdateView(PermissionUpdateView):
         seo = seo_form.save()
         about_us.seo = seo
 
-        if not about_us.gallery:
+        if not self.object.gallery:
             about_us.gallery = Gallery.objects.create(name='about-us-gallery')
-        if not about_us.additional_gallery:
+        if not self.object.additional_gallery:
             about_us.additional_gallery = Gallery.objects.create(name='about-us-additional-gallery')
         about_us.save()
 
@@ -117,11 +105,11 @@ class AboutUsUpdateView(PermissionUpdateView):
                 document_saved = document.save(commit=False)
                 document_saved.about_us = about_us
                 document_saved.save()
-        messages.success(self.request, 'Зміни успішно збережені')
+        messages.success(self.request, 'Зміни успішно збережені.')
         return redirect('about-us-update')
 
     def form_invalid(self, form):
-        messages.error(self.request, 'Щось пішло не так при. Перевірте правильність вводу')
+        messages.error(self.request, 'Щось пішло не так при. Перевірте правильність вводу.')
         return redirect('about-us-update')
 
 
@@ -138,7 +126,7 @@ class PhotoDeleteView(PermissionDeleteView):
     def get(self, request, *args, **kwargs):
         self.object = self.get_object()
         self.object.delete()
-        messages.success(self.request, 'Фото успішно видалено')
+        messages.success(self.request, 'Фото успішно видалено.')
         return redirect('about-us-update')
 
 
@@ -155,7 +143,7 @@ class DocumentDeleteView(PermissionDeleteView):
     def get(self, request, *args, **kwargs):
         self.object = self.get_object()
         self.object.delete()
-        messages.success(self.request, 'Документ успішно видалено')
+        messages.success(self.request, 'Документ успішно видалено.')
         return redirect('about-us-update')
 
 
@@ -178,7 +166,6 @@ class ServiceFrontUpdateView(PermissionUpdateView):
         return context
 
     def post(self, request, *args, **kwargs):
-        print(self.request.POST)
         self.object = self.get_object()
         form = self.get_form_class()(request.POST, instance=self.object)
         seo_form = SeoForm(request.POST, instance=self.object.seo, prefix='seo')
@@ -188,7 +175,43 @@ class ServiceFrontUpdateView(PermissionUpdateView):
             prefix='service-object',
             queryset=ServiceObjectFront.objects.filter(service_front=self.object)
         )
-        print(form.errors)
-        print(seo_form.errors)
-        print(service_front_object_formset.errors)
+        if form.is_valid() and seo_form.is_valid() and service_front_object_formset.is_valid():
+            return self.form_valid(form, seo_form, service_front_object_formset)
+        return self.form_invalid(form)
+
+    def form_valid(self, form, seo_form, service_front_object_formset):
+        seo = seo_form.save()
+        service = form.save(commit=False)
+        if not self.object.seo:
+            service.seo = seo
+        service.save()
+
+        for obj in service_front_object_formset.forms:
+            if obj.cleaned_data.get('photo') and obj.cleaned_data.get('title') and obj.cleaned_data.get('description'):
+                obj_saved = obj.save(commit=False)
+                obj_saved.service_front = self.object
+                obj_saved.save()
+
+        messages.success(self.request, 'Зміни успішно збережені.')
+        return redirect('service-front-update')
+
+    def form_invalid(self, form):
+        messages.error(self.request, 'Щось пішло не так. Перевірте правильність вводу.')
+        return redirect('service-front-update')
+
+
+class ServiceObjectFrontDeleteView(PermissionDeleteView):
+    model = ServiceObjectFront
+    string_permission = 'site_management_access'
+
+    def get_object(self, queryset=None):
+        try:
+            return ServiceObjectFront.objects.get(pk=self.kwargs.get('service_object_pk'))
+        except ServiceObjectFront.DoesNotExist:
+            raise Http404()
+
+    def get(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        self.object.delete()
+        messages.success(self.request, 'Послугу успішно видалено.')
         return redirect('service-front-update')

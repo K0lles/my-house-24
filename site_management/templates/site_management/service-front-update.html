@@ -30,6 +30,25 @@
             </div>
         </div>
         <div class="card-body">
+            {% if messages %}
+                {% for message in messages %}
+                    {% if message.tags == 'success' %}
+                        <div class="alert alert-success alert-dismissible fade show" role="alert">
+                            {{ message }}
+                                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                        </div>
+                    {% elif message.tags == 'error' %}
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            {{ message }}
+                                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            {% endif %}
             <form id="service-update-form" method="post" action="{% url 'service-front-update' %}" enctype="multipart/form-data">
             {% csrf_token %}
                 <div class="row" style="margin-bottom: 15px; margin-top: 10px;">
@@ -39,16 +58,17 @@
                     {{ service_front_object_formset.management_form }}
                     {% for service in service_front_object_formset.forms %}
                         <div class="col-md-4">
+                             {{ service.id }}
                             <h6 class="float-left">Послуга {{ forloop.counter }}</h6>
-                            <button class="btn btn-danger float-right delete-service" type="button"><i class="fa fa-trash"></i></button>
-                            <img id="{{ service.photo.auto_id }}-display" class="img-responsive" width="100%" height="200px;" {% if not service.instance.photo %}src="{% static 'all_logos/empty-photo.png' %}"{% else %}src="{{ service.instance.photo.url }}"{% endif %} style="margin-top: 8px;" onchange="loadFile(event, this.id)">
+                            <button class="btn btn-danger float-right delete-service" data-href="{% url 'service-object-front-delete' service_object_pk=service.instance.pk %}" type="button"><i class="fa fa-trash"></i></button>
+                            <img id="{{ service.photo.auto_id }}-display" class="img-responsive" width="100%" height="200px;" {% if not service.instance.photo %}src="{% static 'all_logos/empty-photo.png' %}"{% else %}src="{{ service.instance.photo.url }}"{% endif %} style="margin-top: 8px;">
                             <div class="form-group">
                                 <label class="form-label" for="{{ service.photo.auto_id }}">Рекомендований розмір: (650х300)</label>
-                                <input type="file" accept="image/*" id="{{ service.photo.auto_id }}" name="{{ service.photo.html_name }}" value="{{ service.instance.photo }}" style="display: block;">
+                                <input type="file" accept="image/*" id="{{ service.photo.auto_id }}" name="{{ service.photo.html_name }}" value="{{ service.instance.photo.url }}" style="display: block;" onchange="loadFile(event, this.id)">
                             </div>
                             <div class="form-group">
                                 <label for="{{ service.title.auto_id }}" class="form-label">Назва послуги</label>
-                                <input type="text" class="form-control" id="{{ service.title.auto_id }}" name="{{ service.title.html_name }}" onchange="fieldIsValid(this)">
+                                <input type="text" class="form-control" id="{{ service.title.auto_id }}" name="{{ service.title.html_name }}" value="{{ service.instance.title }}" onchange="fieldIsValid(this)">
                             </div>
                             <div class="form-group">
                                 <label for="{{ service.description.auto_id }}" class="form-label">Опис послуги</label>
@@ -63,7 +83,7 @@
                 </div>
                 <div hidden="hidden" class="col-md-4" id="{{ service_front_object_formset.empty_form.photo.auto_id }}-parent">
                     <h6 class="float-left">Послуга</h6>
-                    <button class="btn btn-danger float-right delete-service" type="button"><i class="fa fa-trash"></i></button>
+                    <button class="btn btn-danger float-right" type="button"><i class="fa fa-trash"></i></button>
                     <img id="{{ service_front_object_formset.empty_form.photo.auto_id }}-display" class="img-responsive" width="100%" height="200px;" src="{% static 'all_logos/empty-photo.png' %}" style="margin-top: 8px;">
                     <div class="form-group">
                         <label class="form-label" for="{{ service_front_object_formset.empty_form.photo.auto_id }}">Рекомендований розмір: (650х300)</label>
@@ -119,6 +139,24 @@
 <script>
     $('#service-update-form').find('div[id*="editor-id_service-object"]').each(function () {
         ClassicEditor.create(document.getElementById($(this).attr('id')));
+    })
+
+    $('.delete-service').on('click', function (event) {
+        event.preventDefault();
+        Swal.fire({
+            title: 'Ви впевнені?',
+            text: "Після видалення послугу неможливо буде повернути!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#A9A9A9',
+            cancelButtonText: 'Скасувати',
+            confirmButtonText: 'Видалити'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.location.href = $(this).attr('data-href');
+                }
+            })
     })
 
     const SERVICE_TOTAL_FORMS = $('#id_service-object-TOTAL_FORMS');

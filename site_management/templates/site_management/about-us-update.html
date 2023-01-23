@@ -76,7 +76,7 @@
                         <img id="{{ form.director_photo.auto_id }}-display" height="300px" width="237px" {% if form.instance.director_photo %}src="{{ form.instance.director_photo.url }}"{% else %}src="{% static 'all_logos/empty-photo.png' %}"{% endif %}>
                         <div class="form-group">
                             <label class="form-label" for="{{ form.director_photo.auto_id }}">Рекомендований розмір: (250х310)</label>
-                            <input type="file" accept="image/*" id="{{ form.director_photo.auto_id }}" name="{{ form.director_photo.html_name }}" value="{{ form.instance.director_photo }}" onchange="loadFile(event, this.id)" style="display: block;">
+                            <input type="file" accept="image/*" id="{{ form.director_photo.auto_id }}" name="{{ form.director_photo.html_name }}" value="{{ form.instance.director_photo.url }}" onchange="loadFile(event, this.id)" style="display: block;">
                         </div>
                     </div>
                 </div>
@@ -86,7 +86,7 @@
                 <div class="row">
                     {% for photo in photos %}
                         <div class="col-md-3">
-                            <img src="{{ photo.photo.url }}" height="150px" width="100%">
+                            <img src="{{ photo.photo.url }}" height="210px" width="100%">
                             <div class="form-group text-center" style="margin-top: 15px;">
                                 <a href="{% url 'photo-delete' photo_pk=photo.pk %}" type="button" class="btn btn-danger delete-button"><i class="fa fa-trash"></i></a>
                             </div>
@@ -122,9 +122,9 @@
                 <div class="row">
                     {% for photo in additional_photos %}
                         <div class="col-md-3">
-                            <img class="margin-bottom-15" src="{{ photo.photo.url }}" height="150px">
-                            <div class="form-group margin-bottom-15">
-                                <button id="{{ photo.id }}" type="button" class="btn btn-danger delete-additional-photo"><i class="fa fa-trash"></i></button>
+                            <img class="margin-bottom-15" src="{{ photo.photo.url }}" height="210px" width="100%">
+                            <div class="form-group text-center" style="margin-top: 15px;">
+                                <a href="{% url 'photo-delete' photo_pk=photo.pk %}" type="button" class="btn btn-danger delete-button"><i class="fa fa-trash"></i></a>
                             </div>
                         </div>
                     {% endfor %}
@@ -140,10 +140,11 @@
                 {{ document_formset.management_form }}
                     <div id="document-list">
                         {% for document in document_formset.forms %}
+                        {{ document.id }}
                             <div id="{{ document.file.auto_id }}-parent" class="col-sm-12 col-lg-6">
                                 <div class="form-group">
                                     <a href="{% url 'document-delete' document_pk=document.instance.pk %}" id="{{ document.file.auto_id }}-delete" data-file="{{ document.instance.id }}" class="btn btn-danger float-right delete-button"><i class="fa fa-trash"></i></a>
-                                    <img class="img-responsive float-left" {% if document.instance.get_extension != '.png' and document.instance.get_extension != '.jpg' and document.instance.get_extension != '.jpeg' %}src="{% static 'all_logos/pdf-icon.png' %}"{% else %}src="{{ document.instance.file.url }}"{% endif %} height="60px" width="55px">
+                                    <img class="img-responsive float-left" {% if document.instance.extension != '.png' and document.instance.extension != '.jpg' and document.instance.extension != '.jpeg' %}src="{% static 'all_logos/pdf-icon.png' %}"{% else %}src="{{ document.instance.file.url }}"{% endif %} height="60px" width="70px" style="padding-right: 10px;">
                                     <label for="{{ document.file.auto_id }}" class="form-label">PDF, JPG (макс. розмір 20 Mb);</label>
                                     <input type="file" id="{{ document.file.auto_id }}" value="{{ document.instance.file }}" name="{{ document.file.html_name }}" style="display: block">
                                 </div>
@@ -158,7 +159,7 @@
                     <div id="{{ document_formset.empty_form.file.auto_id }}-parent" hidden="hidden" class="col-sm-12 col-lg-6">
                         <div class="form-group">
                             <button type="button" id="{{ document_formset.empty_form.file.auto_id }}-delete" class="btn btn-danger float-right"><i class="fa fa-trash"></i></button>
-                            <img class="img-responsive float-left" src="{% static 'all_logos/empty-document.png' %}" height="60px" width="55px">
+                            <img class="img-responsive float-left" src="{% static 'all_logos/empty-document.png' %}" height="60px" width="70px" style="padding-right: 10px;">
                             <label for="{{ document_formset.empty_form.file.auto_id }}" class="form-label">PDF, JPG (макс. розмір 20 Mb)</label>
                             <input type="file" id="{{ document_formset.empty_form.file.auto_id }}" name="{{ document_formset.empty_form.file.html_name }}" style="display: block">
                         </div>
@@ -272,6 +273,8 @@
         }
 
         if (isValid) {
+            $('#insert-into-id_short_text').append(`<textarea id="{{ form.short_text.auto_id }}" name="{{ form.short_text.html_name }}">${$('#parent-short-text .ck-editor__editable[role="textbox"]').html()}</textarea>`);
+            $('#insert-into-id_additional_text').append(`<textarea id="{{ form.additional_text.auto_id }}" name="{{ form.additional_text.html_name }}">${$('#parent-additional-text .ck-editor__editable[role="textbox"]').html()}</textarea>`);
             $(`form#about-us-form`).submit();
             return true;
         }

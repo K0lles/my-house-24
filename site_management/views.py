@@ -215,3 +215,66 @@ class ServiceObjectFrontDeleteView(PermissionDeleteView):
         self.object.delete()
         messages.success(self.request, 'Послугу успішно видалено.')
         return redirect('service-front-update')
+
+
+class TariffPageUpdateView(PermissionUpdateView):
+    model = TariffPage
+    template_name = 'site_management/tariff-page-update.html'
+    form_class = TariffPageForm
+    string_permission = 'site_management_access'
+
+    def get_object(self, queryset=None):
+        obj = TariffPage.objects.select_related('seo').prefetch_related('tariffobjectfront_set').first()
+        if not obj:
+            obj = TariffPage.objects.create()
+        return obj
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['tariff_object_formset'] = tariff_object_front_formset_factory(queryset=self.object.tariffobjectfront_set.all(), prefix='tariff-object')
+        context['seo_form'] = SeoForm(prefix='seo', instance=self.object.seo)
+        return context
+
+    def post(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        form = self.get_form_class()(request.POST, instance=self.object)
+        seo_form = SeoForm(request.POST, instance=self.object.seo, prefix='seo')
+        tariff_object_formset = tariff_object_front_formset_factory(request.POST, request.FILES, queryset=self.object.tariffobjectfront_set.all(), prefix='tariff-object')
+        if form.is_valid() and seo_form.is_valid() and tariff_object_formset.is_valid():
+            return self.form_valid(form, seo_form, tariff_object_formset)
+        return self.form_invalid(form)
+
+    def form_valid(self, form, seo_form, tariff_object_formset):
+        tariff_page = form.save(commit=False)
+        tariff_page.seo = seo_form.save()
+        tariff_page.save()
+
+        for obj in tariff_object_formset.forms:
+            if obj.cleaned_data.get('photo') and obj.cleaned_data.get('title'):
+                obj_saved = obj.save(commit=False)
+                obj_saved.tariff_page = tariff_page
+                obj_saved.save()
+
+        messages.success(self.request, 'Зміни успішно збережені.')
+        return redirect('tariff-page-update')
+
+    def form_invalid(self, form):
+        messages.error(self.request, 'Щось пішло не так. Перевірте правильність введених даних.')
+        return redirect('tariff-page-update')
+
+
+class TariffObjectFrontDeleteView(PermissionDeleteView):
+    model = TariffObjectFront
+    string_permission = 'site_management_access'
+
+    def get_object(self, queryset=None):
+        try:
+            return TariffObjectFront.objects.get(pk=self.kwargs.get('tariff_object_pk'))
+        except TariffObjectFront.DoesNotExist:
+            raise Http404()
+
+    def get(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        self.object.delete()
+        messages.success(self.request, 'Тариф успішно видалено.')
+        return redirect('tariff-page-update')

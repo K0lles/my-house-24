@@ -57,6 +57,18 @@ class ServiceObjectFront(models.Model):
     description = models.TextField()
 
 
+class TariffPage(models.Model):
+    title = models.CharField(max_length=200, verbose_name='Заголовок', blank=True, null=True)
+    short_text = models.TextField(verbose_name='Короткий текст', blank=True, null=True)
+    seo = models.ForeignKey(Seo, on_delete=models.SET_NULL, blank=True, null=True)
+
+
+class TariffObjectFront(models.Model):
+    tariff_page = models.ForeignKey(TariffPage, on_delete=models.CASCADE)
+    photo = models.ImageField(upload_to='tariffs/photos/')
+    title = models.CharField(max_length=200, verbose_name='Підпис')
+
+
 class Contact(models.Model):
     seo = models.ForeignKey(Seo, on_delete=models.SET_NULL, blank=True, null=True)
     title = models.CharField(max_length=200, verbose_name='Заголовок')

@@ -86,3 +86,20 @@ class ServiceFrontObjectForm(ModelForm):
 
 
 service_object_front_formset_factory = modelformset_factory(ServiceObjectFront, form=ServiceFrontObjectForm, extra=0)
+
+
+class TariffPageForm(ModelForm):
+
+    class Meta:
+        model = TariffPage
+        fields = '__all__'
+
+
+class TariffObjectFrontForm(ModelForm):
+
+    class Meta:
+        model = TariffObjectFront
+        exclude = ['tariff_page']
+
+
+tariff_object_front_formset_factory = modelformset_factory(TariffObjectFront, form=TariffObjectFrontForm, extra=0)

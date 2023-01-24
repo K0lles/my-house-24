@@ -71,15 +71,15 @@ class TariffObjectFront(models.Model):
 
 class Contact(models.Model):
     seo = models.ForeignKey(Seo, on_delete=models.SET_NULL, blank=True, null=True)
-    title = models.CharField(max_length=200, verbose_name='Заголовок')
-    text = models.TextField(verbose_name='Короткий текст')
-    commercial_url = models.URLField(verbose_name='Посилання на комерційний сайт')
-    name_surname_father = models.CharField(max_length=200, verbose_name='ПІБ')
-    location = models.CharField(max_length=200, verbose_name='Локація')
-    address = models.CharField(max_length=200, verbose_name='Адреса')
-    phone = PhoneNumberField(verbose_name='Телефон')
-    email = models.EmailField(verbose_name='Email')
-    map_code = models.TextField(verbose_name='Код карти')
+    title = models.CharField(max_length=200, verbose_name='Заголовок', blank=True, null=True)
+    text = models.TextField(verbose_name='Короткий текст', blank=True, null=True)
+    commercial_url = models.URLField(verbose_name='Посилання на комерційний сайт', blank=True, null=True)
+    name_surname_father = models.CharField(max_length=200, verbose_name='ПІБ', blank=True, null=True)
+    location = models.CharField(max_length=200, verbose_name='Локація', blank=True, null=True)
+    address = models.CharField(max_length=200, verbose_name='Адреса', blank=True, null=True)
+    phone = PhoneNumberField(verbose_name='Телефон', blank=True, null=True)
+    email = models.EmailField(verbose_name='Email', blank=True, null=True)
+    map_code = models.TextField(verbose_name='Код карти', blank=True, null=True)
 
 
 class Document(models.Model):

@@ -1,0 +1,197 @@
+{% extends 'main_page.html' %}
+{% load static %}
+
+{% block title %}
+    <title>Редагування сторінки</title>
+{% endblock %}
+
+{% block styles %}
+    <style>
+        .ck-editor__editable[role="textbox"] {
+            /* editing area */
+            min-height: 200px;
+            min-width: 100%;
+        }
+    </style>
+{% endblock %}
+
+{% block content_header %}
+    <h1>Редагування сторінки</h1>
+{% endblock %}
+
+{% block main_content %}
+    <div class="card">
+        <div class="card-header">
+            <div class="row">
+                <div class="col-sm-12 col-lg-6">
+                    <h5 style="font-size: 18px; color: grey">Редагування сторінки "Контакти"</h5>
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            {% if messages %}
+                {% for message in messages %}
+                    {% if message.tags == 'success' %}
+                        <div class="alert alert-success alert-dismissible fade show" role="alert">
+                            {{ message }}
+                                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                        </div>
+                    {% elif message.tags == 'error' %}
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            {{ message }}
+                                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            {% endif %}
+            <form id="contact-update-form" method="post" action="{% url 'contact-update' %}" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="row">
+                    <div class="col-sm-12 col-lg-8">
+                        <div class="row" style="margin-bottom: 15px; margin-top: 10px;">
+                            <h5 style="border-bottom: 1px solid rgba(0,0,0,.125); padding-bottom: 10px;">Контактна інформація</h5>
+                        </div>
+                        <div class="row">
+                            <div class="form-group">
+                                <label for="{{ form.title.auto_id }}" class="form-label">Заголовок</label>
+                                <input type="text" class="form-control" id="{{ form.title.auto_id }}" {% if form.instance.title %}value="{{ form.instance.title }}"{% endif %} name="{{ form.title.html_name }}" onchange="fieldIsValid(this)">
+                                <p id="{{ form.title.auto_id }}-errors" style="color: red;"></p>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Короткий текст</label>
+                                <div id="parent-text">
+                                    <div id="editor-text">{% if form.instance.text %}{{ form.instance.text|safe }}{% endif %}</div>
+                                </div>
+                                <div hidden="hidden" id="insert-into-id_text"></div>
+                                <p id="{{ form.text.auto_id }}-errors" style="color: red;"></p>
+                            </div>
+                            <div class="form-group">
+                                <label for="{{ form.commercial_url.auto_id }}" class="form-label">Посилання на комерційний сайт</label>
+                                <input type="text" class="form-control" {% if form.instance.commercial_url %}value="{{ form.instance.commercial_url }}"{% endif %} id="{{ form.commercial_url.auto_id }}" name="{{ form.commercial_url.html_name }}" onchange="fieldIsValid(this)">
+                                <p id="{{ form.commercial_url.auto_id }}-errors" style="color: red;"></p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-12 col-lg-4">
+                        <div class="row" style="margin-bottom: 15px; margin-top: 10px;">
+                            <h5 style="border-bottom: 1px solid rgba(0,0,0,.125); padding-bottom: 10px;">Контакти</h5>
+                        </div>
+                        <div class="form-group">
+                            <label for="{{ form.name_surname_father.auto_id }}" class="form-label">ПІБ</label>
+                            <input type="text" class="form-control" {% if form.instance.name_surname_father %}value="{{ form.instance.name_surname_father }}"{% endif %} id="{{ form.name_surname_father.auto_id }}" name="{{ form.name_surname_father.html_name }}" onchange="fieldIsValid(this)">
+                            <p id="{{ form.name_surname_father.auto_id }}-errors" style="color: red;"></p>
+                        </div>
+                        <div class="form-group">
+                            <label for="{{ form.location.auto_id }}" class="form-label">Локація</label>
+                            <input type="text" class="form-control" {% if form.instance.location %}value="{{ form.instance.location }}"{% endif %} id="{{ form.location.auto_id }}" name="{{ form.location.html_name }}" onchange="fieldIsValid(this)">
+                            <p id="{{ form.location.auto_id }}-errors" style="color: red;"></p>
+                        </div>
+                        <div class="form-group">
+                            <label for="{{ form.address.auto_id }}" class="form-label">Адрес</label>
+                            <input type="text" class="form-control" {% if form.instance.address %}value="{{ form.instance.address }}"{% endif %} id="{{ form.address.auto_id }}" name="{{ form.address.html_name }}" onchange="fieldIsValid(this)">
+                            <p id="{{ form.address.auto_id }}-errors" style="color: red;"></p>
+                        </div>
+                        <div class="form-group">
+                            <label for="{{ form.phone.auto_id }}" class="form-label">Телефон</label>
+                            <input type="text" class="form-control" {% if form.instance.phone %}value="{{ form.instance.phone }}"{% endif %} id="{{ form.phone.auto_id }}" name="{{ form.phone.html_name }}" onchange="fieldIsValid(this)">
+                            <p id="{{ form.phone.auto_id }}-errors" style="color: red;"></p>
+                        </div>
+                        <div class="form-group">
+                            <label for="{{ form.email.auto_id }}" class="form-label">E-mail</label>
+                            <input type="email" class="form-control" {% if form.instance.email %}value="{{ form.instance.email }}"{% endif %} id="{{ form.email.auto_id }}" name="{{ form.email.html_name }}" onchange="fieldIsValid(this)">
+                            <p id="{{ form.email.auto_id }}-errors" style="color: red;"></p>
+                        </div>
+                    </div>
+                </div>
+                <div class="row" style="margin-bottom: 15px; margin-top: 10px;">
+                    <h5 style="border-bottom: 1px solid rgba(0,0,0,.125); padding-bottom: 10px;">Карта</h5>
+                </div>
+                <div class="row">
+                    <div class="form-group">
+                        <label for="{{ form.map_code.auto_id }}" class="form-label">Код карти</label>
+                        <textarea id="{{ form.map_code.auto_id }}" name="{{ form.map_code.html_name }}" rows="5" class="form-control">{% if form.instance.map_code %}{{ form.instance.map_code }}{% endif %}</textarea>
+                        <p id="{{ form.map_code.auto_id }}-errors" style="color: red;"></p>
+                    </div>
+                </div>
+                <div class="row" style="margin-bottom: 15px; margin-top: 10px;">
+                    <h5 style="border-bottom: 1px solid rgba(0,0,0,.125); padding-bottom: 10px;">Налаштування SEO</h5>
+                </div>
+                <div class="row">
+                    <div class="form-group">
+                        <label for="{{ seo_form.title.auto_id }}">Title</label>
+                        <input type="text" class="form-control" id="{{ seo_form.title.auto_id }}" {% if seo_form.instance.title %}value="{{ seo_form.instance.title }}"{% endif %} name="{{ seo_form.title.html_name }}" onchange="fieldIsValid(this)">
+                        <p id="{{ seo_form.title.auto_id }}-errors" style="color: red;"></p>
+                    </div>
+                    <div class="form-group">
+                        <label for="{{ seo_form.description.auto_id }}">Description</label>
+                        <textarea rows="6" class="form-control" id="{{ seo_form.description.auto_id }}" name="{{ seo_form.description.html_name }}" onchange="fieldIsValid(this)">{% if seo_form.instance.description %}{{ seo_form.instance.description }}{% endif %}</textarea>
+                        <p id="{{ seo_form.description.auto_id }}-errors" style="color: red;"></p>
+                    </div>
+                    <div class="form-group">
+                        <label for="{{ seo_form.keywords.auto_id }}">Keywords</label>
+                        <textarea rows="6" class="form-control" id="{{ seo_form.keywords.auto_id }}" name="{{ seo_form.keywords.html_name }}" onchange="fieldIsValid(this)">{% if seo_form.instance.keywords %}{{ seo_form.instance.keywords }}{% endif %}</textarea>
+                        <p id="{{ seo_form.keywords.auto_id }}-errors" style="color: red;"></p>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-sm-12 text-center">
+                        <button type="reset" class="btn btn-default">Скасувати</button>
+                        <button type="submit" class="btn btn-success" onclick="formIsValid()">Зберегти</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    ClassicEditor.create(document.querySelector('#editor-text'));
+
+    function formIsValid() {
+        event.preventDefault();
+        let isValid = true;
+
+        if ($('#parent-text .ck-editor__editable[role="textbox"]').html() === '<p><br data-cke-filler="true"></p>'){
+            if (!($(`#id_text-errors`).text()).includes('Поле не може бути пустим')) {
+                $(`#id_text-errors`).text('Поле не може бути пустим');
+            }
+            isValid = false;
+        }
+        else {
+            $(`#id_text-errors`).text('');
+        }
+
+        $('#contact-update-form').find('input[type!="hidden"][class!="ck-hidden"][type!="checkbox"]').each(function() {
+            if (!$(this).attr('id').includes('ck-') && !fieldIsValid(this)) {
+                isValid = false;
+            }
+        });
+
+        if (!fieldIsValid(document.getElementById('id_map_code'))) {
+            isValid = false;
+        }
+
+        if (!fieldIsValid(document.getElementById('id_seo-description'))) {
+            isValid = false;
+        }
+
+        if (!fieldIsValid(document.getElementById('id_seo-keywords'))) {
+            isValid = false;
+        }
+
+        if (isValid) {
+            $('#insert-into-id_text').append(`<textarea id="{{ form.text.auto_id }}" name="{{ form.text.html_name }}">${$('#parent-text .ck-editor__editable[role="textbox"]').html()}</textarea>`);
+            $('#contact-update-form').submit();
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+</script>
+{% endblock %}

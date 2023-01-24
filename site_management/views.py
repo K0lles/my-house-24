@@ -278,3 +278,42 @@ class TariffObjectFrontDeleteView(PermissionDeleteView):
         self.object.delete()
         messages.success(self.request, 'Тариф успішно видалено.')
         return redirect('tariff-page-update')
+
+
+class ContactUpdateView(PermissionUpdateView):
+    model = Contact
+    template_name = 'site_management/contact-page.html'
+    form_class = ContactForm
+    string_permission = 'site_management_access'
+
+    def get_object(self, queryset=None):
+        obj = self.model.objects.first()
+        if not obj:
+            obj = self.model.objects.create()
+        return obj
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['seo_form'] = SeoForm(instance=self.object.seo, prefix='seo')
+        return context
+
+    def post(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        form = self.form_class(request.POST, instance=self.object)
+        seo_form = SeoForm(request.POST, instance=self.object.seo, prefix='seo')
+        if form.is_valid() and seo_form.is_valid():
+            return self.form_valid(form, seo_form)
+        return self.form_invalid(form)
+
+    def form_valid(self, form, seo_form):
+        obj = form.save(commit=False)
+        seo = seo_form.save()
+        obj.seo = seo
+        obj.save()
+        messages.success(self.request, 'Зміни успішно збережені.')
+        return redirect('contact-update')
+
+    def form_invalid(self, form):
+        messages.error(self.request, 'Щось пішло не так. Перевірте правильність введених даних.')
+        return redirect('contact-update')
+

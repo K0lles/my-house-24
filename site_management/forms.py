@@ -103,3 +103,10 @@ class TariffObjectFrontForm(ModelForm):
 
 
 tariff_object_front_formset_factory = modelformset_factory(TariffObjectFront, form=TariffObjectFrontForm, extra=0)
+
+
+class ContactForm(ModelForm):
+
+    class Meta:
+        model = Contact
+        fields = '__all__'

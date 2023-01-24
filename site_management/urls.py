@@ -12,4 +12,5 @@ urlpatterns = [
     path('service-object/delete/<int:service_object_pk>/', ServiceObjectFrontDeleteView.as_view(), name='service-object-front-delete'),
     path('tariff/', TariffPageUpdateView.as_view(), name='tariff-page-update'),
     path('tariff-object/delete/<int:tariff_object_pk>/', TariffObjectFrontDeleteView.as_view(), name='tariff-object-delete'),
+    path('contact/', ContactUpdateView.as_view(), name='contact-update'),
 ]

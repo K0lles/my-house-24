@@ -62,6 +62,7 @@
         <option value="$MODULE_DIR$/administrator_panel/templates" />
         <option value="$MODULE_DIR$/configuration/templates" />
         <option value="$MODULE_DIR$/site_management/templates" />
+        <option value="$MODULE_DIR$/front_side/templates" />
       </list>
     </option>
   </component>

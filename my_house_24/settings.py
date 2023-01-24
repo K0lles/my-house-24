@@ -52,6 +52,7 @@ INSTALLED_APPS = [
     'administrator_panel.apps.AdministratorPanelConfig',
     'configuration.apps.ConfigurationConfig',
     'site_management.apps.SiteManagementConfig',
+    'front_side.apps.FrontSideConfig',
 ]
 
 MIDDLEWARE = [

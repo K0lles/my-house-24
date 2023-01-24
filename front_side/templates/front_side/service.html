@@ -1,0 +1,36 @@
+{% extends 'front_side/base_page_front.html' %}
+{% load static %}
+
+{% block header_list %}
+<ul class="nav nav-pills">
+    <li class="nav-item"><a href="{% url 'main-page' %}" class="nav-link">Головна</a></li>
+    <li class="nav-item"><a href="{% url 'about-us-page' %}" class="nav-link">Про нас</a></li>
+    <li class="nav-item"><a href="{% url 'service-page' %}" class="nav-link active" aria-current="page">Послуги</a></li>
+    <li class="nav-item"><a href="https://google.com" class="nav-link">Умови покупки</a></li>
+    <li class="nav-item"><a href="{% url 'contact-page' %}" class="nav-link">Контакти</a></li>
+    <li class="nav-item"><a href="{% url 'user-login' %}" class="nav-link"><i class="fa fa-sign-in-alt"></i>  Вхід</a></li>
+</ul>
+{% endblock %}
+
+{% block main_content %}
+    <div class="container">
+        <div class="row">
+            <div class="page-header">
+                <h4>Наші послуги</h4>
+            </div>
+        </div>
+        {% for obj in object.serviceobjectfront_set.all %}
+            <div class="row" style="margin-bottom: 30px;">
+                <div class="col-sm-12 col-lg-7">
+                    <img class="img-responsive img-thumbnail" src="{{ obj.photo.url }}" style="width: 100%; height: 300px!important;">
+                </div>
+                <div class="col-sm-12 col-lg-5">
+                    <div class="page-header" style="margin-top: 0">
+                        <h4>{{ obj.title }}</h4>
+                    </div>
+                    {{ obj.description|safe }}
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% endblock %}

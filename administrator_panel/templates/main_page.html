@@ -5,7 +5,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   {% block title %}
-  <title>AdminLTE 3 | Dashboard</title>
+  <title></title>
   {% endblock %}
   <link rel="icon" type="image/png" href="{% static 'all_logos/header-icon-myhouse.png' %}">
 
@@ -225,25 +225,31 @@
             </a>
             <ul class="nav nav-treeview">
               <li class="nav-item">
-                <a href="#" class="nav-link">
+                <a href="{% url 'main-page-update' %}" class="nav-link">
                   <i class="fa fa-circle"></i>
                   <p>Головна</p>
                 </a>
               </li>
               <li class="nav-item">
-                <a href="#" class="nav-link">
+                <a href="{% url 'about-us-update' %}" class="nav-link">
                   <i class="fa fa-circle"></i>
                   <p>Про нас</p>
                 </a>
               </li>
               <li class="nav-item">
-                <a href="#" class="nav-link">
+                <a href="{% url 'service-front-update' %}" class="nav-link">
                   <i class="fa fa-circle"></i>
                   <p>Послуги</p>
                 </a>
               </li>
               <li class="nav-item">
-                <a href="#" class="nav-link">
+                <a href="{% url 'tariff-page-update' %}" class="nav-link">
+                  <i class="fa fa-circle"></i>
+                  <p>Тарифи</p>
+                </a>
+              </li>
+              <li class="nav-item">
+                <a href="{% url 'contact-update' %}" class="nav-link">
                   <i class="fa fa-circle"></i>
                   <p>Контакти</p>
                 </a>

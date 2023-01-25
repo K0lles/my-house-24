@@ -1,0 +1,322 @@
+{% extends 'main_page.html' %}
+{% load static %}
+
+{% block title %}
+    <title>Редагування сторінки</title>
+{% endblock %}
+
+{% block content_header %}
+    <h1>Редагування сторінки</h1>
+{% endblock %}
+
+{% block styles %}
+<style>
+
+        .ck-editor__editable[role="textbox"] {
+            /* editing area */
+            min-height: 200px;
+            min-width: 100%;
+        }
+</style>
+{% endblock %}
+
+{% block main_content %}
+    <div class="card">
+        <div class="card-header">
+            <div class="row">
+                <div class="col-sm-12 col-lg-6">
+                    <h5 style="font-size: 18px; color: grey">Редагування сторінки "Про нас"</h5>
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            {% if messages %}
+                {% for message in messages %}
+                    {% if message.tags == 'success' %}
+                        <div class="alert alert-success alert-dismissible fade show" role="alert">
+                            {{ message }}
+                                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                        </div>
+                    {% elif message.tags == 'error' %}
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            {{ message }}
+                                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            {% endif %}
+            <form id="about-us-form" method="post" action="{% url 'about-us-update' %}" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="row">
+                    <h5 style="border-bottom: 1px solid rgba(0,0,0,.125); padding-bottom: 10px;">Інформація</h5>
+                </div>
+                <div class="row">
+                    <div class="col-md-8">
+                        <div class="form-group">
+                            <label class="form-label" for="{{ form.title.auto_id }}">Заголовок</label>
+                            <input type="text" class="form-control" id="{{ form.title.auto_id }}" value="{{ form.instance.title }}" name="{{ form.title.html_name }}" onchange="fieldIsValid(this)">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Короткий текст</label>
+                            <div id="parent-short-text">
+                                <div id="editor-short-text">{{ form.instance.short_text|safe }}</div>
+                            </div>
+                            <div hidden="hidden">
+                                <div id="insert-into-id_short_text"></div>
+                            </div>
+                            <p id="{{ form.short_text.auto_id }}-errors" style="color: red;"></p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <h6 style="font-size: 18px; color: grey">Фото директора</h6>
+                        <img id="{{ form.director_photo.auto_id }}-display" height="300px" width="237px" {% if form.instance.director_photo %}src="{{ form.instance.director_photo.url }}"{% else %}src="{% static 'all_logos/empty-photo.png' %}"{% endif %}>
+                        <div class="form-group">
+                            <label class="form-label" for="{{ form.director_photo.auto_id }}">Рекомендований розмір: (250х310)</label>
+                            <input type="file" accept="image/*" id="{{ form.director_photo.auto_id }}" name="{{ form.director_photo.html_name }}" value="{{ form.instance.director_photo.url }}" onchange="loadFile(event, this.id)" style="display: block;">
+                        </div>
+                    </div>
+                </div>
+                <div class="row" style="margin-bottom: 15px; margin-top: 20px;">
+                    <h5 style="border-bottom: 1px solid rgba(0,0,0,.125); padding-bottom: 20px;">Фотогалерея</h5>
+                </div>
+                <div class="row">
+                    {% for photo in photos %}
+                        <div class="col-md-3">
+                            <img src="{{ photo.photo.url }}" height="210px" width="100%">
+                            <div class="form-group text-center" style="margin-top: 15px;">
+                                <a href="{% url 'photo-delete' photo_pk=photo.pk %}" type="button" class="btn btn-danger delete-button"><i class="fa fa-trash"></i></a>
+                            </div>
+                        </div>
+                    {% endfor %}
+                    <div class="row col-sm-12 form-group" >
+                        <label for="{{ photo_form.photo.auto_id }}" class="form-label">Рекомендований розмір: (1200х1200)</label>
+                        <input type="file" accept="image/*" id="{{ photo_form.photo.auto_id }}" name="{{ photo_form.photo.html_name }}" style="display: block;">
+                    </div>
+                </div>
+                <div class="row" style="margin-bottom: 15px; margin-top: 20px;">
+                    <h5 style="border-bottom: 1px solid rgba(0,0,0,.125); padding-bottom: 20px;">Додаткова інформація</h5>
+                </div>
+                <div class="row">
+                    <div class="form-group">
+                        <label class="form-label" for="{{ form.additional_title.auto_id }}">Заголовок</label>
+                        <input type="text" class="form-control" id="{{ form.additional_title.auto_id }}" value="{{ form.instance.additional_title }}" name="{{ form.additional_title.html_name }}" onchange="fieldIsValid(this)">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Короткий текст</label>
+                        <div id="parent-additional-text">
+                            <div id="editor-additional-text">{{ form.instance.additional_text|safe }}</div>
+                        </div>
+                        <div hidden="hidden">
+                            <div id="insert-into-id_additional_text"></div>
+                        </div>
+                        <p id="{{ form.additional_text.auto_id }}-errors" style="color: red;"></p>
+                    </div>
+                </div>
+                <div class="row" style="margin-bottom: 15px; margin-top: 20px;">
+                    <h5 style="border-bottom: 1px solid rgba(0,0,0,.125); padding-bottom: 20px;">Додаткова фотогалерея</h5>
+                </div>
+                <div class="row">
+                    {% for photo in additional_photos %}
+                        <div class="col-md-3">
+                            <img class="margin-bottom-15" src="{{ photo.photo.url }}" height="210px" width="100%">
+                            <div class="form-group text-center" style="margin-top: 15px;">
+                                <a href="{% url 'photo-delete' photo_pk=photo.pk %}" type="button" class="btn btn-danger delete-button"><i class="fa fa-trash"></i></a>
+                            </div>
+                        </div>
+                    {% endfor %}
+                    <div class="row col-sm-12 form-group" >
+                        <label for="{{ additional_photo_form.photo.auto_id }}" class="form-label">Рекомендований розмір: (1200х1200)</label>
+                        <input type="file" accept="image/*" id="{{ additional_photo_form.photo.auto_id }}" name="{{ additional_photo_form.photo.html_name }}" style="display: block;">
+                    </div>
+                </div>
+                <div class="row" style="margin-bottom: 15px; margin-top: 20px;">
+                    <h5 style="border-bottom: 1px solid rgba(0,0,0,.125); padding-bottom: 20px;">Документи</h5>
+                </div>
+                <div class="row">
+                {{ document_formset.management_form }}
+                    <div id="document-list">
+                        {% for document in document_formset.forms %}
+                        {{ document.id }}
+                            <div id="{{ document.file.auto_id }}-parent" class="col-sm-12 col-lg-6">
+                                <div class="form-group">
+                                    <a href="{% url 'document-delete' document_pk=document.instance.pk %}" id="{{ document.file.auto_id }}-delete" data-file="{{ document.instance.id }}" class="btn btn-danger float-right delete-button"><i class="fa fa-trash"></i></a>
+                                    <img class="img-responsive float-left" {% if document.instance.extension != '.png' and document.instance.extension != '.jpg' and document.instance.extension != '.jpeg' %}src="{% static 'all_logos/pdf-icon.png' %}"{% else %}src="{{ document.instance.file.url }}"{% endif %} height="60px" width="70px" style="padding-right: 10px;">
+                                    <label for="{{ document.file.auto_id }}" class="form-label">PDF, JPG (макс. розмір 20 Mb);</label>
+                                    <input type="file" id="{{ document.file.auto_id }}" value="{{ document.instance.file }}" name="{{ document.file.html_name }}" style="display: block">
+                                </div>
+                                <div class="form-group">
+                                    <label for="{{ document.title.auto_id }}" class="form-label">Назва документу</label>
+                                    <input type="text" class="form-control" id="{{ document.title.auto_id }}" value="{{ document.instance.title }}" name="{{ document.title.html_name }}" onchange="fieldIsValid(this)">
+                                    <p id="{{ document.title.auto_id }}-errors" style="color: red;"></p>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                    <div id="{{ document_formset.empty_form.file.auto_id }}-parent" hidden="hidden" class="col-sm-12 col-lg-6">
+                        <div class="form-group">
+                            <button type="button" id="{{ document_formset.empty_form.file.auto_id }}-delete" class="btn btn-danger float-right"><i class="fa fa-trash"></i></button>
+                            <img class="img-responsive float-left" src="{% static 'all_logos/empty-document.png' %}" height="60px" width="70px" style="padding-right: 10px;">
+                            <label for="{{ document_formset.empty_form.file.auto_id }}" class="form-label">PDF, JPG (макс. розмір 20 Mb)</label>
+                            <input type="file" id="{{ document_formset.empty_form.file.auto_id }}" name="{{ document_formset.empty_form.file.html_name }}" style="display: block">
+                        </div>
+                        <div class="form-group">
+                            <label for="{{ document_formset.empty_form.title.auto_id }}" class="form-label">Назва документу</label>
+                            <input type="hidden" class="form-control" id="{{ document_formset.empty_form.title.auto_id }}" name="{{ document_formset.empty_form.title.html_name }}" onchange="fieldIsValid(this)">
+                            <p id="{{ document_formset.empty_form.title.auto_id }}-errors" style="color: red;"></p>
+                        </div>
+                    </div>
+                    <div class="col-sm-12">
+                        <button type="button" class="btn btn-success" id="add-document">Додати документ</button>
+                    </div>
+                </div>
+                <div class="row" style="margin-bottom: 15px; margin-top: 20px;">
+                    <h5 style="border-bottom: 1px solid rgba(0,0,0,.125); padding-bottom: 20px;">Налаштування SEO</h5>
+                </div>
+                <div class="row">
+                    <div class="form-group">
+                        <label for="{{ seo_form.title.auto_id }}">Title</label>
+                        <input type="text" class="form-control" id="{{ seo_form.title.auto_id }}" {% if seo_form.instance.title %}value="{{ seo_form.instance.title }}"{% endif %} name="{{ seo_form.title.html_name }}" onchange="fieldIsValid(this)">
+                        <p id="{{ seo_form.title.auto_id }}-errors" style="color: red;"></p>
+                    </div>
+                    <div class="form-group">
+                        <label for="{{ seo_form.description.auto_id }}">Description</label>
+                        <textarea rows="6" class="form-control" id="{{ seo_form.description.auto_id }}" name="{{ seo_form.description.html_name }}" onchange="fieldIsValid(this)">{% if seo_form.instance.description %}{{ seo_form.instance.description }}{% endif %}</textarea>
+                        <p id="{{ seo_form.description.auto_id }}-errors" style="color: red;"></p>
+                    </div>
+                    <div class="form-group">
+                        <label for="{{ seo_form.keywords.auto_id }}">Keywords</label>
+                        <textarea rows="6" class="form-control" id="{{ seo_form.keywords.auto_id }}" name="{{ seo_form.keywords.html_name }}" onchange="fieldIsValid(this)">{% if seo_form.instance.keywords %}{{ seo_form.instance.keywords }}{% endif %}</textarea>
+                        <p id="{{ seo_form.keywords.auto_id }}-errors" style="color: red;"></p>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-sm-12 text-center">
+                        <button type="reset" class="btn btn-default">Скасувати</button>
+                        <button type="submit" class="btn btn-success" onclick="formIsValid()">Зберегти</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    ClassicEditor.create(document.querySelector('#editor-short-text'));
+    ClassicEditor.create(document.querySelector('#editor-additional-text'));
+
+    const DOCUMENT_TOTAL_FORMS = $('#id_document-TOTAL_FORMS');
+    $('#add-document').on('click', function () {
+        let empty_form = $('div#id_document-__prefix__-file-parent').clone();
+        let total_forms = DOCUMENT_TOTAL_FORMS.val();
+
+        empty_form.find('label[for="id_document-__prefix__-title"]').attr('for', `id_document-${total_forms}-title`);
+        empty_form.find('#id_document-__prefix__-title').attr('type', `text`);
+        empty_form.find('#id_document-__prefix__-title').attr('name', `document-${total_forms}-title`);
+        empty_form.find('#id_document-__prefix__-title').attr('id', `id_document-${total_forms}-title`);
+
+        empty_form.find('#id_document-__prefix__-file').attr('name', `document-${total_forms}-file`);
+        empty_form.find('#id_document-__prefix__-file').attr('id', `id_document-${total_forms}-file`);
+
+        empty_form.find('#id_document-__prefix__-file-delete').attr('id', `id_document-${total_forms}-file-delete`);
+
+        empty_form.find(`#id_document-${total_forms}-file-delete`).attr('onclick', 'deletePhoto(this)');
+
+        empty_form.attr('id', `id_document-${total_forms}-file-parent`);
+        empty_form.removeAttr('hidden');
+        empty_form.find(`#id_document-__prefix__-title-errors`).attr('id', `id_document-${total_forms}-title-errors`);
+
+        DOCUMENT_TOTAL_FORMS.attr('value', parseInt(total_forms) + 1);
+        $('#document-list').append(empty_form);
+    })
+
+    function formIsValid() {
+        event.preventDefault();
+        let isValid = true;
+
+        if ($('#parent-short-text .ck-editor__editable[role="textbox"]').html() === '<p><br data-cke-filler="true"></p>'){
+            if (!($(`#id_short_text-errors`).text()).includes('Поле не може бути пустим')) {
+                $(`#id_short_text-errors`).text('Поле не може бути пустим');
+            }
+            isValid = false;
+        }
+        else {
+            $(`#id_short_text-errors`).text('');
+        }
+
+        if ($('#parent-additional-text .ck-editor__editable[role="textbox"]').html() === '<p><br data-cke-filler="true"></p>'){
+            if (!($(`#id_additional_text-errors`).text()).includes('Поле не може бути пустим')) {
+                $(`#id_additional_text-errors`).text('Поле не може бути пустим');
+            }
+            isValid = false;
+        }
+        else {
+            $(`#id_additional_text-errors`).text('');
+        }
+
+        $(`#about-us-form`).find(`input[type!='hidden'][class!="ck-hidden"]`).each(function() {
+            if (!$(this).attr('id').includes('ck-') && !fieldIsValid(this)) {
+                isValid = false;
+            }
+        });
+
+        if (!fieldIsValid(document.getElementById('id_seo-description'))) {
+            isValid = false;
+        }
+
+        if (!fieldIsValid(document.getElementById('id_seo-keywords'))) {
+            isValid = false;
+        }
+
+        if (isValid) {
+            $('#insert-into-id_short_text').append(`<textarea id="{{ form.short_text.auto_id }}" name="{{ form.short_text.html_name }}">${$('#parent-short-text .ck-editor__editable[role="textbox"]').html()}</textarea>`);
+            $('#insert-into-id_additional_text').append(`<textarea id="{{ form.additional_text.auto_id }}" name="{{ form.additional_text.html_name }}">${$('#parent-additional-text .ck-editor__editable[role="textbox"]').html()}</textarea>`);
+            $(`form#about-us-form`).submit();
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+
+    $('.delete-button').on('click', function (event) {
+        event.stopPropagation();
+        event.preventDefault();
+        Swal.fire({
+            title: 'Ви впевнені?',
+            text: "Після видалення елемент неможливо буде повернути!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#A9A9A9',
+            cancelButtonText: 'Скасувати',
+            confirmButtonText: 'Видалити'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.location.href = $(this).attr('href');
+                }
+            })
+    })
+
+    function deletePhoto(element) {
+        Swal.fire({
+            title: 'Ви впевнені?',
+            text: "Після видалення елемент неможливо буде повернути!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#A9A9A9',
+            cancelButtonText: 'Скасувати',
+            confirmButtonText: 'Видалити'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $(`#${element.id}`).parent().parent().remove();
+                }
+            })
+    }
+</script>
+{% endblock %}

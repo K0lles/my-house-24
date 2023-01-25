@@ -1,0 +1,251 @@
+{% extends 'main_page.html' %}
+{% load static %}
+
+{% block title %}
+    <title>Редагування сторінки</title>
+{% endblock %}
+
+{% block styles %}
+    <style>
+        .ck-editor__editable[role="textbox"] {
+            /* editing area */
+            min-height: 200px;
+            min-width: 100%;
+        }
+    </style>
+{% endblock %}
+
+{% block content_header %}
+    <h1>Редагування сторінки</h1>
+{% endblock %}
+
+{% block main_content %}
+    <div class="card">
+        <div class="card-header">
+            <div class="row">
+                <div class="col-sm-12 col-lg-6">
+                    <h5 style="font-size: 18px; color: grey">Редагування сторінки "Тарифи"</h5>
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            {% if messages %}
+                {% for message in messages %}
+                    {% if message.tags == 'success' %}
+                        <div class="alert alert-success alert-dismissible fade show" role="alert">
+                            {{ message }}
+                                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                        </div>
+                    {% elif message.tags == 'error' %}
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            {{ message }}
+                                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            {% endif %}
+            <form id="tariff-update-form" method="post" action="{% url 'tariff-page-update' %}" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="row" style="margin-bottom: 15px; margin-top: 10px;">
+                    <h5 style="border-bottom: 1px solid rgba(0,0,0,.125); padding-bottom: 10px;">Інформація</h5>
+                </div>
+                <div class="row">
+                    <div class="form-group">
+                        <label class="form-label" for="{{ form.title.auto_id }}">Заголовок</label>
+                        <input type="text" class="form-control" id="{{ form.title.auto_id }}" name="{{ form.title.html_name }}" {% if form.instance.title %}value="{{ form.instance.title }}"{% endif %}>
+                        <p id="{{ form.title.auto_id }}-errors" style="color: red;"></p>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Короткий текст</label>
+                        <div id="parent-short-text">
+                            <div id="editor-short-text">{% if form.instance.short_text %}{{ form.instance.short_text|safe }}{% endif %}</div>
+                            <div hidden="hidden">
+                                <div id="insert-into-id_short_text"></div>
+                            </div>
+                            <p id="{{ form.short_text.auto_id }}-errors" style="color: red;"></p>
+                        </div>
+                    </div>
+                </div>
+                <div class="row" style="margin-bottom: 15px; margin-top: 10px;">
+                    <h5 style="border-bottom: 1px solid rgba(0,0,0,.125); padding-bottom: 10px;">Зображення</h5>
+                </div>
+                <div id="tariff-object-list" class="row">
+                    {{ tariff_object_formset.management_form }}
+                    {% for tariff in tariff_object_formset.forms %}
+                        {{ tariff.id }}
+                        <div class="col-md-4">
+                            <h6 class="float-left">Тариф {{ forloop.counter }}</h6>
+                            <button class="btn btn-danger float-right delete-tariff" data-href="{% url 'tariff-object-delete' tariff_object_pk=tariff.instance.pk %}" type="button"><i class="fa fa-trash"></i></button>
+                            <img id="{{ tariff.photo.auto_id }}-display" {% if not tariff.instance.photo %}src="{% static 'all_logos/empty-photo.png' %}"{% else %}src="{{ tariff.instance.photo.url }}"{% endif %} class="img-responsive" height="300px" width="100%" style="margin-top: 8px;">
+                            <div class="form-group">
+                                <label for="{{ tariff.photo.auto_id }}" class="form-label">Файл</label>
+                                <input type="file" id="{{ tariff.photo.auto_id }}" name="{{ tariff.photo.html_name }}" style="display: block;" onchange="loadFile(event, this.id)">
+                            </div>
+                            <div class="form-group">
+                                <label for="{{ tariff.title.auto_id }}" class="form-label">Підпис</label>
+                                <input type="text" class="form-control" id="{{ tariff.title.auto_id }}" value="{{ tariff.instance.title }}" name="{{ tariff.title.html_name }}" onchange="fieldIsValid(this)">
+                                <p id="{{ tariff.title.auto_id }}-errors" style="color: red;"></p>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+                <div class="col-md-4" hidden="hidden" id="{{ tariff_object_formset.empty_form.photo.auto_id }}-parent">
+                    <h6 class="float-left"></h6>
+                    <button class="btn btn-danger float-right delete-tariff" type="button"><i class="fa fa-trash"></i></button>
+                    <img id="{{ tariff_object_formset.empty_form.photo.auto_id }}-display" src="{% static 'all_logos/empty-photo.png' %}" class="img-responsive" height="300px" width="100%" style="margin-top: 8px;">
+                    <div class="form-group">
+                        <label for="{{ tariff_object_formset.empty_form.photo.auto_id }}" class="form-label">Файл</label>
+                        <input type="file" id="{{ tariff_object_formset.empty_form.photo.auto_id }}" name="{{ tariff_object_formset.empty_form.photo.html_name }}" style="display: block;">
+                    </div>
+                    <div class="form-group">
+                        <label for="{{ tariff_object_formset.empty_form.title.auto_id }}" class="form-label">Підпис</label>
+                        <input type="hidden" class="form-control" id="{{ tariff_object_formset.empty_form.title.auto_id }}" name="{{ tariff_object_formset.empty_form.title.html_name }}" onchange="fieldIsValid(this)">
+                        <p id="{{ tariff_object_formset.empty_form.title.auto_id }}-errors" style="color: red;"></p>
+                    </div>
+                </div>
+                <div class="row" style="margin-bottom: 15px; margin-top: 10px;">
+                    <h5 style="border-bottom: 1px solid rgba(0,0,0,.125); padding-bottom: 10px;">Налаштування SEO</h5>
+                </div>
+                <div class="row">
+                    <div class="form-group">
+                        <label for="{{ seo_form.title.auto_id }}">Title</label>
+                        <input type="text" class="form-control" id="{{ seo_form.title.auto_id }}" {% if seo_form.instance.title %}value="{{ seo_form.instance.title }}"{% endif %} name="{{ seo_form.title.html_name }}" onchange="fieldIsValid(this)">
+                        <p id="{{ seo_form.title.auto_id }}-errors" style="color: red;"></p>
+                    </div>
+                    <div class="form-group">
+                        <label for="{{ seo_form.description.auto_id }}">Description</label>
+                        <textarea rows="6" class="form-control" id="{{ seo_form.description.auto_id }}" name="{{ seo_form.description.html_name }}" onchange="fieldIsValid(this)">{% if seo_form.instance.description %}{{ seo_form.instance.description }}{% endif %}</textarea>
+                        <p id="{{ seo_form.description.auto_id }}-errors" style="color: red;"></p>
+                    </div>
+                    <div class="form-group">
+                        <label for="{{ seo_form.keywords.auto_id }}">Keywords</label>
+                        <textarea rows="6" class="form-control" id="{{ seo_form.keywords.auto_id }}" name="{{ seo_form.keywords.html_name }}" onchange="fieldIsValid(this)">{% if seo_form.instance.keywords %}{{ seo_form.instance.keywords }}{% endif %}</textarea>
+                        <p id="{{ seo_form.keywords.auto_id }}-errors" style="color: red;"></p>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-sm-12 text-center">
+                        <button type="reset" class="btn btn-default">Скасувати</button>
+                        <button type="button" class="btn btn-success add-tariff-object">Додати тариф</button>
+                        <button type="submit" class="btn btn-success" onclick="formIsValid()">Зберегти</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    ClassicEditor.create(document.querySelector('#editor-short-text'));
+
+    function deleteTariff(element) {
+        Swal.fire({
+            title: 'Ви впевнені?',
+            text: "Після видалення тариф неможливо буде повернути!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#A9A9A9',
+            cancelButtonText: 'Скасувати',
+            confirmButtonText: 'Видалити'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $(`#${element.id}`).parent().remove();
+                }
+            })
+    }
+
+    $('.delete-tariff').on('click', function (event) {
+        event.preventDefault();
+        Swal.fire({
+            title: 'Ви впевнені?',
+            text: "Після видалення тариф неможливо буде повернути!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#A9A9A9',
+            cancelButtonText: 'Скасувати',
+            confirmButtonText: 'Видалити'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.location.href = $(this).attr('data-href');
+                }
+            })
+    })
+
+    const TARIFF_TOTAL_FORMS = $('#id_tariff-object-TOTAL_FORMS');
+    $('.add-tariff-object').on('click', function () {
+        let empty_form = $('div#id_tariff-object-__prefix__-photo-parent').clone();
+        let total_forms = TARIFF_TOTAL_FORMS.val();
+
+        empty_form.find('h6').html(`Тариф ${parseInt(total_forms) + 1}`);
+        empty_form.find('label[for="id_tariff-object-__prefix__-photo-display"]').attr('for', `id_tariff-object-${total_forms}-photo-display`);
+        empty_form.find('#id_tariff-object-__prefix__-photo-display').attr('id', `id_tariff-object-${total_forms}-photo-display`);
+
+        empty_form.find('label[for="id_tariff-object-__prefix__-photo"]').attr('for', `id_tariff-object-${total_forms}-photo`);
+        empty_form.find('#id_tariff-object-__prefix__-photo').attr('name', `tariff-object-${total_forms}-photo`);
+        empty_form.find('#id_tariff-object-__prefix__-photo').attr('onchange', `loadFile(event, this.id)`);
+        empty_form.find('#id_tariff-object-__prefix__-photo').attr('id', `id_tariff-object-${total_forms}-photo`);
+
+        empty_form.find('label[for="id_tariff-object-__prefix__-title"]').attr('for', `id_tariff-object-${total_forms}-title`);
+        empty_form.find('#id_tariff-object-__prefix__-title').attr('type', `text`);
+        empty_form.find('#id_tariff-object-__prefix__-title').attr('name', `tariff-object-${total_forms}-title`);
+        empty_form.find('#id_tariff-object-__prefix__-title').attr('id', `id_tariff-object-${total_forms}-title`);
+        empty_form.find('#id_tariff-object-__prefix__-title-errors').attr('id', `id_tariff-object-${total_forms}-title-errors`);
+
+        empty_form.find(`button`).attr('id', `id_tariff-object-${total_forms}-photo-delete`);
+        empty_form.find('#insert-into-id_service-object-__prefix__-description').attr('id', `insert-into-id_service-object-${total_forms}-description`);
+
+        empty_form.find(`button`).attr('onclick', 'deleteTariff(this)');
+
+        empty_form.attr('id', `id_tariff-object-${total_forms}-photo-parent`);
+        empty_form.removeAttr('hidden');
+
+        TARIFF_TOTAL_FORMS.attr('value', parseInt(total_forms) + 1);
+        $('#tariff-object-list').append(empty_form);
+    })
+
+    function formIsValid() {
+        event.preventDefault();
+        let isValid = true;
+
+        if ($('#parent-short-text .ck-editor__editable[role="textbox"]').html() === '<p><br data-cke-filler="true"></p>'){
+            if (!($(`#id_short_text-errors`).text()).includes('Поле не може бути пустим')) {
+                $(`#id_short_text-errors`).text('Поле не може бути пустим');
+            }
+            isValid = false;
+        }
+        else {
+            $(`#id_short_text-errors`).text('');
+        }
+
+        $(`#tariff-update-form`).find('input[type!="hidden"][class!="ck-hidden"][type!="checkbox"]').each(function() {
+            if (!$(this).attr('id').includes('ck-') && !fieldIsValid(this)) {
+                isValid = false;
+            }
+        });
+
+        if (!fieldIsValid(document.getElementById('id_seo-description'))) {
+            isValid = false;
+        }
+
+        if (!fieldIsValid(document.getElementById('id_seo-keywords'))) {
+            isValid = false;
+        }
+
+        if (isValid) {
+            $('#insert-into-id_short_text').append(`<textarea id="{{ form.short_text.auto_id }}" name="{{ form.short_text.html_name }}">${$('#parent-short-text .ck-editor__editable[role="textbox"]').html()}</textarea>`);
+            $('#tariff-update-form').submit();
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+</script>
+{% endblock %}

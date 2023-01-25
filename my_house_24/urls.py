@@ -9,9 +9,10 @@ handler404 = PageNotFoundView.as_view()
 handler505 = InternalServerError.as_view()
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
+    path('', include('front_side.urls')),
     path('administrator-panel/', include('administrator_panel.urls')),
     path('configuration/', include('configuration.urls')),
+    path('site-management/', include('site_management.urls')),
 
     path('__debug__/', include('debug_toolbar.urls')),
 ]

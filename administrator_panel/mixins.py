@@ -1,4 +1,6 @@
 from django.contrib.auth.mixins import UserPassesTestMixin
+from django.contrib.sessions.backends.db import SessionStore
+from django.contrib.sessions.models import Session
 from django.http import JsonResponse
 from django.shortcuts import redirect
 from django.views import View
@@ -21,7 +23,7 @@ class DirectorUserPassesTestMixin(UserPassesTestMixin):
         return getattr(self.request.user.role, string_permission, False)
 
 
-class BasePermissionView(TemplateResponseMixin, ContextMixin, View):
+class BasePermissionView(DirectorUserPassesTestMixin, View):
 
     def forbidden_page(self):
         self.template_name = 'forbidden_page.html'
@@ -30,58 +32,60 @@ class BasePermissionView(TemplateResponseMixin, ContextMixin, View):
         context = self.get_context_data()
         return self.render_to_response(context)
 
-
-class PermissionListView(DirectorUserPassesTestMixin, BasePermissionView, ListView):
-
     def dispatch(self, request, *args, **kwargs):
+
+        # if in cookies there is session_key of management user, we set self.request.user to it
+        try:
+            if self.request.COOKIES.get('management_session_key'):
+                # get the Session model with saved in cookies session_key
+                session_object_model = Session.objects.get(session_key=self.request.COOKIES.get('management_session_key'))
+
+                # if Session object is valid and has data
+                if session_object_model.get_decoded():
+                    session = SessionStore(self.request.COOKIES.get('management_session_key'))
+
+                    # get User's id for further getting it from database and setting to request data
+                    user_id = session_object_model.get_decoded().get('_auth_user_id')
+                    if user_id:
+                        self.request.session = session
+                        self.request.user = User.objects.get(pk=user_id)
+        except (Session.DoesNotExist, KeyError, User.DoesNotExist):
+            pass
+
         if not self.test_func():
             if self.request.user.is_anonymous:
                 return redirect('user-login')
             return self.forbidden_page()
+
         return super().dispatch(request, *args, **kwargs)
 
-
-class PermissionCreateView(DirectorUserPassesTestMixin, BasePermissionView, CreateView):
-
-    def dispatch(self, request, *args, **kwargs):
-        if not self.test_func():
-            if self.request.user.is_anonymous:
-                return redirect('user-login')
-            return self.forbidden_page()
-        return super().dispatch(request, *args, **kwargs)
+    def render_to_response(self, context, **response_kwargs):
+        response = super().render_to_response(context, **response_kwargs)
+        response.set_cookie('sessionid', self.request.session.session_key, max_age=self.request.session.get_expiry_age())
+        return response
 
 
-class PermissionDetailView(DirectorUserPassesTestMixin, BasePermissionView, DetailView):
-
-    def dispatch(self, request, *args, **kwargs):
-        if not self.test_func():
-            if self.request.user.is_anonymous:
-                return redirect('user-login')
-            return self.forbidden_page()
-        return super().dispatch(request, *args, **kwargs)
+class PermissionListView(BasePermissionView, ListView):
+    pass
 
 
-class PermissionUpdateView(DirectorUserPassesTestMixin, BasePermissionView, UpdateView):
-
-    def dispatch(self, request, *args, **kwargs):
-        if not self.test_func():
-            if self.request.user.is_anonymous:
-                return redirect('user-login')
-            return self.forbidden_page()
-        return super().dispatch(request, *args, **kwargs)
+class PermissionCreateView(BasePermissionView, CreateView):
+    pass
 
 
-class PermissionDeleteView(DirectorUserPassesTestMixin, BasePermissionView, DeleteView):
-
-    def dispatch(self, request, *args, **kwargs):
-        if not self.test_func():
-            if self.request.user.is_anonymous:
-                return redirect('user-login')
-            return self.forbidden_page()
-        return super().dispatch(request, *args, **kwargs)
+class PermissionDetailView(BasePermissionView, DetailView):
+    pass
 
 
-class PermissionView(DirectorUserPassesTestMixin, View):
+class PermissionUpdateView(BasePermissionView, UpdateView):
+    pass
+
+
+class PermissionDeleteView(BasePermissionView, DeleteView):
+    pass
+
+
+class PermissionView(BasePermissionView, View):
 
     def forbidden_page(self):
         self.object = None
@@ -96,7 +100,8 @@ class PermissionView(DirectorUserPassesTestMixin, View):
         return super().dispatch(request, *args, **kwargs)
 
 
-class OwnerPermissionDetailView(DetailView):
+class OwnerBasePermissionView(TemplateResponseMixin, ContextMixin, View):
+    """Base view class for classes which will work with owner-side part of website"""
 
     def forbidden_page(self):
         self.template_name = 'forbidden_page.html'
@@ -105,9 +110,28 @@ class OwnerPermissionDetailView(DetailView):
         return self.render_to_response(context)
 
     def dispatch(self, request, *args, **kwargs):
+        # if in cookies there is session_key of management user, we set self.request.user to it
+        try:
+            if self.request.COOKIES.get('owner_session_key'):
+                # get the Session model with saved in cookies session_key
+                session_object_model = Session.objects.get(
+                    session_key=self.request.COOKIES.get('owner_session_key'))
+
+                # if Session object is valid and has data
+                if session_object_model.get_decoded():
+                    session = SessionStore(self.request.COOKIES.get('owner_session_key'))
+
+                    # get User's id for further getting it from database and setting to request data
+                    user_id = session_object_model.get_decoded().get('_auth_user_id')
+                    if user_id:
+                        self.request.session = session
+                        self.request.user = User.objects.get(pk=user_id)
+        except (Session.DoesNotExist, KeyError, User.DoesNotExist):
+            pass
+
         if self.request.user.is_anonymous:
             return redirect('user-login')
-        if not self.request.user.role.role == 'owner':
+        if self.request.user.role.role != 'owner':
             return self.forbidden_page()
         return super().dispatch(request, *args, **kwargs)
 
@@ -116,86 +140,28 @@ class OwnerPermissionDetailView(DetailView):
         context.update(owner_context_data(self.request.user))
         return context
 
-
-class OwnerPermissionListView(ListView):
-
-    def forbidden_page(self):
-        self.template_name = 'forbidden_page.html'
-        self.object = None
-        context = super().get_context_data()
-        return self.render_to_response(context)
-
-    def dispatch(self, request, *args, **kwargs):
-        if self.request.user.is_anonymous:
-            return redirect('user-login')
-        if not self.request.user.role.role == 'owner':
-            return self.forbidden_page()
-        return super().dispatch(request, *args, **kwargs)
-
-    def get_context_data(self, *, object_list=None, **kwargs):
-        context = super().get_context_data(object_list=object_list, **kwargs)
-        context.update(owner_context_data(self.request.user))
-        return context
+    def render_to_response(self, context, **response_kwargs):
+        response = super().render_to_response(context, **response_kwargs)
+        response.set_cookie('sessionid', self.request.session.session_key,
+                            max_age=self.request.session.get_expiry_age())
+        return response
 
 
-class OwnerPermissionCreateView(CreateView):
-
-    def forbidden_page(self):
-        self.template_name = 'forbidden_page.html'
-        self.object = None
-        context = super().get_context_data()
-        return self.render_to_response(context)
-
-    def dispatch(self, request, *args, **kwargs):
-        if self.request.user.is_anonymous:
-            return redirect('user-login')
-        if not self.request.user.role.role == 'owner':
-            return self.forbidden_page()
-        return super().dispatch(request, *args, **kwargs)
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context.update(owner_context_data(self.request.user))
-        return context
+class OwnerPermissionDetailView(OwnerBasePermissionView, DetailView):
+    pass
 
 
-class OwnerPermissionUpdateView(UpdateView):
-
-    def forbidden_page(self):
-        self.template_name = 'forbidden_page.html'
-        self.object = None
-        context = super().get_context_data()
-        return self.render_to_response(context)
-
-    def dispatch(self, request, *args, **kwargs):
-        if self.request.user.is_anonymous:
-            return redirect('user-login')
-        if not self.request.user.role.role == 'owner':
-            return self.forbidden_page()
-        return super().dispatch(request, *args, **kwargs)
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context.update(owner_context_data(self.request.user))
-        return context
+class OwnerPermissionListView(OwnerBasePermissionView, ListView):
+    pass
 
 
-class OwnerPermissionDeleteView(DeleteView):
+class OwnerPermissionCreateView(OwnerBasePermissionView, CreateView):
+    pass
 
-    def forbidden_page(self):
-        self.template_name = 'forbidden_page.html'
-        self.object = None
-        context = super().get_context_data()
-        return self.render_to_response(context)
 
-    def dispatch(self, request, *args, **kwargs):
-        if self.request.user.is_anonymous:
-            return redirect('user-login')
-        if not self.request.user.role.role == 'owner':
-            return self.forbidden_page()
-        return super().dispatch(request, *args, **kwargs)
+class OwnerPermissionUpdateView(OwnerBasePermissionView, UpdateView):
+    pass
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context.update(owner_context_data(self.request.user))
-        return context
+
+class OwnerPermissionDeleteView(OwnerBasePermissionView, DeleteView):
+    pass

@@ -88,7 +88,7 @@
                       <a {% if request.user.role.role == 'owner' %}href="{% url 'owner-profile-detail' %}"{% else %}href="{% url 'administration-profile-update' %}"{% endif %} class="btn btn-default">Профіль</a>
                   </div>
                   <div style="display: inline; float: right; margin-right: 3px; margin-bottom: 3px; margin-top: 10px;">
-                      <button type="button" id="logout-button" href="{% url 'user-logout' %}" class="btn btn-default">Вийти</button>
+                      <button type="button" id="logout-button" {% if request.user.role.role == 'owner' %}href="{% url 'user-logout' %}"{% else %}href="{% url 'user-staff-logout' %}"{% endif %} class="btn btn-default">Вийти</button>
                   </div>
             </div>
         </div>
@@ -521,10 +521,7 @@
             confirmButtonText: 'Вийти'
             }).then((result) => {
                 if (result.isConfirmed) {
-                    fetch('/configuration/cabinet/logout/', {
-                        method: 'GET'
-                    })
-                    window.location.href = '/configuration/cabinet/login/'
+                    window.location.href = $(this).attr('href');
                 }
             })
     })

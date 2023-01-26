@@ -53,8 +53,10 @@ class BasePermissionView(DirectorUserPassesTestMixin, View):
             pass
 
         if not self.test_func():
-            if self.request.user.is_anonymous:
-                return redirect('user-login')
+            if self.request.user.is_anonymous \
+                    or (self.request.user.is_authenticated and self.request.user.role == 'owner' \
+                        and self.request.COOKIES.get('management_session_key') == 'None'):
+                return redirect('user-staff-login')
             return self.forbidden_page()
 
         return super().dispatch(request, *args, **kwargs)
@@ -129,7 +131,9 @@ class OwnerBasePermissionView(TemplateResponseMixin, ContextMixin, View):
         except (Session.DoesNotExist, KeyError, User.DoesNotExist):
             pass
 
-        if self.request.user.is_anonymous:
+        if self.request.user.is_anonymous \
+                or (self.request.user.is_authenticated and self.request.user.role != 'owner' \
+                        and self.request.COOKIES.get('owner_session_key') == 'None'):
             return redirect('user-login')
         if self.request.user.role.role != 'owner':
             return self.forbidden_page()

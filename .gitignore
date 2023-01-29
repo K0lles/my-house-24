@@ -111,7 +111,8 @@ env.bak/
 venv.bak/
 
 # Mediafiles
-media
+media/*
+!/media/start_commands
 
 # Spyder project settings
 .spyderproject

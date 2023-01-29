@@ -27,6 +27,9 @@
                 <div class="col-sm-12 col-lg-6">
                     <h5 style="font-size: 18px; color: grey">Редагування сторінки "Головна"</h5>
                 </div>
+                <div class="col-sm-12 col-lg-6 text-right">
+                    <button type="button" class="btn btn-default" id="update-seo">Оновити robots та sitemap</button>
+                </div>
             </div>
         </div>
         <div class="card-body">
@@ -298,6 +301,32 @@
         ClassicEditor
         .create( document.querySelector( `#editor-block-${i}` ) )
     }
+
+    $('#update-seo').on('click', function () {
+        Swal.fire({
+            title: 'Ви впевнені?',
+            text: "Ви впевнені, що хочете оновини robots та sitemaps?",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#63A8E1',
+            cancelButtonColor: '#A9A9A9',
+            cancelButtonText: 'Скасувати',
+            confirmButtonText: 'Оновити'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    setTimeout(function () {
+                        Swal.fire({
+                            position: 'top-end',
+                            icon: 'success',
+                            title: 'Robots та sitemaps успішно оновлено!',
+                            showConfirmButton: false,
+                            timer: 1200,
+                        })
+                    }, 700);
+
+                }
+            })
+    })
 
     function formIsValid() {
         event.preventDefault();

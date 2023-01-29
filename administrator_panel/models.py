@@ -1,5 +1,6 @@
 from django.db import models
 from django.core.validators import MinValueValidator
+from django.urls import reverse
 from django.utils import timezone
 
 from phonenumber_field.modelfields import PhoneNumberField
@@ -16,6 +17,9 @@ class House(models.Model):
     photo_3 = models.ImageField(upload_to='houses/photos/', blank=True, null=True)
     photo_4 = models.ImageField(upload_to='houses/photos/', blank=True, null=True)
     photo_5 = models.ImageField(upload_to='houses/photos/', blank=True, null=True)
+
+    def get_absolute_url(self):
+        return reverse('house-detail', kwargs={'house_pk': self.id})
 
 
 class HouseUser(models.Model):
@@ -42,6 +46,9 @@ class Flat(models.Model):
     tariff = models.ForeignKey(Tariff, on_delete=models.PROTECT, verbose_name='Тариф', blank=True, null=True)
     square = models.FloatField(validators=[MinValueValidator(0)], verbose_name='Площа')
 
+    def get_absolute_url(self):
+        return reverse('flat-detail', kwargs={'flat_pk': self.id})
+
 
 class PersonalAccount(models.Model):
     number = models.CharField(max_length=255, verbose_name='Номер', unique=True)
@@ -52,6 +59,9 @@ class PersonalAccount(models.Model):
         inactive = ('inactive', 'Неактивний')
 
     status = models.CharField(max_length=15, choices=Status.choices, default='inactive', verbose_name='Статус')
+
+    def get_absolute_url(self):
+        return reverse('personal-account-detail', kwargs={'account_pk': self.id})
 
 
 class Notoriety(models.Model):
@@ -71,6 +81,9 @@ class Notoriety(models.Model):
     type = models.CharField(max_length=20, choices=TypeChoices.choices, default='income')    # is set in view while saving - income or outcome
     created_at = models.DateField(default=timezone.now)
 
+    def get_absolute_url(self):
+        return reverse('notoriety-detail', kwargs={'notoriety_pk': self.id})
+
 
 class Receipt(models.Model):
     number = models.CharField(max_length=8, unique=True)
@@ -87,6 +100,9 @@ class Receipt(models.Model):
 
     status = models.CharField(max_length=20, choices=StatusChoices.choices, default='paid', verbose_name='Статус')
     created_at = models.DateField(default=timezone.now)
+
+    def get_absolute_url(self):
+        return reverse('receipt-detail', kwargs={'receipt_pk': self.id})
 
 
 class Application(models.Model):
@@ -111,6 +127,9 @@ class Application(models.Model):
     desired_date = models.DateField(default=timezone.now)
     desired_time = models.TimeField(default=timezone.now)
     created_by_director = models.BooleanField(default=False)
+
+    def get_absolute_url(self):
+        return reverse('application-detail', kwargs={'application_pk': self.id})
 
 
 class Message(models.Model):
@@ -160,6 +179,9 @@ class Message(models.Model):
 
         return 'Всім'
 
+    def get_absolute_url(self):
+        return reverse('message-detail', kwargs={'message_pk': self.id})
+
 
 class Template(models.Model):
     name = models.CharField(max_length=255)
@@ -181,6 +203,9 @@ class Evidence(models.Model):
     status = models.CharField(max_length=20, choices=StatusChoices.choices, verbose_name='Статус')
     counter_evidence = models.FloatField(validators=[MinValueValidator(0.0)])
     date_from = models.DateField(default=timezone.now)
+
+    def get_absolute_url(self):
+        return reverse('evidence-detail', kwargs={'evidence_pk': self.id})
 
 
 class ReceiptService(models.Model):

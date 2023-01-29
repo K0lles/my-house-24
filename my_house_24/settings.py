@@ -40,6 +40,7 @@ INTERNAL_IPS = [
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
+    'django.contrib.sitemaps',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
@@ -54,6 +55,8 @@ INSTALLED_APPS = [
     'site_management.apps.SiteManagementConfig',
     'front_side.apps.FrontSideConfig',
 ]
+
+SITE_ID = 1
 
 MIDDLEWARE = [
     'debug_toolbar.middleware.DebugToolbarMiddleware',

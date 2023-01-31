@@ -1533,7 +1533,7 @@ class NotorietyUpdateView(PermissionUpdateView):
 class NotorietyListView(PermissionListView):
     model = Notoriety
     template_name = 'administrator_panel/notoriety-list.html'
-    queryset = Notoriety.objects.select_related('article', 'account', 'account__flat__owner').all().order_by(
+    queryset = Notoriety.objects.select_related('article', 'account', 'account__flat__owner').filter(is_completed=True).order_by(
         '-created_at')
     string_permission = 'checkout_access'
 

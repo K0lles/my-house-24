@@ -220,7 +220,7 @@ class Command(BaseCommand):
                 role=Role.objects.get(role='director')
             )
 
-            for i in range(0, 7):
+            for i in range(0, 20):
                 User.objects.create_user(
                     email=fake.ascii_email(),
                     password='123qweasd',
@@ -231,3 +231,16 @@ class Command(BaseCommand):
                     is_active=True,
                     role=Role.objects.get(role=random.choice(['plumber', 'manager', 'accountant', 'electrician']))
                 )
+
+            if not User.objects.filter(role__role='manager').exists():
+                for i in range(0, 4):
+                    User.objects.create_user(
+                        email=fake.ascii_email(),
+                        password='123qweasd',
+                        name=fake.first_name(),
+                        surname=fake.last_name(),
+                        phone=fake.phone_number(),
+                        status='active',
+                        is_active=True,
+                        role=Role.objects.get(role='manager')
+                    )

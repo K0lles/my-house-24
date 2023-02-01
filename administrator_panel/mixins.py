@@ -54,7 +54,7 @@ class BasePermissionView(DirectorUserPassesTestMixin, View):
 
         if not self.test_func():
             if self.request.user.is_anonymous \
-                    or (self.request.user.is_authenticated and self.request.user.role == 'owner' \
+                    or (self.request.user.is_authenticated and self.request.user.role.role == 'owner' \
                         and self.request.COOKIES.get('management_session_key') == 'None'):
                 return redirect('user-staff-login')
             return self.forbidden_page()

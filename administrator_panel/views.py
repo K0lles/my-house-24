@@ -1812,7 +1812,6 @@ class BuildReceiptFileView(SingleObjectMixin, View):
                             row=index + 1, column=index_second + 1).fill)
 
                     if val:
-
                         if val.startswith('%') and val not in ['%serviceName%', '%servicePrice%', '%serviceUnit%',
                                                                '%serviceAmount%', '%serviceTotal%']:
                             if val == '%LOOP STARTING%':
@@ -1826,7 +1825,6 @@ class BuildReceiptFileView(SingleObjectMixin, View):
                                 val)
                             continue
                         wb.worksheets[0].cell(row=index + 1, column=index_second + 1).value = val
-
             # moving footer of cycle for correct display receipt services
             wb.worksheets[0].move_range(f'{start_moving.coordinate}:{end_moving.coordinate}',
                                         rows=receipt.receiptservices.all().count() - 2, cols=0)
@@ -1900,7 +1898,7 @@ class BuildReceiptFileView(SingleObjectMixin, View):
             file_path = f'{settings.MEDIA_ROOT}/receipts/{file_name}'
             wb.save(file_path)
             return JsonResponse({'answer': 'success', 'file_path': f'{settings.MEDIA_URL}receipts/{file_name}', 'full_path': file_path, 'file_name': file_name})
-        except (Template.DoesNotExist, Receipt.DoesNotExist, PersonalAccount.DoesNotExist):
+        except (Template.DoesNotExist, Receipt.DoesNotExist, PersonalAccount.DoesNotExist) as e:
             return JsonResponse({'answer': 'failed'})
 
 
@@ -2507,7 +2505,7 @@ class ReceiptToPDFDetailView(OwnerPermissionDetailView):
             pdfkit.from_file(html_file_path, html_file_path.replace('.html', '.pdf'), options={'encoding': 'UTF-8'})
 
             return JsonResponse({'answer': 'success', 'file_path': f'{settings.MEDIA_URL}receipts/{file_name.replace(".xlsx", ".pdf")}'})
-        except:
+        except Exception as e:
             return JsonResponse({'answer': 'Щось пішло не так!'})
 
 

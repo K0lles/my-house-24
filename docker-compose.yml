@@ -1,0 +1,43 @@
+version: '3.9'
+
+services:
+  nginx:
+    build: ./nginx
+    ports:
+      - "81:80"
+    volumes:
+      - static_volume:/home/app/my_house_24/static
+      - media_volume:/home/app/my_house_24/media
+    depends_on:
+      - web
+    restart: "on-failure"
+
+  db:
+    hostname: db
+    image: postgres:13.0-alpine
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgres/data/
+    env_file:
+      - ./.env
+
+  web:
+    build: .
+    command: gunicorn --bind 0.0.0.0:8000 my_house_24.wsgi
+    volumes:
+      - static_volume:/home/app/my_house_24/static
+      - media_volume:/home/app/my_house_24/media
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./.env
+    depends_on:
+      - db
+    restart: "on-failure"
+    image: my-house-24-app
+
+volumes:
+  postgres_data:
+  media_volume:
+  static_volume:

@@ -1,3 +1,4 @@
+import datetime
 import locale
 from copy import deepcopy
 import pandas as pd
@@ -53,10 +54,16 @@ class StatisticListView(PermissionListView):
         context['application_new_sum'] = Application.objects.filter(status='new').count()
 
         context['totals'] = count_all_totals(personal_accounts)
-        notorieties = Notoriety.objects.filter(created_at__year=timezone.now().year - 1)
+        notorieties = Notoriety.objects.filter(created_at__range=(timezone.datetime(timezone.datetime.now().year - 1,
+                                                                                    timezone.datetime.now().month,
+                                                                                    timezone.datetime.now().day),
+                                                                  timezone.datetime.now()))
         receipts = Receipt.objects\
             .prefetch_related('receiptservices')\
-            .filter(is_completed=True, date_from__year=timezone.now().year - 1)\
+            .filter(is_completed=True, date_from__range=(timezone.datetime(timezone.datetime.now().year - 1,
+                                                                           timezone.datetime.now().month,
+                                                                           timezone.datetime.now().day),
+                                                         timezone.datetime.now()))\
             .order_by('date_from')
 
         grouped_income_notorieties_queryset = notorieties\
@@ -875,10 +882,12 @@ class OwnerListView(PermissionListView):
         # dictionary with debt information about each owner
         context['debts'] = {}
         for owner in context['object_list']:
-            context['debts'][owner.pk] = True
+            context['debts'][owner.pk] = 'немає даних'
             for account in personal_accounts:
                 if account.flat.owner.pk == owner.pk and account.subtraction < 0:
-                    context['debts'][owner.pk] = False
+                    context['debts'][owner.pk] = 'Є'
+                elif account.flat.owner.pk == owner.pk and account.subtraction >= 0:
+                    context['debts'][owner.pk] = 'Немає'
         return context
 
 
@@ -2201,7 +2210,10 @@ class OwnerSummaryListView(OwnerPermissionListView):
 
         # making outcome diagram for whole year by months
         outcome_diagram_queryset = context['object_list'] \
-            .filter(date_from__year=timezone.now().year - 1) \
+            .filter(date_from__range=(datetime.datetime(timezone.now().year - 1,
+                                                        timezone.now().month,
+                                                        timezone.now().day),
+                                      datetime.datetime.now()))\
             .annotate(month=TruncMonth('date_from')) \
             .values('month') \
             .order_by('month') \
@@ -2221,7 +2233,7 @@ class OwnerSummaryListView(OwnerPermissionListView):
         last_day_of_previous_month = first_day_of_current_month - datetime.timedelta(days=1)
         previous_month_diagram_queryset = context['object_list'] \
             .filter(date_from__month=last_day_of_previous_month.month,
-                    date_from__year=timezone.now().year - 1)\
+                    date_from__year=last_day_of_previous_month.year)\
             .annotate(service=F('receiptservices__service__name'))\
             .values('service')\
             .order_by('service')\
@@ -2233,7 +2245,8 @@ class OwnerSummaryListView(OwnerPermissionListView):
                 context['previous_month_diagram'][outcome.get('service')] = outcome.get('sum')
 
         current_year_diagram_queryset = context['object_list'] \
-            .filter(date_from__year=timezone.now().year - 1) \
+            .filter(date_from__range=(datetime.datetime(timezone.now().year, 1, 1),
+                                      datetime.datetime.now())) \
             .annotate(service=F('receiptservices__service__name')) \
             .values('service') \
             .order_by('service') \

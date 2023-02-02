@@ -108,6 +108,7 @@ class OwnerBasePermissionView(TemplateResponseMixin, ContextMixin, View):
     def forbidden_page(self):
         self.template_name = 'forbidden_page.html'
         self.object = None
+        self.object_list = None
         context = super().get_context_data()
         return self.render_to_response(context)
 
@@ -128,11 +129,13 @@ class OwnerBasePermissionView(TemplateResponseMixin, ContextMixin, View):
                     if user_id:
                         self.request.session = session
                         self.request.user = User.objects.get(pk=user_id)
+            else:
+                self.request.session = SessionStore(None)
         except (Session.DoesNotExist, KeyError, User.DoesNotExist):
             pass
 
         if self.request.user.is_anonymous \
-                or (self.request.user.is_authenticated and self.request.user.role != 'owner' \
+                or (self.request.user.is_authenticated and self.request.user.role.role != 'owner' \
                         and self.request.COOKIES.get('owner_session_key') == 'None'):
             return redirect('user-login')
         if self.request.user.role.role != 'owner':

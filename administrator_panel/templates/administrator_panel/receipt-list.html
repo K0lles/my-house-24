@@ -104,7 +104,7 @@
                                     <td>{{ receipt.created_at|date:'d.m.Y' }}</td>
                                     <td>{{ receipt.date_to|date:'F' }}</td>
                                     <td>{{ receipt.account.flat.number }}, {{ receipt.account.flat.house.name }}</td>
-                                    <td>{{ receipt.account.flat.owner.surname }} {{ receipt.account.flat.owner.name }} {{ receipt.account.flat.owner.father }}</td>
+                                    <td>{{ receipt.account.flat.owner.surname }} {{ receipt.account.flat.owner.name }} {% if receipt.account.flat.owner.father %}{{ receipt.account.flat.owner.father }}{% endif %}</td>
                                     <td>{% if receipt.is_completed %}Проведена{% else %}Не проведена{% endif %}</td>
                                     <td>{% if receipt.summ %}{{ receipt.summ|floatformat:2 }}{% else %}0.00{% endif %}</td>
                                     <td class="text-right">

@@ -129,7 +129,7 @@
                     <div class="form-group">
                         <div class="col-sm-12">
                             <label for="{{ form.comment.auto_id }}">Коментар</label>
-                            <textarea class="form-control" id="{{ form.comment.auto_id }}" name="{{ form.comment.html_name }}" rows="5">{% if form.instance.pk %}{{ form.instance.comment }}{% endif %}{% if base_notoriety.comment %}{{ base_notoriety.comment }}{% endif %}</textarea>
+                            <textarea class="form-control" id="{{ form.comment.auto_id }}" name="{{ form.comment.html_name }}" rows="5">{% if form.instance.pk and form.instance.comment %}{{ form.instance.comment }}{% endif %}{% if base_notoriety.comment %}{{ base_notoriety.comment }}{% endif %}</textarea>
                         </div>
                     </div>
                 </div>

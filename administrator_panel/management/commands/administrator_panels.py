@@ -12,7 +12,7 @@ from configuration.models import Role, TariffService
 class Command(BaseCommand):
 
     def handle(self, *args, **options):
-        fake = Faker()
+        fake = Faker('uk_UA')
 
         for i in range(0, 4):
             House.objects.create(
@@ -39,7 +39,7 @@ class Command(BaseCommand):
                 )
 
         for i in range(0, random.randint(7, 10)):
-            User.objects.create(
+            User.objects.create_user(
                 email=fake.ascii_email(),
                 password='123qweasd',
                 name=fake.first_name(),
@@ -69,20 +69,31 @@ class Command(BaseCommand):
                 status='active',
             )
 
-        for i in range(0, 7):
+        for i in range(0, 29):
             flat = random.choice(Flat.objects
                                  .select_related('personalaccount',
                                                  'tariff')
                                  .prefetch_related('tariff__service_tariff__service')
                                  .filter(personalaccount__isnull=False))
+            date_from = fake.date_between(datetime.datetime(datetime.datetime.now().year - 1,
+                                                            datetime.datetime.now().month,
+                                                            datetime.datetime.now().day),
+                                          datetime.datetime.now())
+
+            if date_from.month != 12:
+                date_to = datetime.datetime(date_from.year, date_from.month + 1, date_from.day)
+            else:
+                date_to = datetime.datetime(date_from.year + 1, 1, date_from.day)
+
             receipt = Receipt.objects.create(
                 number=''.join(random.choice(digits) for i in range(8)),
                 account=flat.personalaccount,
-                date_from=datetime.datetime.now(),
-                date_to=datetime.datetime.date(datetime.datetime.year, datetime.datetime.month + 1, datetime.datetime.day),
+                date_from=date_from,
+                date_to=date_to,
                 tariff=flat.tariff,
                 is_completed=True,
                 status=random.choice(['paid', 'partly paid', 'not paid']),
+                created_at=date_from
             )
 
             for z in range(0, random.randint(2, 7)):
@@ -96,8 +107,8 @@ class Command(BaseCommand):
                     receipt=receipt,
                     service=service,
                     amount=amount,
-                    price=tariff_service_price,
-                    total_price=amount * tariff_service_price
+                    price=tariff_service_price.price,
+                    total_price=amount * tariff_service_price.price
                 )
 
         for i in range(0, random.randint(7, 14)):
@@ -105,24 +116,32 @@ class Command(BaseCommand):
             Notoriety.objects.create(
                 number=''.join(random.choice(digits) for i in range(8)),
                 account=account,
-                article=ArticlePayment.objects.filter(type='income'),
+                article=random.choice(ArticlePayment.objects.filter(type='income')),
                 sum=random.randint(260, 14890),
                 is_completed=True,
                 manager=random.choice(User.objects.filter(role__role='manager')),
-                type='income'
+                type='income',
+                created_at=fake.date_between(datetime.datetime(datetime.datetime.now().year - 1,
+                                                            datetime.datetime.now().month,
+                                                            datetime.datetime.now().day),
+                                             datetime.datetime.now())
             )
 
-        for i in range(0, random.randint(4, 8)):
+        for i in range(0, random.randint(10, 14)):
             Notoriety.objects.create(
                 number=''.join(random.choice(digits) for i in range(8)),
-                article=ArticlePayment.objects.filter(type='outcome'),
+                article=random.choice(ArticlePayment.objects.filter(type='outcome')),
                 sum=random.randint(450, 6900),
                 is_completed=True,
                 manager=random.choice(User.objects.filter(role__role='manager')),
-                type='outcome'
+                type='outcome',
+                created_at=fake.date_between(datetime.datetime(datetime.datetime.now().year - 1,
+                                                            datetime.datetime.now().month,
+                                                            datetime.datetime.now().day),
+                                             datetime.datetime.now())
             )
 
-        for i in range(0, random.randint(12, 18)):
+        for i in range(0, random.randint(16, 22)):
             flat = random.choice(Flat.objects.filter(personalaccount__isnull=False))
             service = random.choice(Service.objects.filter(tariff=flat.tariff))
             Evidence.objects.create(
@@ -130,17 +149,36 @@ class Command(BaseCommand):
                 flat=flat,
                 service=service,
                 status=random.choice(['new', 'null', 'taken', 'taken and paid']),
-                counter_evidence=random.uniform(29.0, 689.20)
+                counter_evidence=random.uniform(29.0, 689.20),
+                date_from=fake.date_between(datetime.datetime(datetime.datetime.now().year - 1,
+                                                            datetime.datetime.now().month,
+                                                            datetime.datetime.now().day),
+                                            datetime.datetime.now())
             )
 
         for i in range(0, 5):
             flat = random.choice(Flat.objects.filter(personalaccount__isnull=False))
-            master = random.choice(User.objects.filter(role__role__in=['plumber', 'accountant', 'electrician']))
+            master = random.choice(User.objects.filter(role__role__in=['plumber', 'electrician']))
             Application.objects.create(
                 flat=flat,
                 master_type=master.role.role,
                 master=master,
                 description=fake.paragraph(nb_sentences=5),
                 status=random.choice(['new', 'in work', 'completed']),
-                created_by_director=True
+                created_by_director=True,
+                desired_date=fake.date_time_between(datetime.datetime(datetime.datetime.now().year - 1,
+                                                            datetime.datetime.now().month,
+                                                            datetime.datetime.now().day),
+                                          datetime.datetime.now()),
+                desired_time=fake.date_time_between_dates(datetime.datetime(datetime.datetime.now().year - 1,
+                                                            datetime.datetime.now().month,
+                                                            datetime.datetime.now().day),
+                                                datetime.datetime.now())
+            )
+
+        if not Template.objects.all().exists():
+            Template.objects.create(
+                name='Шаблон',
+                file='start_commands/template/template-first.xlsx',
+                is_default=True
             )

@@ -45,7 +45,7 @@
                     <div class="btn-group">
                         <a href="{% url 'template-choose' %}?receipt={{ object.pk }}" class="btn btn-default" type="button" style="margin-right: 10px;">Друк</a>
                         <a href="{% url 'template-choose' %}?receipt={{ object.pk }}" class="btn btn-default" style="margin-right: 10px;">Відправити на email</a>
-                        <a class="btn btn-info" href="{% url 'receipt-update' receipt_pk=object.pk %}">Редагувати особовий рахунок</a>
+                        <a class="btn btn-info" href="{% url 'receipt-update' receipt_pk=object.pk %}">Редагувати квитанцію</a>
                     </div>
                 </div>
             </div>
@@ -121,8 +121,8 @@
                         <tr>
                             <td>{{ forloop.counter }}</td>
                             <td>{{ receipt_service.service.name }}</td>
+                            <td>{{ receipt_service.amount|floatformat:2 }}</td>
                             <td>{{ receipt_service.service.measurement_unit.name }}</td>
-                            <td>{{ receipt_service.amount }}</td>
                             <td>{{ receipt_service.price }}</td>
                             <td>{{ receipt_service.total_price|floatformat:2 }}</td>
                         </tr>

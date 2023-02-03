@@ -780,7 +780,8 @@ class PersonalAccountExcelView(View):
                     if account.flat.owner:
                         owner_string = account.flat.owner.surname + ' ' if account.flat.owner.surname else ''
                         owner_string += account.flat.owner.name + ' ' if account.flat.owner.name else ''
-                        owner_string += account.flat.owner.father + ' ' if account.flat.owner.father else ''
+                        if account.flat.owner.father:
+                            owner_string += account.flat.owner.father + ' '
                         ws[f'F{index + 2}'].value = owner_string
 
                 ws[f'G{index + 2}'].value = account.subtraction if account.subtraction else 0

@@ -99,16 +99,16 @@ class Command(BaseCommand):
             for z in range(0, random.randint(2, 7)):
                 service = random.choice(Service.objects.filter(tariff=flat.tariff))
                 try:
-                    tariff_service_price = TariffService.objects.get(tariff=flat.tariff, service=service)
+                    tariff_service_price = TariffService.objects.get(tariff=flat.tariff, service=service).price
                 except TariffService.DoesNotExist:
-                    tariff_service_price = random.uniform(0.10, 10.85)
-                amount = random.uniform(1.10, 250.35)
+                    tariff_service_price = format(random.uniform(0.10, 10.85), ".2f")
+                amount = format(random.uniform(1.10, 250.35), ".2f")
                 ReceiptService.objects.create(
                     receipt=receipt,
                     service=service,
                     amount=amount,
-                    price=tariff_service_price.price,
-                    total_price=amount * tariff_service_price.price
+                    price=tariff_service_price,
+                    total_price=format(float(amount) * tariff_service_price, ".2f")
                 )
 
         for i in range(0, random.randint(7, 14)):
@@ -149,7 +149,7 @@ class Command(BaseCommand):
                 flat=flat,
                 service=service,
                 status=random.choice(['new', 'null', 'taken', 'taken and paid']),
-                counter_evidence=random.uniform(29.0, 689.20),
+                counter_evidence=format(random.uniform(29.0, 689.20), ".2f"),
                 date_from=fake.date_between(datetime.datetime(datetime.datetime.now().year - 1,
                                                             datetime.datetime.now().month,
                                                             datetime.datetime.now().day),

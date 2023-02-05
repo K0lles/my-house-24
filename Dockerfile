@@ -12,10 +12,6 @@ ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
 # install dependencies
-COPY ./entrypoint.sh $MY_HOUSE_24
-
-RUN sed -i 's/\r$//g' $MY_HOUSE_24/entrypoint.sh
-RUN chmod +x entrypoint.sh
 RUN pip install --upgrade pip
 
 # copy project
@@ -29,10 +25,5 @@ RUN sed -i '/uk_UA.UTF-8/s/^# //g' /etc/locale.gen && \
 ENV LANG uk_UA.UTF-8
 ENV LANGUAGE uk_UA:uk
 ENV LC_ALL uk_UA.UTF-8
-
-#RUN sudo apt -y install language-pack-uk
-#RUN dpkg-reconfigure locales
-#RUN locale-gen uk_UA uk_UA.utf8
-#RUN dpkg-reconfigure locales
 
 RUN pip install -r requirements.txt

@@ -39,7 +39,6 @@ class BasePermissionView(DirectorUserPassesTestMixin, View):
             if self.request.COOKIES.get('management_session_key'):
                 # get the Session model with saved in cookies session_key
                 session_object_model = Session.objects.get(session_key=self.request.COOKIES.get('management_session_key'))
-
                 # if Session object is valid and has data
                 if session_object_model.get_decoded():
                     session = SessionStore(self.request.COOKIES.get('management_session_key'))
@@ -50,11 +49,11 @@ class BasePermissionView(DirectorUserPassesTestMixin, View):
                         self.request.session = session
                         self.request.user = User.objects.get(pk=user_id)
         except (Session.DoesNotExist, KeyError, User.DoesNotExist):
-            pass
+            self.request.session = SessionStore(None)
 
         if not self.test_func():
             if self.request.user.is_anonymous \
-                    or (self.request.user.is_authenticated and self.request.user.role.role == 'owner' \
+                    or (self.request.user.is_authenticated and self.request.user.role.role == 'owner'
                         and self.request.COOKIES.get('management_session_key') == 'None'):
                 return redirect('user-staff-login')
             return self.forbidden_page()
@@ -132,11 +131,11 @@ class OwnerBasePermissionView(TemplateResponseMixin, ContextMixin, View):
             else:
                 self.request.session = SessionStore(None)
         except (Session.DoesNotExist, KeyError, User.DoesNotExist):
-            pass
+            self.request.session = SessionStore(None)
 
         if self.request.user.is_anonymous \
-                or (self.request.user.is_authenticated and self.request.user.role.role != 'owner' \
-                        and self.request.COOKIES.get('owner_session_key') == 'None'):
+                or (self.request.user.is_authenticated and self.request.user.role.role != 'owner'
+                    and self.request.COOKIES.get('owner_session_key') == 'None'):
             return redirect('user-login')
         if self.request.user.role.role != 'owner':
             return self.forbidden_page()

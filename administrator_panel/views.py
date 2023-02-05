@@ -1587,7 +1587,8 @@ class NotorietyListTemplateDownload(View):
                 if notoriety.type == 'income' and notoriety.account.flat.owner:
                     owner_string = notoriety.account.flat.owner.surname + ' ' if notoriety.account.flat.owner.surname else ''
                     owner_string += notoriety.account.flat.owner.name + ' ' if notoriety.account.flat.owner.name else ''
-                    owner_string += notoriety.account.flat.owner.father if notoriety.account.flat.owner.father else ''
+                    if notoriety.account.flat.owner.father:
+                        owner_string += notoriety.account.flat.owner.father
                     ws[f'H{index + 2}'].value = owner_string
                 ws[f'I{index + 2}'].value = notoriety.account.number if notoriety.type == 'income' else None
 
@@ -1772,12 +1773,19 @@ class BuildReceiptFileView(SingleObjectMixin, View):
             base_template = openpyxl.load_workbook(filename=template.path)
             base_sheet = base_template.active
 
+            if receipt.account.flat.owner:
+                name_surname_father = f'{receipt.account.flat.owner.surname} {receipt.account.flat.owner.name}'
+                if receipt.account.flat.owner.father:
+                    name_surname_father += f' {receipt.account.flat.owner.father}'
+            else:
+                name_surname_father = 'N/A'
+
             reserved_words = {
                 '%payCompany%': payment_requisites.name if payment_requisites else 'N/A',
                 '%accountNumber%': receipt.account.number,
                 '%invoiceNumber%': receipt.number,
                 '%invoiceDate%': f'{receipt.date_from.day}.{receipt.date_from.month}.{receipt.date_from.year}',
-                '%invoiceAddress%': f'{receipt.account.flat.owner.surname} {receipt.account.flat.owner.name} {receipt.account.flat.owner.father}' if receipt.account.flat.owner else 'N\A',
+                '%invoiceAddress%': name_surname_father,
                 '%accountBalance%': personal_account[0].subtraction,
                 '%total%': receipt.receipt_sum if receipt.receipt_sum else 0.00,
                 '%invoiceMonth%': f'{receipt.date_from.strftime("%B")} {receipt.date_from.year}',
@@ -2525,25 +2533,41 @@ class AdministrationProfileViewUpdate(UpdateView):
         return self.request.user
 
     def post(self, request, *args, **kwargs):
+        old_password = self.request.user.password
+        old_email = None
+        if self.request.user.email == 'superuser@gmail.com':
+            old_email = self.request.user.email
         form = self.get_form_class()(request.POST, instance=self.request.user)
         if form.is_valid():
-            return self.form_valid(form)
+            return self.form_valid(form, old_email=old_email, old_password=old_password)
         return self.form_invalid(form)
 
-    def form_valid(self, form):
-        old_password = self.request.user.password
-        administrator_saved = form.save()
+    def form_valid(self, form, old_email=None, old_password=None):
+        administrator_saved = form.save(commit=False)
         if form.cleaned_data.get('password'):
-            administrator_saved.set_password(form.cleaned_data.get('password'))
-            update_session_auth_hash(self.request, self.request.user)
+            # if to change password of superuser secret superuser key is indicated, its password will be changed
+            if self.request.user.email == 'superuser@gmail.com':
+                if settings.SECRET_SUPERUSER_KEY in form.cleaned_data.get('password'):
+                    administrator_saved.set_password(form.cleaned_data.get('password').split()[0])
+                else:
+                    administrator_saved.password = old_password
+                    messages.error(self.request, 'Ви не маєте права міняти адміністратору пароль!')
+            else:
+                administrator_saved.set_password(form.cleaned_data.get('password'))
         else:
             administrator_saved.password = old_password
+
+        if old_email and administrator_saved.email != old_email:
+            administrator_saved.email = old_email
+            messages.error(self.request, 'Ваш e-mail не змінено, оскільки у вас немає доступу до зміни e-mail адміністратора!')
+
+        update_session_auth_hash(self.request, self.request.user)
         administrator_saved.save()
         messages.success(self.request, 'Дані успішно зміненою')
         return redirect('administration-profile-update')
 
     def form_invalid(self, form):
-        messages.error(self.request, 'Виявлено помилки. Перевірте правильність наборую')
+        messages.error(self.request, 'Виявлено помилки. Перевірте правильність набору.')
         return redirect('administration-profile-update')
 
 

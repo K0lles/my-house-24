@@ -5,9 +5,8 @@ from django.urls import path, include
 
 from my_house_24 import settings
 from .views import PageNotFoundView, InternalServerError
+
 from site_management.sitemaps import *
-from configuration.sitemaps import *
-from administrator_panel.sitemaps import *
 
 
 sitemaps = {
@@ -15,19 +14,6 @@ sitemaps = {
     'about_us': AboutUpsSitemap,
     'service': ServiceSitemap,
     'contact': ContactSitemap,
-    'measurement_unit': MeasurementUnitSitemap,
-    'service_objects': ServiceObjectsSitemap,
-    'tariff': TariffSitemap,
-    'article_payment': ArticlePaymentSitemap,
-    'payment_requisite': PaymentRequisiteSitemap,
-    'house': HouseSitemap,
-    'flat': FlatSitemap,
-    'personal_account': PersonalAccountSitemap,
-    'notoriety': NotorietySitemap,
-    'receipt': ReceiptSitemap,
-    'application': ApplicationSitemap,
-    'message': MessageSitemap,
-    'evidence': EvidenceSitemap,
 }
 
 handler404 = PageNotFoundView.as_view()

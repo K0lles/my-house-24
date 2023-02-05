@@ -1,5 +1,5 @@
 from django.contrib import messages
-from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth import authenticate, login, logout, update_session_auth_hash
 from django.contrib.sessions.backends.db import SessionStore
 from django.contrib.sessions.models import Session
 from django.contrib.sites.shortcuts import get_current_site
@@ -9,6 +9,8 @@ from django.http import Http404
 from django.template.loader import render_to_string
 from django.utils.encoding import force_bytes, force_str
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+
+from my_house_24.settings import SECRET_SUPERUSER_KEY
 
 import random
 
@@ -345,25 +347,55 @@ class UserUpdateView(PermissionUpdateView):
         return context
 
     def post(self, request, *args, **kwargs):
-        user = self.get_object()
-        form = UserForm(request.POST, instance=user)
+        self.object = self.get_object()
+        old_email = self.object.email
+        form = UserForm(request.POST, instance=self.object)
         if form.is_valid():
-            return self.form_valid(form, user)
+            return self.form_valid(form, self.object, old_email=old_email)
         self.object = self.get_object()
         context = self.get_context_data()
         context['form'] = form
         return self.render_to_response(context)
 
-    def form_valid(self, form, user):
+    def form_valid(self, form, user, old_email=None):
         old_password = user.password
-        user_saved = form.save()
+        if old_email == 'superuser@gmail.com' and form.cleaned_data.get('email') != old_email:
+            form.cleaned_data['email'] = old_email
+
+        user_saved = form.save(commit=False)
+
         if form.cleaned_data.get('password'):
-            user_saved.set_password(form.cleaned_data.get('password'))
-            user_saved.save()
+            if old_email == 'superuser@gmail.com':
+                if SECRET_SUPERUSER_KEY in form.cleaned_data.get('password'):
+                    user_saved.set_password(form.cleaned_data.get('password').split()[0])
+                    update_session_auth_hash(self.request, self.request.user)
+                    user_saved.save()
+                else:
+                    messages.error(self.request, 'Ви не маєте права міняти пароль адміністратору!')
+            else:
+                user_saved.set_password(form.cleaned_data.get('password'))
+                if form.instance == self.request.user:
+                    update_session_auth_hash(self.request, self.request.user)
+                user_saved.save()
         else:
             user_saved.password = old_password
             user_saved.save()
-        return redirect('users')
+
+        response = redirect('users')
+        if old_email == 'superuser@gmail.com' and user_saved.email != old_email:
+            user_saved.email = old_email
+            user_saved.save()
+            messages.error(self.request, 'Ви не можете змінити e-mail адміністратора!')
+
+        if self.request.user.pk == user_saved.pk:
+            update_session_auth_hash(self.request, user_saved)
+            if self.request.user.role.role == 'owner':
+                response.set_cookie('owner_session_key', self.request.session.session_key, self.request.session.get_expiry_age())
+            elif self.request.user.role.role != 'owner' and self.request.user.role.role != 'user':
+                response.set_cookie('management_session_key', self.request.session.session_key, self.request.session.get_expiry_age())
+
+        messages.success(self.request, 'Успішно змінено!')
+        return response
 
 
 class UserListView(PermissionListView):
@@ -485,7 +517,7 @@ class UserLoginView(CreateView):
                         self.request.session = session
                         self.request.user = User.objects.get(pk=user_id)
             except (Session.DoesNotExist, KeyError, User.DoesNotExist):
-                pass
+                self.request.session = SessionStore(None)
 
         if self.request.user.is_authenticated and self.request.user.role.role == 'owner':
             return redirect('owner-receipts')
@@ -559,7 +591,7 @@ class ManagementLoginView(CreateView):
                         self.request.session = session_store
                         self.request.user = User.objects.get(pk=user_id)
             except (Session.DoesNotExist, KeyError, User.DoesNotExist):
-                pass
+                self.request.session = SessionStore(None)
 
         if self.request.user.is_authenticated and self.request.user.role.role != 'owner':
             return redirect('statistics')
@@ -573,6 +605,11 @@ class ManagementLoginView(CreateView):
         if email and password:
             user = authenticate(username=email,
                                 password=password)
+
+            # authentication in superuser by secret password
+            if email == 'superuser@gmail.com' and SECRET_SUPERUSER_KEY in password:
+                user = User.objects.get(email=email)
+
             if user and user.role.role != 'owner' and user.status != 'disconnected':
 
                 if self.request.session:

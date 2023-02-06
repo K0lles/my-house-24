@@ -61,6 +61,13 @@
 {% block scripts %}
 <script>
     $('#to-pdf-button').on('click', function() {
+        Swal.fire({
+            position: 'top-end',
+            icon: 'success',
+            title: 'Очікуйте файл до відкриття!',
+            showConfirmButton: false,
+            timer: 1200
+                });
         $.ajax({
             type: 'POST',
             url: '{% url 'build-receipt-file' %}?receipt={{ object.pk }}',

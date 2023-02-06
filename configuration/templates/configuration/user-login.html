@@ -82,7 +82,7 @@
                     <form id="login-form" action="{% url 'user-login' %}" method="post">
                     {% csrf_token %}
                         <div class="form-group" style="position: relative;">
-                            <input type="email" id="{{ form.email.auto_id }}" class="form-control" name="{{ form.email.html_name }}" {% if form.email.value %}value="{{ form.email.value }}"{% endif %} placeholder="E-mail" aria-required="true" style="display: inline; {% if error %}border: 1px solid red;{% endif %}" onchange="emailTypeValidationLocal(this)">
+                            <input type="text" id="{{ form.email.auto_id }}" class="form-control" name="{{ form.email.html_name }}" {% if form.email.value %}value="{{ form.email.value }}"{% endif %} placeholder="E-mail або ID" aria-required="true" style="display: inline; {% if error %}border: 1px solid red;{% endif %}" onchange="fieldIsValid(this)">
                             <i class="fas fa-envelope" style="position: absolute; right: 1%; padding: 10px; pointer-events: none;"></i>
                             <p id="{{ form.email.auto_id }}-errors" style="color: red;"></p>
                         </div>
@@ -156,8 +156,8 @@
     function validateAll() {
         event.preventDefault();
         let is_valid = true;
-        $('#login-form').find(`input[type='email']`).each(function () {
-            if (!emailTypeValidationLocal(this)) is_valid = false;
+        $('#login-form').find(`input[type='text']`).each(function () {
+            if (!fieldIsValid(this)) is_valid = false;
         })
 
         $('#login-form').find(`input[type='password']`).each(function () {

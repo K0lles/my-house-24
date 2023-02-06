@@ -1,6 +1,10 @@
 {% extends 'main_page.html' %}
 {% load static %}
 
+{% block title %}
+    <title>Користувачі</title>
+{% endblock %}
+
 {% block content_header %}
     <h1>{% if form.instance.id %}Редагування користувача{% else %}Новий користувач{% endif %}</h1>
 {% endblock %}

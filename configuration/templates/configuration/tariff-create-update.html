@@ -1,6 +1,10 @@
 {% extends 'main_page.html' %}
 {% load static %}
 
+{% block title %}
+    <title>Тарифи</title>
+{% endblock %}
+
 {% block content_header %}
     {% if object %}
     <h1>Тариф: {{ object.name }}</h1>

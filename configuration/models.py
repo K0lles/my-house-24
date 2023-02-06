@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
 from django.core.validators import MinValueValidator
+from django.urls import reverse
 
 from phonenumber_field.modelfields import PhoneNumberField
 
@@ -104,10 +105,18 @@ class User(AbstractBaseUser):
     def is_staff(self):
         return self.is_admin
 
+    def get_absolute_url(self):
+        if self.role.role != 'owner':
+            return reverse('user-detail', kwargs={'pk': self.id})
+        return reverse('owner-detail', kwargs={'owner_pk': self.id})
+
 
 class MeasurementUnit(models.Model):
     name = models.CharField(max_length=200, verbose_name='Од. вим.')
     is_used = models.BooleanField(default=False)
+
+    def get_absolute_url(self):
+        return reverse('measurement-units')
 
 
 class Service(models.Model):
@@ -116,12 +125,18 @@ class Service(models.Model):
     show_in_counters = models.BooleanField(default=True, verbose_name='Показувати в рахунок')
     is_used = models.BooleanField(default=False)
 
+    def get_absolute_url(self):
+        return reverse('services')
+
 
 class Tariff(models.Model):
     name = models.CharField(max_length=200, verbose_name='Назва тарифу')
     description = models.TextField(verbose_name='Опис тарифу')
     service_tariff = models.ManyToManyField(Service, through='TariffService', through_fields=('tariff', 'service'))
     updated_at = models.DateTimeField(auto_now=True, verbose_name='Дата редагування')
+
+    def get_absolute_url(self):
+        return reverse('tariff-detail', kwargs={'pk': self.id})
 
 
 class TariffService(models.Model):
@@ -147,7 +162,13 @@ class ArticlePayment(models.Model):
 
     type = models.CharField(max_length=10, choices=TypeChoices.choices, verbose_name='Прихід/Розхід')
 
+    def get_absolute_url(self):
+        return reverse('articles-payment')
+
 
 class PaymentRequisite(models.Model):
     name = models.CharField(max_length=200, verbose_name='Назва компанії')
     information = models.TextField(verbose_name='Інформація')
+
+    def get_absolute_url(self):
+        return reverse('requisites')

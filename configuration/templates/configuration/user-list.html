@@ -1,6 +1,10 @@
 {% extends 'main_page.html' %}
 {% load static %}
 
+{% block title %}
+    <title>Користувачі</title>
+{% endblock %}
+
 {% block content_header %}
     <h1>Користувачі</h1>
 {% endblock %}
@@ -13,6 +17,25 @@
     </div>
     <div class="card">
         <div class="card-body">
+            {% if messages %}
+                {% for message in messages %}
+                    {% if message.tags == 'success' %}
+                        <div class="alert alert-success alert-dismissible fade show" role="alert">
+                            {{ message }}
+                                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                        </div>
+                    {% elif message.tags == 'error' %}
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            {{ message }}
+                                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            {% endif %}
             <div class="row">
                 <table id="user-table" class="table table-hover table-borderless">
                     <thead>

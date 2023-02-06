@@ -53,7 +53,7 @@
                             <td>{{ evidence.flat.section.name }}</td>
                             <td>{{ evidence.flat.number }}</td>
                             <td>{{ evidence.service.name }}</td>
-                            <td>{{ evidence.counter_evidence }}</td>
+                            <td>{{ evidence.counter_evidence|floatformat:2 }}</td>
                             <td>{{ evidence.service.measurement_unit.name }}</td>
                             <td class="text-right">
                                 <div class="btn-group">

@@ -114,7 +114,7 @@
                     </div>
                 </div>
                 <label style="margin-top: 30px;" class="form-label">Коментар</label>
-                <div id="editor" style="margin-top: 2%;">{% if form.instance.pk %}{{ form.instance.comment|safe }}{% endif %}</div>
+                <div id="editor" style="margin-top: 2%;">{% if form.instance.pk and form.instance.comment %}{{ form.instance.comment|safe }}{% endif %}</div>
                 <div hidden="hidden">
                     <div id="insert-into"></div>
                 </div>

@@ -1,6 +1,7 @@
 import os
 
 from django.db import models
+from django.urls import reverse
 
 from phonenumber_field.modelfields import PhoneNumberField
 
@@ -34,6 +35,9 @@ class MainPage(models.Model):
     block_description_6 = models.TextField(verbose_name='Опис', blank=True, null=True)
     block_photo_6 = models.ImageField(upload_to='main-page/block-photos/', blank=True, null=True)
 
+    def get_absolute_url(self):
+        return reverse('main-page')
+
 
 class AboutUs(models.Model):
     gallery = models.ForeignKey(Gallery, related_name='gallery', on_delete=models.SET_NULL, blank=True, null=True)
@@ -45,9 +49,15 @@ class AboutUs(models.Model):
     additional_title = models.CharField(max_length=200, verbose_name='Заголовок', blank=True, null=True)
     additional_text = models.TextField(verbose_name='Короткий текст', blank=True, null=True)
 
+    def get_absolute_url(self):
+        return reverse('about-us-page')
+
 
 class ServiceFront(models.Model):
     seo = models.ForeignKey(Seo, on_delete=models.SET_NULL, blank=True, null=True)
+
+    def get_absolute_url(self):
+        return reverse('service-page')
 
 
 class ServiceObjectFront(models.Model):
@@ -80,6 +90,9 @@ class Contact(models.Model):
     phone = PhoneNumberField(verbose_name='Телефон', blank=True, null=True)
     email = models.EmailField(verbose_name='Email', blank=True, null=True)
     map_code = models.TextField(verbose_name='Код карти', blank=True, null=True)
+
+    def get_absolute_url(self):
+        return reverse('contact-page')
 
 
 class Document(models.Model):

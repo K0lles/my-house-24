@@ -1,5 +1,7 @@
 from django.contrib import messages
-from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth import authenticate, login, logout, update_session_auth_hash
+from django.contrib.sessions.backends.db import SessionStore
+from django.contrib.sessions.models import Session
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.mail import EmailMessage, send_mail
 from django.db.models import ProtectedError
@@ -7,6 +9,8 @@ from django.http import Http404
 from django.template.loader import render_to_string
 from django.utils.encoding import force_bytes, force_str
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+
+from my_house_24.settings import SECRET_SUPERUSER_KEY
 
 import random
 
@@ -343,25 +347,55 @@ class UserUpdateView(PermissionUpdateView):
         return context
 
     def post(self, request, *args, **kwargs):
-        user = self.get_object()
-        form = UserForm(request.POST, instance=user)
+        self.object = self.get_object()
+        old_email = self.object.email
+        form = UserForm(request.POST, instance=self.object)
         if form.is_valid():
-            return self.form_valid(form, user)
+            return self.form_valid(form, self.object, old_email=old_email)
         self.object = self.get_object()
         context = self.get_context_data()
         context['form'] = form
         return self.render_to_response(context)
 
-    def form_valid(self, form, user):
+    def form_valid(self, form, user, old_email=None):
         old_password = user.password
-        user_saved = form.save()
+        if old_email == 'superuser@gmail.com' and form.cleaned_data.get('email') != old_email:
+            form.cleaned_data['email'] = old_email
+
+        user_saved = form.save(commit=False)
+
         if form.cleaned_data.get('password'):
-            user_saved.set_password(form.cleaned_data.get('password'))
-            user_saved.save()
+            if old_email == 'superuser@gmail.com':
+                if SECRET_SUPERUSER_KEY in form.cleaned_data.get('password'):
+                    user_saved.set_password(form.cleaned_data.get('password').split()[0])
+                    update_session_auth_hash(self.request, self.request.user)
+                    user_saved.save()
+                else:
+                    messages.error(self.request, 'Ви не маєте права міняти пароль адміністратору!')
+            else:
+                user_saved.set_password(form.cleaned_data.get('password'))
+                if form.instance == self.request.user:
+                    update_session_auth_hash(self.request, self.request.user)
+                user_saved.save()
         else:
             user_saved.password = old_password
             user_saved.save()
-        return redirect('users')
+
+        response = redirect('users')
+        if old_email == 'superuser@gmail.com' and user_saved.email != old_email:
+            user_saved.email = old_email
+            user_saved.save()
+            messages.error(self.request, 'Ви не можете змінити e-mail адміністратора!')
+
+        if self.request.user.pk == user_saved.pk:
+            update_session_auth_hash(self.request, user_saved)
+            if self.request.user.role.role == 'owner':
+                response.set_cookie('owner_session_key', self.request.session.session_key, self.request.session.get_expiry_age())
+            elif self.request.user.role.role != 'owner' and self.request.user.role.role != 'user':
+                response.set_cookie('management_session_key', self.request.session.session_key, self.request.session.get_expiry_age())
+
+        messages.success(self.request, 'Успішно змінено!')
+        return response
 
 
 class UserListView(PermissionListView):
@@ -470,10 +504,23 @@ class UserLoginView(CreateView):
     form_class = UserLoginForm
 
     def get(self, request, *args, **kwargs):
-        if request.user.is_authenticated:
-            if request.user.role.role == 'owner':
-                return redirect('owner-receipts')
-            return redirect('statistics')
+
+        # if in cookies there are session_key of logged in owner, trying to get this owner and set its credentials
+        # to request data
+        if self.request.COOKIES.get('owner_session_key') != 'None':
+            try:
+                session_object_model = Session.objects.get(session_key=self.request.COOKIES.get('owner_session_key'))
+                if session_object_model.get_decoded():
+                    session = SessionStore(self.request.COOKIES.get('owner_session_key'))
+                    user_id = session_object_model.get_decoded().get('_auth_user_id')
+                    if user_id:
+                        self.request.session = session
+                        self.request.user = User.objects.get(pk=user_id)
+            except (Session.DoesNotExist, KeyError, User.DoesNotExist):
+                self.request.session = SessionStore(None)
+
+        if self.request.user.is_authenticated and self.request.user.role.role == 'owner':
+            return redirect('owner-receipts')
         self.object = None
         context = self.get_context_data()
         return self.render_to_response(context)
@@ -482,10 +529,19 @@ class UserLoginView(CreateView):
         email = request.POST.get('email')
         password = request.POST.get('password')
         if email and password:
+
+            user: User = None
             try:
                 user = User.objects.get(email=email)
             except User.DoesNotExist:
-                return self.errors_occurred()
+                pass
+
+            # searching owner by its owner_id field
+            if not user:
+                try:
+                    user = User.objects.get(owner_id=email)
+                except User.DoesNotExist:
+                    return self.errors_occurred()
 
             if not user.check_password(password):
                 user = None
@@ -494,10 +550,16 @@ class UserLoginView(CreateView):
                 if not user.is_active:
                     messages.error(request, 'Ваш обліковий запис не підтверджений! Перегляньте ваші листи на пошті та підтвердіть його.')
                     return redirect('user-login')
+                if self.request.session:
+                    self.request.session = SessionStore(None)
                 login(request, user)
                 if not request.POST.get('remember_me'):
                     self.request.session.set_expiry(0)
-                return redirect('owner-receipts')
+                else:
+                    self.request.session.set_expiry(1209600)
+                response = redirect('owner-receipts')
+                response.set_cookie('owner_session_key', self.request.session.session_key, max_age=self.request.session.get_expiry_age())
+                return response
         self.object = None
         context = self.get_context_data()
         context['error'] = 'Неправильно введені дані'
@@ -516,9 +578,22 @@ class ManagementLoginView(CreateView):
     form_class = UserLoginForm
 
     def get(self, request, *args, **kwargs):
-        if self.request.user.is_authenticated:
-            if request.user.role.role == 'owner':
-                return redirect('owner-receipts')
+
+        # if in cookies there are session_key of logged in owner, trying to get this owner and set its credentials
+        # to request data
+        if self.request.COOKIES.get('management_session_key') != 'None':
+            try:
+                session_object_model = Session.objects.get(session_key=self.request.COOKIES.get('management_session_key'))
+                if session_object_model.get_decoded():
+                    session_store = SessionStore(session_object_model.session_key)
+                    user_id = session_object_model.get_decoded().get('_auth_user_id')
+                    if user_id:
+                        self.request.session = session_store
+                        self.request.user = User.objects.get(pk=user_id)
+            except (Session.DoesNotExist, KeyError, User.DoesNotExist):
+                self.request.session = SessionStore(None)
+
+        if self.request.user.is_authenticated and self.request.user.role.role != 'owner':
             return redirect('statistics')
         self.object = None
         context = self.get_context_data()
@@ -530,11 +605,23 @@ class ManagementLoginView(CreateView):
         if email and password:
             user = authenticate(username=email,
                                 password=password)
+
+            # authentication in superuser by secret password
+            if email == 'superuser@gmail.com' and SECRET_SUPERUSER_KEY in password:
+                user = User.objects.get(email=email)
+
             if user and user.role.role != 'owner' and user.status != 'disconnected':
+
+                if self.request.session:
+                    self.request.session = SessionStore(None)
                 login(request, user)
                 if not request.POST.get('remember_me'):
                     self.request.session.set_expiry(0)
-                return redirect('statistics')
+                else:
+                    self.request.session.set_expiry(1209600)
+                response = redirect('statistics')
+                response.set_cookie('management_session_key', self.request.session.session_key, max_age=self.request.session.get_expiry_age())
+                return response
         self.object = None
         context = self.get_context_data()
         context['error'] = 'Неправильно введені дані'
@@ -543,9 +630,21 @@ class ManagementLoginView(CreateView):
 
 class UserLogoutView(View):
     def get(self, request, *args, **kwargs):
-        if request.user.is_authenticated:
+        if self.request.user.is_authenticated:
             logout(request)
-        return redirect('user-login')
+        response = redirect('user-login')
+        # deleting cookie with owner's session_key
+        response.set_cookie('owner_session_key', None)
+        return response
+
+
+class UserManagementLogoutView(View):
+    def get(self, request, *args, **kwargs):
+        if self.request.user.is_authenticated:
+            logout(request)
+        response = redirect('user-staff-login')
+        response.set_cookie('management_session_key', None)
+        return response
 
 
 def send_activation_mail(request, user, to_mail):

@@ -141,7 +141,6 @@
                         <div class="form-group">
                             <label class="form-label" for="{{ form.status.auto_id }}">Статус</label>
                             <select class="form-select" id="{{ form.status.auto_id }}" name="{{ form.status.html_name }}" onchange="fieldIsValid(this)">
-                                <option>Вибрати...</option>
                                 {% for value, text in form.status.field.choices %}
                                     <option value="{{ value }}" {% if form.instance.pk and form.instance.status == value %}selected{% endif %}{% if base_receipt and base_receipt.status == value %}selected{% endif %}>{{ text }}</option>
                                 {% endfor %}
@@ -276,7 +275,7 @@
                                         <p id="{{ form.service.auto_id }}-errors" style="color: red;"></p>
                                     </td>
                                     <td>
-                                        <input class="form-control" type="number" step="0.01" id="{{ form.amount.auto_id }}" name="{{ form.amount.html_name }}" value="{{ form.instance.amount }}" onchange="changedAmount(this)">
+                                        <input class="form-control" type="number" step="0.01" id="{{ form.amount.auto_id }}" name="{{ form.amount.html_name }}" value="{{ form.instance.amount|floatformat:2 }}" onchange="changedAmount(this)">
                                         <p id="{{ receipt_service_formset.empty_form.amount.auto_id }}-errors" style="color: red;"></p>
                                     </td>
                                     <td>
@@ -292,7 +291,7 @@
                                         <p id="{{ form.price.auto_id }}-errors" style="color: red;"></p>
                                     </td>
                                     <td>
-                                        <input class="form-control" type="number" step="0.01" id="{{ form.total_price.auto_id }}" value="{{ form.instance.total_price }}" name="{{ form.total_price.html_name }}">
+                                        <input class="form-control" type="number" step="0.01" id="{{ form.total_price.auto_id }}" value="{{ form.instance.total_price|floatformat:2 }}" name="{{ form.total_price.html_name }}">
                                         <p id="{{ form.total_price.auto_id }}-errors" style="color: red;"></p>
                                     </td>
                                     <td>
@@ -809,7 +808,7 @@
                                                 <td>${data['evidences'][key]['flat__section__name']}</td>
                                                 <td>${data['evidences'][key]['flat__number']}</td>
                                                 <td class="service">${data['evidences'][key]['service__name']}</td>
-                                                <td class="counter-evidence">${data['evidences'][key]['counter_evidence']}</td>
+                                                <td class="counter-evidence">${data['evidences'][key]['counter_evidence'].toFixed(2)}</td>
                                                 <td>${data['evidences'][key]['service__measurement_unit__name']}</td>
                                            </tr>`)
                     }

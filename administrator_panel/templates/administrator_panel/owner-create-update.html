@@ -146,6 +146,11 @@
 {% block scripts %}
 <script>
 
+    if ("{{ form.instance.pk|safe }}" === 'None') {
+        $('#id_owner_id').val(generateNumber());
+    }
+
+
     $('#datepicker').datepicker({
         format: 'dd.mm.yyyy'
     });

@@ -61,6 +61,13 @@
 {% block scripts %}
 <script>
     $('#to-pdf-button').on('click', function() {
+        Swal.fire({
+            position: 'top-end',
+            icon: 'success',
+            title: 'Очікуйте файл до відкриття!',
+            showConfirmButton: false,
+            timer: 1200
+                });
         $.ajax({
             type: 'POST',
             url: '{% url 'build-receipt-file' %}?receipt={{ object.pk }}',
@@ -73,6 +80,15 @@
                     let file_name = data['file_name'];
                     getExcelToPdf(file_path, file_name);
                 }
+            },
+            error: function(XMLHttpRequest, textStatus, errorThrown) {
+                Swal.fire({
+                    position: 'top-end',
+                    icon: 'error',
+                    title: 'Щось пішло не так!',
+                    showConfirmButton: false,
+                    timer: 1200
+                });
             }
         })
     })
@@ -93,8 +109,17 @@
                         title: data['answer'],
                         showConfirmButton: false,
                         timer: 1200
-                    });
+                        });
                     }
+                },
+                error: function(XMLHttpRequest, textStatus, errorThrown) {
+                    Swal.fire({
+                        position: 'top-end',
+                        icon: 'error',
+                        title: 'Щось пішло не так!',
+                        showConfirmButton: false,
+                        timer: 1200
+                    });
                 }
             })
         }

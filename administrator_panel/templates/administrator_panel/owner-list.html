@@ -67,7 +67,8 @@
                                         {% else %}<span class="badge badge-danger">{{ owner.get_status_display }}</span>{% endif %}
                                     </td>
                                     <td style="vertical-align: middle;">
-                                        {% if debts|get_item:owner.pk %}Є{% else %}Немає{% endif %}
+                                        {{ debts|get_item:owner.pk }}
+{#                                        {% if debts|get_item:owner.pk %}Є{% else %}Немає{% endif %}#}
                                     </td>
                                     <td class="text-right" style="vertical-align: middle;">
                                         <div class="btn-group">

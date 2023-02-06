@@ -23,7 +23,7 @@
                 <tbody>
                     {% for tariff_service in object_list.tariff.tariffservice_set.all %}
                         <tr>
-                            <td>{{ tariff_service.tariff.name }}</td>
+                            <td>{{ tariff_service.service.name }}</td>
                             <td>{{ tariff_service.service.measurement_unit.name }}</td>
                             <td>{{ tariff_service.price|floatformat:2 }}</td>
                         </tr>

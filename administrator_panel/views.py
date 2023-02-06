@@ -1,3 +1,4 @@
+import datetime
 import locale
 from copy import deepcopy
 import pandas as pd
@@ -53,10 +54,16 @@ class StatisticListView(PermissionListView):
         context['application_new_sum'] = Application.objects.filter(status='new').count()
 
         context['totals'] = count_all_totals(personal_accounts)
-        notorieties = Notoriety.objects.filter(created_at__year=timezone.now().year - 1)
+        notorieties = Notoriety.objects.filter(created_at__range=(timezone.datetime(timezone.datetime.now().year - 1,
+                                                                                    timezone.datetime.now().month,
+                                                                                    timezone.datetime.now().day),
+                                                                  timezone.datetime.now()))
         receipts = Receipt.objects\
             .prefetch_related('receiptservices')\
-            .filter(is_completed=True, date_from__year=timezone.now().year - 1)\
+            .filter(is_completed=True, date_from__range=(timezone.datetime(timezone.datetime.now().year - 1,
+                                                                           timezone.datetime.now().month,
+                                                                           timezone.datetime.now().day),
+                                                         timezone.datetime.now()))\
             .order_by('date_from')
 
         grouped_income_notorieties_queryset = notorieties\
@@ -773,7 +780,8 @@ class PersonalAccountExcelView(View):
                     if account.flat.owner:
                         owner_string = account.flat.owner.surname + ' ' if account.flat.owner.surname else ''
                         owner_string += account.flat.owner.name + ' ' if account.flat.owner.name else ''
-                        owner_string += account.flat.owner.father + ' ' if account.flat.owner.father else ''
+                        if account.flat.owner.father:
+                            owner_string += account.flat.owner.father + ' '
                         ws[f'F{index + 2}'].value = owner_string
 
                 ws[f'G{index + 2}'].value = account.subtraction if account.subtraction else 0
@@ -875,10 +883,12 @@ class OwnerListView(PermissionListView):
         # dictionary with debt information about each owner
         context['debts'] = {}
         for owner in context['object_list']:
-            context['debts'][owner.pk] = True
+            context['debts'][owner.pk] = 'немає даних'
             for account in personal_accounts:
                 if account.flat.owner.pk == owner.pk and account.subtraction < 0:
-                    context['debts'][owner.pk] = False
+                    context['debts'][owner.pk] = 'Є'
+                elif account.flat.owner.pk == owner.pk and account.subtraction >= 0:
+                    context['debts'][owner.pk] = 'Немає'
         return context
 
 
@@ -1533,7 +1543,7 @@ class NotorietyUpdateView(PermissionUpdateView):
 class NotorietyListView(PermissionListView):
     model = Notoriety
     template_name = 'administrator_panel/notoriety-list.html'
-    queryset = Notoriety.objects.select_related('article', 'account', 'account__flat__owner').all().order_by(
+    queryset = Notoriety.objects.select_related('article', 'account', 'account__flat__owner').filter(is_completed=True).order_by(
         '-created_at')
     string_permission = 'checkout_access'
 
@@ -1577,7 +1587,8 @@ class NotorietyListTemplateDownload(View):
                 if notoriety.type == 'income' and notoriety.account.flat.owner:
                     owner_string = notoriety.account.flat.owner.surname + ' ' if notoriety.account.flat.owner.surname else ''
                     owner_string += notoriety.account.flat.owner.name + ' ' if notoriety.account.flat.owner.name else ''
-                    owner_string += notoriety.account.flat.owner.father if notoriety.account.flat.owner.father else ''
+                    if notoriety.account.flat.owner.father:
+                        owner_string += notoriety.account.flat.owner.father
                     ws[f'H{index + 2}'].value = owner_string
                 ws[f'I{index + 2}'].value = notoriety.account.number if notoriety.type == 'income' else None
 
@@ -1762,12 +1773,19 @@ class BuildReceiptFileView(SingleObjectMixin, View):
             base_template = openpyxl.load_workbook(filename=template.path)
             base_sheet = base_template.active
 
+            if receipt.account.flat.owner:
+                name_surname_father = f'{receipt.account.flat.owner.surname} {receipt.account.flat.owner.name}'
+                if receipt.account.flat.owner.father:
+                    name_surname_father += f' {receipt.account.flat.owner.father}'
+            else:
+                name_surname_father = 'N/A'
+
             reserved_words = {
                 '%payCompany%': payment_requisites.name if payment_requisites else 'N/A',
                 '%accountNumber%': receipt.account.number,
                 '%invoiceNumber%': receipt.number,
                 '%invoiceDate%': f'{receipt.date_from.day}.{receipt.date_from.month}.{receipt.date_from.year}',
-                '%invoiceAddress%': f'{receipt.account.flat.owner.surname} {receipt.account.flat.owner.name} {receipt.account.flat.owner.father}' if receipt.account.flat.owner else 'N\A',
+                '%invoiceAddress%': name_surname_father,
                 '%accountBalance%': personal_account[0].subtraction,
                 '%total%': receipt.receipt_sum if receipt.receipt_sum else 0.00,
                 '%invoiceMonth%': f'{receipt.date_from.strftime("%B")} {receipt.date_from.year}',
@@ -1803,7 +1821,6 @@ class BuildReceiptFileView(SingleObjectMixin, View):
                             row=index + 1, column=index_second + 1).fill)
 
                     if val:
-
                         if val.startswith('%') and val not in ['%serviceName%', '%servicePrice%', '%serviceUnit%',
                                                                '%serviceAmount%', '%serviceTotal%']:
                             if val == '%LOOP STARTING%':
@@ -1817,7 +1834,6 @@ class BuildReceiptFileView(SingleObjectMixin, View):
                                 val)
                             continue
                         wb.worksheets[0].cell(row=index + 1, column=index_second + 1).value = val
-
             # moving footer of cycle for correct display receipt services
             wb.worksheets[0].move_range(f'{start_moving.coordinate}:{end_moving.coordinate}',
                                         rows=receipt.receiptservices.all().count() - 2, cols=0)
@@ -1891,7 +1907,7 @@ class BuildReceiptFileView(SingleObjectMixin, View):
             file_path = f'{settings.MEDIA_ROOT}/receipts/{file_name}'
             wb.save(file_path)
             return JsonResponse({'answer': 'success', 'file_path': f'{settings.MEDIA_URL}receipts/{file_name}', 'full_path': file_path, 'file_name': file_name})
-        except (Template.DoesNotExist, Receipt.DoesNotExist, PersonalAccount.DoesNotExist):
+        except (Template.DoesNotExist, Receipt.DoesNotExist, PersonalAccount.DoesNotExist) as e:
             return JsonResponse({'answer': 'failed'})
 
 
@@ -2201,7 +2217,10 @@ class OwnerSummaryListView(OwnerPermissionListView):
 
         # making outcome diagram for whole year by months
         outcome_diagram_queryset = context['object_list'] \
-            .filter(date_from__year=timezone.now().year - 1) \
+            .filter(date_from__range=(datetime.datetime(timezone.now().year - 1,
+                                                        timezone.now().month,
+                                                        timezone.now().day),
+                                      datetime.datetime.now()))\
             .annotate(month=TruncMonth('date_from')) \
             .values('month') \
             .order_by('month') \
@@ -2221,7 +2240,7 @@ class OwnerSummaryListView(OwnerPermissionListView):
         last_day_of_previous_month = first_day_of_current_month - datetime.timedelta(days=1)
         previous_month_diagram_queryset = context['object_list'] \
             .filter(date_from__month=last_day_of_previous_month.month,
-                    date_from__year=timezone.now().year - 1)\
+                    date_from__year=last_day_of_previous_month.year)\
             .annotate(service=F('receiptservices__service__name'))\
             .values('service')\
             .order_by('service')\
@@ -2233,7 +2252,8 @@ class OwnerSummaryListView(OwnerPermissionListView):
                 context['previous_month_diagram'][outcome.get('service')] = outcome.get('sum')
 
         current_year_diagram_queryset = context['object_list'] \
-            .filter(date_from__year=timezone.now().year - 1) \
+            .filter(date_from__range=(datetime.datetime(timezone.now().year, 1, 1),
+                                      datetime.datetime.now())) \
             .annotate(service=F('receiptservices__service__name')) \
             .values('service') \
             .order_by('service') \
@@ -2494,7 +2514,7 @@ class ReceiptToPDFDetailView(OwnerPermissionDetailView):
             pdfkit.from_file(html_file_path, html_file_path.replace('.html', '.pdf'), options={'encoding': 'UTF-8'})
 
             return JsonResponse({'answer': 'success', 'file_path': f'{settings.MEDIA_URL}receipts/{file_name.replace(".xlsx", ".pdf")}'})
-        except:
+        except Exception as e:
             return JsonResponse({'answer': 'Щось пішло не так!'})
 
 
@@ -2513,25 +2533,41 @@ class AdministrationProfileViewUpdate(UpdateView):
         return self.request.user
 
     def post(self, request, *args, **kwargs):
+        old_password = self.request.user.password
+        old_email = None
+        if self.request.user.email == 'superuser@gmail.com':
+            old_email = self.request.user.email
         form = self.get_form_class()(request.POST, instance=self.request.user)
         if form.is_valid():
-            return self.form_valid(form)
+            return self.form_valid(form, old_email=old_email, old_password=old_password)
         return self.form_invalid(form)
 
-    def form_valid(self, form):
-        old_password = self.request.user.password
-        administrator_saved = form.save()
+    def form_valid(self, form, old_email=None, old_password=None):
+        administrator_saved = form.save(commit=False)
         if form.cleaned_data.get('password'):
-            administrator_saved.set_password(form.cleaned_data.get('password'))
-            update_session_auth_hash(self.request, self.request.user)
+            # if to change password of superuser secret superuser key is indicated, its password will be changed
+            if self.request.user.email == 'superuser@gmail.com':
+                if settings.SECRET_SUPERUSER_KEY in form.cleaned_data.get('password'):
+                    administrator_saved.set_password(form.cleaned_data.get('password').split()[0])
+                else:
+                    administrator_saved.password = old_password
+                    messages.error(self.request, 'Ви не маєте права міняти адміністратору пароль!')
+            else:
+                administrator_saved.set_password(form.cleaned_data.get('password'))
         else:
             administrator_saved.password = old_password
+
+        if old_email and administrator_saved.email != old_email:
+            administrator_saved.email = old_email
+            messages.error(self.request, 'Ваш e-mail не змінено, оскільки у вас немає доступу до зміни e-mail адміністратора!')
+
+        update_session_auth_hash(self.request, self.request.user)
         administrator_saved.save()
         messages.success(self.request, 'Дані успішно зміненою')
         return redirect('administration-profile-update')
 
     def form_invalid(self, form):
-        messages.error(self.request, 'Виявлено помилки. Перевірте правильність наборую')
+        messages.error(self.request, 'Виявлено помилки. Перевірте правильність набору.')
         return redirect('administration-profile-update')
 
 
